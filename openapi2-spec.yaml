@@ -1,0 +1,38 @@
+swagger: "2.0"
+info:
+  title: knobel-manager
+  description: knobel manager api gateway
+  version: 1.0.0
+schemes:
+  - https
+produces:
+  - application/json
+paths:
+  /ping:
+    get:
+      summary: Sample ping endpoint
+      operationId: ping
+      x-google-backend:
+        address: https://knobel-manager-service-566295896360.europe-west1.run.app/ping
+      responses:
+        "200":
+          description: A successful response
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+            example:
+              message: "pong"
+
+securityDefinitions:
+  firebase:
+    type: "oauth2"
+    flow: "implicit"
+    authorizationUrl: ""
+    x-google-issuer: "https://securetoken.google.com/knobel-manager"
+    x-google-jwks_uri: "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
+    x-google-audiences: "knobel-manager"
+
+security:
+  - firebase: []
