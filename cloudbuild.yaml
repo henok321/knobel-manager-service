@@ -1,4 +1,17 @@
 steps:
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', '-t', 'europe-west1-docker.pkg.dev/knobel-manager/cloud-run-source-deploy/knobel-manager-service:$COMMIT_SHA', '.'
+    ]
+
+  # Step 2: Push the Docker image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push', 'europe-west1-docker.pkg.dev/knobel-manager/cloud-run-source-deploy/knobel-manager-service:$COMMIT_SHA'
+    ]
+
+  # Step 3: Deploy the image to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       [
@@ -13,14 +26,14 @@ steps:
         '--cpu=1',
         '--timeout=300s'
       ]
-  - name: 'gcr.io/cloud-builders/git'
-    args: ['log', '-1']
 
-options:
-  logging: CLOUD_LOGGING_ONLY  # Store logs only in Cloud Logging
-
+# Substitutions for environment variables
 substitutions:
   _REGION: 'europe-west1'
   _SERVICE: 'knobel-manager-service'
+
+# Options to log only to Cloud Logging
+options:
+  logging: CLOUD_LOGGING_ONLY
 
 timeout: '900s'
