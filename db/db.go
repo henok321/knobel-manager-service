@@ -6,6 +6,8 @@ import (
 	"knobel-manager-service/models"
 	"log"
 	"os"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type DB struct {
@@ -13,7 +15,7 @@ type DB struct {
 }
 
 func NewDB() (*DB, error) {
-	dsn := fmt.Sprintf("%s:%s@cloudsql(%s)/%s",
+	dsn := fmt.Sprintf("%s:%s@unix(/cloudsql/%s)/%s?parseTime=true",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
 		os.Getenv("CLOUD_SQL_CONNECTION_NAME"),
@@ -24,6 +26,11 @@ func NewDB() (*DB, error) {
 		return nil, fmt.Errorf("failed to create the database connection pool: %v", err)
 	}
 
+	// Set connection pool parameters (optional)
+	dbConn.SetMaxOpenConns(10)
+	dbConn.SetMaxIdleConns(5)
+	dbConn.SetConnMaxLifetime(0) // connections reused forever
+
 	if err := dbConn.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping the database: %v", err)
 	}
@@ -33,9 +40,8 @@ func NewDB() (*DB, error) {
 }
 
 func (db *DB) Close() {
-	err := db.Conn.Close()
-	if err != nil {
-		return
+	if err := db.Conn.Close(); err != nil {
+		log.Printf("Error closing database connection: %v", err)
 	}
 }
 
