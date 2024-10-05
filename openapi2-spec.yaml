@@ -24,6 +24,22 @@ paths:
                 type: string
             example:
               message: "pong"
+  /sample:
+    get:
+      summary: Sample endpoint
+      operationId: sample
+      x-google-backend:
+        address: https://knobel-manager-service-566295896360.europe-west1.run.app/sample
+      responses:
+        "200":
+          description: A successful response
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+            example:
+              message: "sample"
 
 securityDefinitions:
   firebase:
