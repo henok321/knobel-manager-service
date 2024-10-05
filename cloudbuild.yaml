@@ -1,21 +1,20 @@
 steps:
-  # Step 1: Build the Docker image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'build', '-t', 'europe-west1-docker.pkg.dev/knobel-manager/cloud-run-source-deploy/knobel-manager-service/knobel-manager-service:$COMMIT_SHA', '.'
-    ]
+  # Step 1: Build the Docker image using Kaniko with caching
+  - name: 'gcr.io/kaniko-project/executor:latest'
+    args:
+      [
+        '--destination=europe-west1-docker.pkg.dev/knobel-manager/cloud-run-source-deploy/knobel-manager-service/knobel-manager-service:$COMMIT_SHA',
+        '--cache=true',  # Enable caching
+        '--cache-repo=europe-west1-docker.pkg.dev/knobel-manager/cloud-run-source-deploy/knobel-manager-service/cache',
+        '--cache-ttl=48h',  # Set cache time-to-live to 48 hours
+      ]
+    id: 'Build Docker Image'  # Assign an ID for the step
 
-  # Step 2: Push the Docker image to Artifact Registry
-  - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'push', 'europe-west1-docker.pkg.dev/knobel-manager/cloud-run-source-deploy/knobel-manager-service/knobel-manager-service:$COMMIT_SHA'
-    ]
-
-  # Step 3: Deploy the image to Cloud Run
+  # Step 2: Deploy the image to Cloud Run (directly after Kaniko build)
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       [
-        'run', 'deploy', 'knobel-manager-service',  # This is your service name
+        'run', 'deploy', 'knobel-manager-service',
         '--image=europe-west1-docker.pkg.dev/knobel-manager/cloud-run-source-deploy/knobel-manager-service/knobel-manager-service:$COMMIT_SHA',
         '--region=europe-west1',
         '--platform=managed',
@@ -27,8 +26,10 @@ steps:
         '--timeout=300s',
         '--set-env-vars=DB_USER=knobel_manager,DB_NAME=knobel_manager',
       ]
+    id: 'Deploy Cloud Run'  # Assign an ID for the deployment step
+    waitFor: ['Build Docker Image']  # Wait for image build before deploying to Cloud Run
 
-  # Step 4: Create a new API Gateway config version
+  # Step 3: Create a new API Gateway config version (only if Cloud Run deployment is successful)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
       [
@@ -38,8 +39,10 @@ steps:
         '--backend-auth-service-account=566295896360-compute@developer.gserviceaccount.com',
         '--project=knobel-manager',
       ]
+    waitFor: ['Deploy Cloud Run']  # Wait for Cloud Run deployment before creating API config
+    id: 'Create API Config'
 
-  # Step 5: Deploy the new API config to the API Gateway
+  # Step 4: Deploy the new API config to the API Gateway (only if API config is created)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
       [
@@ -49,6 +52,7 @@ steps:
         '--project=knobel-manager',
         '--location=europe-west1',
       ]
+    waitFor: ['Create API Config']  # Only update the gateway if the API config creation was successful
 
 options:
   logging: CLOUD_LOGGING_ONLY  # Use only Cloud Logging
