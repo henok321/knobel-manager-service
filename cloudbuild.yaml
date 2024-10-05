@@ -1,0 +1,17 @@
+steps:
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      [
+        'run', 'deploy', 'knobel-manager-service',
+        '--image=europe-west1-docker.pkg.dev/knobel-manager/cloud-run-source-deploy/knobel-manager-service/$COMMIT_SHA',
+        '--region=europe-west1',
+        '--platform=managed',
+        '--allow-unauthenticated',
+        '--update-secrets=DB_PASSWORD=DB_PASSWORD:latest',  # Inject your secret
+        '--set-cloudsql-instances=knobel-manager:europe-west1:knobel-manager',  # Cloud SQL instance
+        '--memory=512Mi',
+        '--cpu=1',
+        '--timeout=300s'
+      ]
+  - name: 'gcr.io/cloud-builders/git'
+    args: ['log', '-1']
