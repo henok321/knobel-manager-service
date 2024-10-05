@@ -29,34 +29,31 @@ steps:
     id: 'Deploy Cloud Run'
     waitFor: ['Build Docker Image']
 
-  # Step 3: Install the API Gateway component and create the API config in one step
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: 'bash'
+  # Step 3: Create a new API Gateway config version using beta commands
+  - name: 'gcr.io/cloud-builders/gcloud'
     args:
       [
-        '-c',
-        'gcloud components install gcloud-api-gateway && \
-        gcloud api-gateway api-configs create knobel-manager-config-$BUILD_ID \
-          --api=knobel-manager \
-          --openapi-spec=openapi2-spec.yaml \
-          --backend-auth-service-account=566295896360-compute@developer.gserviceaccount.com \
-          --project=knobel-manager'
+        'beta', 'api-gateway', 'api-configs', 'create', 'knobel-manager-config-$BUILD_ID',
+        '--api=knobel-manager',
+        '--openapi-spec=openapi2-spec.yaml',
+        '--backend-auth-service-account=566295896360-compute@developer.gserviceaccount.com',
+        '--project=knobel-manager',
       ]
-    id: 'Install API Gateway and Create Config'
+    id: 'Create API Config'
     waitFor: ['Deploy Cloud Run']
 
-  # Step 4: Deploy the new API config to the API Gateway (corrected API Gateway name)
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  # Step 4: Deploy the new API config to the API Gateway
+  - name: 'gcr.io/cloud-builders/gcloud'
     args:
       [
-        'api-gateway', 'gateways', 'update', 'knobel-manager',  # Corrected API Gateway name
+        'beta', 'api-gateway', 'gateways', 'update', 'knobel-manager',
         '--api=knobel-manager',
         '--api-config=knobel-manager-config-$BUILD_ID',
         '--project=knobel-manager',
         '--location=europe-west1',
       ]
-    waitFor: ['Install API Gateway and Create Config']
     id: 'Deploy API Gateway'
+    waitFor: ['Create API Config']
 
 options:
   logging: CLOUD_LOGGING_ONLY
