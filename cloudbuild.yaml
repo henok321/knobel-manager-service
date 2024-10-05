@@ -15,7 +15,6 @@ steps:
     args: [
       'push', 'europe-west1-docker.pkg.dev/knobel-manager/cloud-run-source-deploy/knobel-manager-service/knobel-manager-service:$COMMIT_SHA'
     ]
-    id: 'Push Docker Image'  # Assign an ID for the push step
     waitFor: ['Build Docker Image']  # Wait for the Docker image build to finish
 
   # Step 3: Deploy the image to Cloud Run (dependent on Docker push)
@@ -34,8 +33,8 @@ steps:
         '--timeout=300s',
         '--set-env-vars=DB_USER=knobel_manager,DB_NAME=knobel_manager',
       ]
-    id: 'Deploy Cloud Run'  # Assign an ID for the deployment step
-    waitFor: ['Push Docker Image']  # Wait for image push before deployment
+    waitFor: ['Build Docker Image', 'Push Docker Image']  # Wait for image push before deployment
+    id: 'Deploy Cloud Run'  # Assign an ID to track successful deployment
 
   # Step 4: Create a new API Gateway config version (only if Cloud Run deployment is successful)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -47,8 +46,8 @@ steps:
         '--backend-auth-service-account=566295896360-compute@developer.gserviceaccount.com',
         '--project=knobel-manager',
       ]
-    id: 'Create API Config'  # Assign an ID for API config creation
     waitFor: ['Deploy Cloud Run']  # Wait for Cloud Run deployment before creating API config
+    id: 'Create API Config'
 
   # Step 5: Deploy the new API config to the API Gateway (only if API config is created)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -60,7 +59,6 @@ steps:
         '--project=knobel-manager',
         '--location=europe-west1',
       ]
-    id: 'Deploy API Gateway'  # Assign an ID for the API Gateway deployment
     waitFor: ['Create API Config']  # Only update the gateway if the API config creation was successful
 
 options:
