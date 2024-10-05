@@ -24,7 +24,8 @@ steps:
         '--set-cloudsql-instances=knobel-manager:europe-west1:knobel-manager',
         '--memory=512Mi',
         '--cpu=1',
-        '--timeout=300s'
+        '--timeout=300s',
+        '--set-env-vars=DB_USER=knobel_manager,DB_NAME=knobel_manager',
       ]
 
 options:
