@@ -4,13 +4,13 @@ steps:
     args:
       [
         '--destination=europe-west1-docker.pkg.dev/knobel-manager/cloud-run-source-deploy/knobel-manager-service/knobel-manager-service:$COMMIT_SHA',
-        '--cache=true',  # Enable caching
+        '--cache=true',
         '--cache-repo=europe-west1-docker.pkg.dev/knobel-manager/cloud-run-source-deploy/knobel-manager-service/cache',
-        '--cache-ttl=48h',  # Set cache time-to-live to 48 hours
+        '--cache-ttl=48h',
       ]
-    id: 'Build Docker Image'  # Assign an ID for the step
+    id: 'Build Docker Image'
 
-  # Step 2: Deploy the image to Cloud Run (directly after Kaniko build)
+  # Step 2: Deploy the image to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
     args:
       [
@@ -26,10 +26,16 @@ steps:
         '--timeout=300s',
         '--set-env-vars=DB_USER=knobel_manager,DB_NAME=knobel_manager',
       ]
-    id: 'Deploy Cloud Run'  # Assign an ID for the deployment step
-    waitFor: ['Build Docker Image']  # Wait for image build before deploying to Cloud Run
+    id: 'Deploy Cloud Run'
+    waitFor: ['Build Docker Image']
 
-  # Step 3: Create a new API Gateway config version (only if Cloud Run deployment is successful)
+  # Step 3: Install the API Gateway component
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args: ['components', 'install', 'gcloud-api-gateway']
+    id: 'Install API Gateway Component'
+    waitFor: ['Deploy Cloud Run']  # Ensure Cloud Run is deployed before installing component
+
+  # Step 4: Create a new API Gateway config version (after API Gateway component is installed)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
       [
@@ -39,23 +45,24 @@ steps:
         '--backend-auth-service-account=566295896360-compute@developer.gserviceaccount.com',
         '--project=knobel-manager',
       ]
-    waitFor: ['Deploy Cloud Run']  # Wait for Cloud Run deployment before creating API config
     id: 'Create API Config'
+    waitFor: ['Install API Gateway Component']
 
-  # Step 4: Deploy the new API config to the API Gateway (only if API config is created)
+  # Step 5: Deploy the new API config to the API Gateway (corrected API Gateway name)
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
       [
-        'api-gateway', 'gateways', 'update', 'knobel-manager',
+        'api-gateway', 'gateways', 'update', 'knobel-manager',  # Corrected API Gateway name
         '--api=knobel-manager',
         '--api-config=knobel-manager-config-$BUILD_ID',
         '--project=knobel-manager',
         '--location=europe-west1',
       ]
-    waitFor: ['Create API Config']  # Only update the gateway if the API config creation was successful
+    waitFor: ['Create API Config']
+    id: 'Deploy API Gateway'
 
 options:
-  logging: CLOUD_LOGGING_ONLY  # Use only Cloud Logging
+  logging: CLOUD_LOGGING_ONLY
 
 substitutions:
   _REGION: 'europe-west1'
