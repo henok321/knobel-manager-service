@@ -24,7 +24,7 @@ steps:
         '--memory=512Mi',
         '--cpu=1',
         '--timeout=300s',
-        '--set-env-vars=DB_USER=knobel_manager,DB_NAME=knobel_manager',
+        '--set-env-vars=DB_USER=knobel_manager,DB_NAME=knobel_manager,INSTANCE_UNIX_SOCKET=/cloudsql/knobel-manager:europe-west1:knobel-manager',
       ]
     id: 'Deploy Cloud Run'
     waitFor: ['Build Docker Image']

@@ -15,24 +15,29 @@ type DB struct {
 }
 
 func NewDB() (*DB, error) {
-	dsn := fmt.Sprintf("%s:%s@unix(/cloudsql/%s)/%s?parseTime=true",
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("CLOUD_SQL_CONNECTION_NAME"),
-		os.Getenv("DB_NAME"))
-
-	dbConn, err := sql.Open("mysql", dsn)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create the database connection pool: %v", err)
+	mustGetenv := func(k string) string {
+		v := os.Getenv(k)
+		if v == "" {
+			log.Fatalf("Fatal Error: %s environment variable not set.", k)
+		}
+		return v
 	}
 
-	// Set connection pool parameters (optional)
-	dbConn.SetMaxOpenConns(10)
-	dbConn.SetMaxIdleConns(5)
-	dbConn.SetConnMaxLifetime(0) // connections reused forever
+	dbUser := mustGetenv("DB_USER")
+	dbPwd := mustGetenv("DB_PASSWORD")
+	dbName := mustGetenv("DB_NAME")
+	unixSocketPath := mustGetenv("INSTANCE_UNIX_SOCKET")
+
+	dbURI := fmt.Sprintf("%s:%s@unix(%s)/%s?parseTime=true",
+		dbUser, dbPwd, unixSocketPath, dbName)
+
+	dbConn, err := sql.Open("mysql", dbURI)
+	if err != nil {
+		return nil, fmt.Errorf("sql.Open: %v", err)
+	}
 
 	if err := dbConn.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping the database: %v", err)
+		return nil, fmt.Errorf("dbConn.Ping: %v", err)
 	}
 
 	log.Println("Connected to the Cloud SQL database!")
@@ -46,6 +51,9 @@ func (db *DB) Close() {
 }
 
 func (db *DB) GetExampleData() (*models.ExampleData, error) {
+	if db.Conn == nil {
+		return nil, fmt.Errorf("database connection is not initialized")
+	}
 	var id int
 	var message string
 	query := "SELECT id, message FROM test LIMIT 1"
