@@ -43,7 +43,7 @@ steps:
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     args:
       [
-        'api-gateway', 'gateways', 'update', 'knobel-manager-gateway',
+        'api-gateway', 'gateways', 'update', 'knobel-manager',
         '--api=knobel-manager',
         '--api-config=knobel-manager-config-$BUILD_ID',
         '--project=knobel-manager',
