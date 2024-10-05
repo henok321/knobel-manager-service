@@ -6,12 +6,21 @@ steps:
         '--image=europe-west1-docker.pkg.dev/knobel-manager/cloud-run-source-deploy/knobel-manager-service/$COMMIT_SHA',
         '--region=europe-west1',
         '--platform=managed',
-        '--allow-unauthenticated',
+        '--allow-unauthenticated',  # API Gateway handles auth
         '--update-secrets=DB_PASSWORD=DB_PASSWORD:latest',  # Inject your secret
-        '--set-cloudsql-instances=knobel-manager:europe-west1:knobel-manager',  # Cloud SQL instance
+        '--set-cloudsql-instances=knobel-manager:europe-west1:knobel-manager',  # Connect to Cloud SQL instance
         '--memory=512Mi',
         '--cpu=1',
         '--timeout=300s'
       ]
   - name: 'gcr.io/cloud-builders/git'
     args: ['log', '-1']
+
+options:
+  logging: CLOUD_LOGGING_ONLY  # Store logs only in Cloud Logging
+
+substitutions:
+  _REGION: 'europe-west1'
+  _SERVICE: 'knobel-manager-service'
+
+timeout: '900s'
