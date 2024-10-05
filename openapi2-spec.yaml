@@ -36,9 +36,12 @@ paths:
           schema:
             type: object
             properties:
+              ID:
+                type: string
               message:
                 type: string
             example:
+              ID: "1"
               message: "sample"
 
 securityDefinitions:
