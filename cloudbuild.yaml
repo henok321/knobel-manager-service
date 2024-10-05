@@ -28,6 +28,28 @@ steps:
         '--set-env-vars=DB_USER=knobel_manager,DB_NAME=knobel_manager',
       ]
 
+  # Step 4: Create a new API Gateway config version
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      [
+        'api-gateway', 'api-configs', 'create', 'knobel-manager-config-$BUILD_ID',
+        '--api=knobel-manager',
+        '--openapi-spec=openapi2-spec.yaml',
+        '--backend-auth-service-account=566295896360-compute@developer.gserviceaccount.com',
+        '--project=knobel-manager',
+      ]
+
+  # Step 5: Deploy the new API config to the API Gateway
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      [
+        'api-gateway', 'gateways', 'update', 'knobel-manager-gateway',
+        '--api=knobel-manager',
+        '--api-config=knobel-manager-config-$BUILD_ID',
+        '--project=knobel-manager',
+        '--location=europe-west1',
+      ]
+
 options:
   logging: CLOUD_LOGGING_ONLY  # Use only Cloud Logging
 
