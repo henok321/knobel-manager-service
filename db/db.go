@@ -33,7 +33,10 @@ func NewDB() (*DB, error) {
 }
 
 func (db *DB) Close() {
-	db.Conn.Close()
+	err := db.Conn.Close()
+	if err != nil {
+		return
+	}
 }
 
 func (db *DB) GetExampleData() (*models.ExampleData, error) {

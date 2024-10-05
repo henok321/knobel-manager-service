@@ -16,9 +16,5 @@ func NewExampleService(db *db.DB) *ExampleService {
 
 func (s *ExampleService) SampleData() (*models.ExampleData, error) {
 	log.Println("Fetching greeting from the database...")
-	data, err := s.DB.GetExampleData()
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
+	return &models.ExampleData{ID: 1, Message: "test"}, nil
 }
