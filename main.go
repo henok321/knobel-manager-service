@@ -31,6 +31,5 @@ func main() {
 
 		// Run the service on port 8080
 	})
-	r.Run(":8080") // By default, Gin listens on 0.0.0.0:8080
-
+	r.Run("0.0.0.0:8080")
 }
