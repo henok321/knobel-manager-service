@@ -1,7 +1,6 @@
 package main
 
 import (
-	"knobel-manager-service/db"
 	"knobel-manager-service/services"
 	"net/http"
 
@@ -13,15 +12,7 @@ func main() {
 	// Create a new Gin router
 	r := gin.Default()
 
-	// Define a simple GET route
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "pong",
-		})
-	})
-
-	database, _ := db.NewDB()
-	sampleService := services.NewExampleService(database)
+	sampleService := services.NewExampleService()
 
 	r.GET("/sample", func(c *gin.Context) {
 		data, err := sampleService.SampleData()

@@ -8,22 +8,6 @@ schemes:
 produces:
   - application/json
 paths:
-  /ping:
-    get:
-      summary: Sample ping endpoint
-      operationId: ping
-      x-google-backend:
-        address: https://knobel-manager-service-566295896360.europe-west1.run.app/ping
-      responses:
-        "200":
-          description: A successful response
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-            example:
-              message: "pong"
   /sample:
     get:
       summary: Sample endpoint
@@ -51,7 +35,7 @@ securityDefinitions:
     authorizationUrl: ""
     x-google-issuer: "https://securetoken.google.com/knobel-manager"
     x-google-jwks_uri: "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
-    x-google-audiences: "knobel-manager"
+    x-google-audiences: "knobel-manager-webapp"
 
 security:
   - firebase: []
