@@ -23,8 +23,7 @@ WORKDIR /
 # Copy the binary from the builder stage
 COPY --from=builder /app/knobel-manager-service /knobel-manager-service
 
-# Expose the port your service will run on (e.g., 8080)
-EXPOSE 443
+EXPOSE 8080
 
 # Command to run the service
 CMD ["/knobel-manager-service"]
