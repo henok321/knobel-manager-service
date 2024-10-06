@@ -1,4 +1,4 @@
-package models
+package player
 
 type Player struct {
 	ID     uint   `gorm:"primaryKey"`
