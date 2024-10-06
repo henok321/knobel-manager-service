@@ -12,7 +12,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go binary
-RUN go build -o knobel-manager-service ./cmd/knobel-manager-service
+RUN go build -o knobel-manager-service ./cmd/
 
 # Start a new smaller base image with a compatible glibc version
 FROM debian:bookworm-slim
