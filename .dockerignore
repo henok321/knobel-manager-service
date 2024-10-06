@@ -1,0 +1,36 @@
+# flyctl launch added from .gitignore
+# Test binary, built with `go test -c`
+**/*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+**/*.out
+
+# Dependency directories (remove the comment below to include it)
+# vendor/
+
+# Go workspace file
+**/go.work
+**/go.work.sum
+
+# env file
+**/.env
+
+# JetBrains
+**/idea
+**/*.iml
+
+# VSCode
+
+**/.vscode
+**/knobel-manager-service
+
+# flyctl launch added from .idea/.gitignore
+# Default ignored files
+.idea/shelf
+.idea/workspace.xml
+# Editor-based HTTP Client requests
+.idea/httpRequests
+# Datasource local storage ignored files
+.idea/dataSources
+.idea/dataSources.local.xml
+fly.toml
