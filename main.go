@@ -12,6 +12,13 @@ func main() {
 	// Create a new Gin router
 	r := gin.Default()
 
+	// Health check route
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status": "healthy",
+		})
+	})
+
 	sampleService := services.NewExampleService()
 
 	r.GET("/sample", func(c *gin.Context) {
