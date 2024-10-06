@@ -22,3 +22,4 @@ go.work.sum
 
 .vscode
 knobel-manager-service
+firebaseServiceAccount.json
