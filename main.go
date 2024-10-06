@@ -1,6 +1,7 @@
 package main
 
 import (
+	"knobel-manager-service/middlewares"
 	"knobel-manager-service/services"
 	"net/http"
 
@@ -12,7 +13,8 @@ func main() {
 	// Create a new Gin router
 	r := gin.Default()
 
-	// Health check route
+	r.Use(gin.WrapH(middlewares.RateLimitMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))))
+
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": "healthy",
@@ -31,5 +33,7 @@ func main() {
 
 		// Run the service on port 8080
 	})
+
 	r.Run("0.0.0.0:8080")
+
 }
