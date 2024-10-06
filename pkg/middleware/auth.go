@@ -43,7 +43,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Extract user information from token claims
 		userInfo := map[string]interface{}{
 			"sub":   token.UID,
-			"name":  token.Claims["name"],
 			"email": token.Claims["email"],
 		}
 
