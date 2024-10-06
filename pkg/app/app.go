@@ -28,6 +28,6 @@ func (app *App) Initialize() {
 }
 
 func (app *App) initializeRoutes() {
-	app.Router.GET("/heath", health.HealthCheck)
+	app.Router.GET("/health", health.HealthCheck)
 	app.Router.GET("/players", app.PlayerHandler.GetPlayers)
 }
