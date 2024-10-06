@@ -22,7 +22,6 @@
 # VSCode
 
 **/.vscode
-**/knobel-manager-service
 
 # flyctl launch added from .idea/.gitignore
 # Default ignored files
