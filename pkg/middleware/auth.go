@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"context"
-	firebase "firebase.google.com/go/v4"
+	firebaseauth "github.com/henok321/knobel-manager-service/pkg/firebase"
 	"net/http"
 	"strings"
 
@@ -26,11 +26,8 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		idToken := parts[1]
 
-		app, err := firebase.NewApp(context.Background(), nil)
-		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize Firebase app"})
-			return
-		}
+		app := firebaseauth.App
+
 		client, err := app.Auth(context.Background())
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize Firebase Auth client"})
