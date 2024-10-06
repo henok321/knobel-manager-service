@@ -27,10 +27,14 @@ func (app *App) Initialize() {
 }
 
 func (app *App) initializeRoutes() {
-	protected := app.Router.Group("/")
-	protected.Use(middleware.AuthMiddleware())
 
-	app.Router.GET("/health", health.HealthCheck)
-	protected.GET("/players", app.PlayerHandler.GetPlayers)
+	unauthenticated := app.Router
+	unauthenticated.Use(middleware.RateLimiterMiddleware(5, 10))
+	unauthenticated.GET("/health", health.HealthCheck)
+
+	authenticated := app.Router.Group("/")
+	authenticated.Use(middleware.AuthMiddleware(), middleware.RateLimiterMiddleware(5, 10))
+	authenticated.GET("/players", app.PlayerHandler.GetPlayers)
+
 	log.Println("Routes setup completed")
 }
