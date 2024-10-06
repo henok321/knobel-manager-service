@@ -1,9 +1,9 @@
 package db
 
 import (
+	"github.com/henok321/knobel-manager-service/pkg/player"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"knobel-manager-service/player"
 	"os"
 )
 

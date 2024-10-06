@@ -1,11 +1,11 @@
-package main
+package app
 
 import (
-	"gorm.io/gorm"
-	"knobel-manager-service/db"
-	"knobel-manager-service/player"
-
 	"github.com/gin-gonic/gin"
+	"github.com/henok321/knobel-manager-service/internal/db"
+	"github.com/henok321/knobel-manager-service/pkg/health"
+	"github.com/henok321/knobel-manager-service/pkg/player"
+	"gorm.io/gorm"
 )
 
 type App struct {
@@ -28,5 +28,6 @@ func (app *App) Initialize() {
 }
 
 func (app *App) initializeRoutes() {
+	app.Router.GET("/heath", health.HealthCheck)
 	app.Router.GET("/players", app.PlayerHandler.GetPlayers)
 }
