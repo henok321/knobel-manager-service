@@ -50,6 +50,7 @@ func (app *App) initializeRoutes() {
 	authenticated.GET("/games/:id", app.GamesHandler.GetGameByID)
 	authenticated.POST("/games", app.GamesHandler.CreateGame)
 	authenticated.PUT("/games/:id", app.GamesHandler.UpdateGame)
+	authenticated.DELETE("/games/:id", app.GamesHandler.DeleteGame)
 
 	log.Println("Routes setup completed")
 }
