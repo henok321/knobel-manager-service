@@ -1,12 +1,13 @@
 package db
 
 import (
+	"log"
+	"os"
+
 	"github.com/henok321/knobel-manager-service/pkg/game"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
-	"os"
 )
 
 func Connect() (*gorm.DB, error) {

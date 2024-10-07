@@ -1,6 +1,8 @@
 package app
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/henok321/knobel-manager-service/internal/db"
 	firebaseauth "github.com/henok321/knobel-manager-service/pkg/firebase"
@@ -9,7 +11,6 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/middleware"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 	"gorm.io/gorm"
-	"log"
 )
 
 type App struct {

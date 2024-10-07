@@ -2,10 +2,11 @@ package firebaseauth
 
 import (
 	"context"
-	fbadmin "firebase.google.com/go/v4"
-	"google.golang.org/api/option"
 	"log"
 	"os"
+
+	fbadmin "firebase.google.com/go/v4"
+	"google.golang.org/api/option"
 )
 
 var App *fbadmin.App
