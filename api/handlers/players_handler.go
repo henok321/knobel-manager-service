@@ -1,6 +1,7 @@
-package player
+package handlers
 
 import (
+	"github.com/henok321/knobel-manager-service/pkg/player"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,10 +12,10 @@ type PlayersHandler interface {
 }
 
 type playersHandler struct {
-	playersService PlayersService
+	playersService player.PlayersService
 }
 
-func NewPlayersHandler(playersService PlayersService) PlayersHandler {
+func NewPlayersHandler(playersService player.PlayersService) PlayersHandler {
 	return &playersHandler{playersService}
 }
 

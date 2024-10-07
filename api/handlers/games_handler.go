@@ -1,14 +1,15 @@
-package game
+package handlers
 
 import (
 	"fmt"
+	"github.com/henok321/knobel-manager-service/pkg/game"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
-func isOwner(sub string, owners []Owner) bool {
+func isOwner(sub string, owners []game.Owner) bool {
 	for _, owner := range owners {
 		if owner.Sub == sub {
 			return true
@@ -26,10 +27,10 @@ type GamesHandler interface {
 }
 
 type gamesHandler struct {
-	service GamesService
+	service game.GamesService
 }
 
-func NewGamesHandler(service GamesService) GamesHandler {
+func NewGamesHandler(service game.GamesService) GamesHandler {
 	return &gamesHandler{service}
 }
 
@@ -85,13 +86,13 @@ func (h *gamesHandler) CreateGame(c *gin.Context) {
 		return
 	}
 
-	var game Game
+	var game game.Game
 	if err := c.BindJSON(&game); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	game.Owners = []Owner{{Sub: sub}}
+	game.Owners = []game.Owner{{Sub: sub}}
 
 	if err := h.service.Create(&game); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
