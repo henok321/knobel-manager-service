@@ -2,9 +2,8 @@ package game
 
 import "gorm.io/gorm"
 
-func InitializeGameModule(db *gorm.DB) GamesHandler {
+func InitializeGameModule(db *gorm.DB) GamesService {
 	repository := NewGamesRepository(db)
 	service := NewGamesService(repository)
-	handler := NewGamesHandler(service)
-	return handler
+	return service
 }
