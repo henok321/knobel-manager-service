@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/henok321/knobel-manager-service/pkg/game"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -14,6 +15,6 @@ func Connect() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	db.AutoMigrate(&player.Player{})
+	db.AutoMigrate(&player.Player{}, &game.Game{}, &game.Owner{})
 	return db, nil
 }
