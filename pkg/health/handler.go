@@ -1,8 +1,9 @@
 package health
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func HealthCheck(c *gin.Context) {

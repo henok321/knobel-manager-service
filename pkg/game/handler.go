@@ -2,9 +2,10 @@ package game
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 func isOwner(sub string, owners []Owner) bool {
