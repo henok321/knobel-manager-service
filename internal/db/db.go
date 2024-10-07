@@ -5,6 +5,7 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/player"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"log"
 	"os"
 )
 
@@ -15,6 +16,10 @@ func Connect() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	db.AutoMigrate(&player.Player{}, &game.Game{}, &game.Owner{})
+	err = db.AutoMigrate(&player.Player{}, &game.Game{}, &game.Owner{})
+
+	if err != nil {
+		log.Fatalf("error migrating database: %v", err)
+	}
 	return db, nil
 }
