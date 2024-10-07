@@ -5,10 +5,10 @@ type PlayersService interface {
 }
 
 type playersService struct {
-	playerRepository PlayerRepository
+	playerRepository PlayersRepository
 }
 
-func NewPlayersService(playerRepository PlayerRepository) PlayersService {
+func NewPlayersService(playerRepository PlayersRepository) PlayersService {
 	return &playersService{playerRepository}
 }
 
