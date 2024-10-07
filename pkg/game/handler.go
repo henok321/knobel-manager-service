@@ -7,6 +7,15 @@ import (
 	"strconv"
 )
 
+func isOwner(sub string, owners []Owner) bool {
+	for _, owner := range owners {
+		if owner.Sub == sub {
+			return true
+		}
+	}
+	return false
+}
+
 type GamesHandler interface {
 	GetGames(c *gin.Context)
 	GetGameByID(c *gin.Context)
@@ -59,15 +68,7 @@ func (h *gamesHandler) GetGameByID(c *gin.Context) {
 		return
 	}
 
-	isOwner := false
-	for _, owner := range game.Owners {
-		if owner.Sub == sub {
-			isOwner = true
-			break
-		}
-	}
-
-	if !isOwner {
+	if !isOwner(sub, game.Owners) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of this game"})
 		return
 	}
@@ -120,15 +121,7 @@ func (h *gamesHandler) UpdateGame(c *gin.Context) {
 		return
 	}
 
-	isOwner := false
-	for _, owner := range game.Owners {
-		if owner.Sub == sub {
-			isOwner = true
-			break
-		}
-	}
-
-	if !isOwner {
+	if !isOwner(sub, game.Owners) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of this game"})
 		return
 	}
@@ -168,15 +161,7 @@ func (h *gamesHandler) DeleteGame(c *gin.Context) {
 		return
 	}
 
-	isOwner := false
-	for _, owner := range game.Owners {
-		if owner.Sub == sub {
-			isOwner = true
-			break
-		}
-	}
-
-	if !isOwner {
+	if !isOwner(sub, game.Owners) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of this game"})
 		return
 	}
