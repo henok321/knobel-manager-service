@@ -47,6 +47,7 @@ func (app *App) initializeRoutes() {
 
 	// game routes
 	authenticated.GET("/games", app.GamesHandler.GetGames)
+	authenticated.GET("/games/:id", app.GamesHandler.GetGameByID)
 	authenticated.POST("/games", app.GamesHandler.CreateGame)
 	authenticated.PUT("/games/:id", app.GamesHandler.UpdateGame)
 

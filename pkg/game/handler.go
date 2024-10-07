@@ -9,6 +9,7 @@ import (
 
 type GamesHandler interface {
 	GetGames(c *gin.Context)
+	GetGameByID(c *gin.Context)
 	CreateGame(c *gin.Context)
 	UpdateGame(c *gin.Context)
 	DeleteGame(c *gin.Context)
@@ -37,6 +38,43 @@ func (h *gamesHandler) GetGames(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"games": games})
 }
+
+func (h *gamesHandler) GetGameByID(c *gin.Context) {
+	sub := c.GetStringMap("user")["sub"].(string)
+
+	if sub == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+
+	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	game, err := h.service.FindByID(uint(id))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
+		return
+	}
+
+	isOwner := false
+	for _, owner := range game.Owners {
+		if owner.Sub == sub {
+			isOwner = true
+			break
+		}
+	}
+
+	if !isOwner {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of this game"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"game": game})
+}
+
 func (h *gamesHandler) CreateGame(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
 
