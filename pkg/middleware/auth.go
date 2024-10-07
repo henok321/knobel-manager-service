@@ -11,45 +11,42 @@ import (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		header := c.GetHeader("Authorization")
-		if header == "" {
+		authorizationHeader := c.GetHeader("Authorization")
+		if authorizationHeader == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
 			return
 		}
 
-		// Extract the token from the header
-		parts := strings.Split(header, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
+		tokenParts := strings.Split(authorizationHeader, " ")
+		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header format"})
 			return
 		}
 
-		idToken := parts[1]
+		idToken := tokenParts[1]
 
-		app := firebaseauth.App
+		firebaseApp := firebaseauth.App
 
-		client, err := app.Auth(context.Background())
+		client, err := firebaseApp.Auth(context.Background())
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize Firebase Auth client"})
 			return
 		}
 
 		token, err := client.VerifyIDToken(context.Background(), idToken)
+
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
 
-		// Extract user information from token claims
 		userInfo := map[string]interface{}{
 			"sub":   token.UID,
 			"email": token.Claims["email"],
 		}
 
-		// Attach the user information to the context
 		c.Set("user", userInfo)
 
-		// Proceed to the next handler
 		c.Next()
 	}
 }

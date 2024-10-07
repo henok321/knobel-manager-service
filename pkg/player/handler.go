@@ -14,7 +14,6 @@ func NewPlayersHandler(playersService PlayersService) *PlayersHandler {
 }
 
 func (h *PlayersHandler) GetPlayers(c *gin.Context) {
-	// use playersService to get all players
 	players, err := h.playersService.FindAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
