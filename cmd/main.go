@@ -1,6 +1,8 @@
 package main
 
-import "github.com/henok321/knobel-manager-service/pkg/app"
+import (
+	"github.com/henok321/knobel-manager-service/internal/app"
+)
 
 func main() {
 	app := &app.App{}

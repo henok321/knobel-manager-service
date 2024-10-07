@@ -2,10 +2,9 @@ package middleware
 
 import (
 	"context"
+	firebaseauth "github.com/henok321/knobel-manager-service/internal/auth"
 	"net/http"
 	"strings"
-
-	firebaseauth "github.com/henok321/knobel-manager-service/pkg/firebase"
 
 	"github.com/gin-gonic/gin"
 )
