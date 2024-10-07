@@ -64,18 +64,18 @@ func (h *gamesHandler) GetGameByID(c *gin.Context) {
 		return
 	}
 
-	game, err := h.service.FindByID(uint(id))
+	gameById, err := h.service.FindByID(uint(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
 		return
 	}
 
-	if !isOwner(sub, game.Owners) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of this game"})
+	if !isOwner(sub, gameById.Owners) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of this gameById"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"game": game})
+	c.JSON(http.StatusOK, gin.H{"gameById": gameById})
 }
 
 func (h *gamesHandler) CreateGame(c *gin.Context) {
@@ -86,21 +86,21 @@ func (h *gamesHandler) CreateGame(c *gin.Context) {
 		return
 	}
 
-	var game game.Game
-	if err := c.BindJSON(&game); err != nil {
+	var createdGame game.Game
+	if err := c.BindJSON(&createdGame); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	game.Owners = []game.Owner{{Sub: sub}}
+	createdGame.Owners = []game.Owner{{Sub: sub}}
 
-	if err := h.service.Create(&game); err != nil {
+	if err := h.service.Create(&createdGame); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.Header("Location", fmt.Sprintf("/games/%d", game.ID))
-	c.JSON(http.StatusCreated, gin.H{"game": game})
+	c.Header("Location", fmt.Sprintf("/games/%d", createdGame.ID))
+	c.JSON(http.StatusCreated, gin.H{"createdGame": createdGame})
 }
 
 func (h *gamesHandler) UpdateGame(c *gin.Context) {
@@ -117,30 +117,30 @@ func (h *gamesHandler) UpdateGame(c *gin.Context) {
 		return
 	}
 
-	game, err := h.service.FindByID(uint(id))
+	updatedGame, err := h.service.FindByID(uint(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
 		return
 	}
 
-	if !isOwner(sub, game.Owners) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of this game"})
+	if !isOwner(sub, updatedGame.Owners) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of this updatedGame"})
 		return
 	}
 
-	if err := c.BindJSON(&game); err != nil {
+	if err := c.BindJSON(&updatedGame); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	game.ID = uint(id)
+	updatedGame.ID = uint(id)
 
-	if err := h.service.Update(game); err != nil {
+	if err := h.service.Update(updatedGame); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"game": game})
+	c.JSON(http.StatusOK, gin.H{"updatedGame": updatedGame})
 }
 
 func (h *gamesHandler) DeleteGame(c *gin.Context) {
@@ -157,14 +157,14 @@ func (h *gamesHandler) DeleteGame(c *gin.Context) {
 		return
 	}
 
-	game, err := h.service.FindByID(uint(id))
+	gameById, err := h.service.FindByID(uint(id))
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
 		return
 	}
 
-	if !isOwner(sub, game.Owners) {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of this game"})
+	if !isOwner(sub, gameById.Owners) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of this gameById"})
 		return
 	}
 
