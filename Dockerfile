@@ -20,6 +20,11 @@ RUN go build -o knobel-manager-service ./cmd/
 # Start a new smaller base image with a compatible glibc version
 FROM debian:bookworm-slim
 
+# Install ca-certificates
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
 # Set the working directory
 WORKDIR /
 
