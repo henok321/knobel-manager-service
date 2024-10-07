@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	firebaseauth "github.com/henok321/knobel-manager-service/pkg/firebase"
-	"log"
 	"net/http"
 	"strings"
 
@@ -37,7 +36,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		token, err := client.VerifyIDToken(context.Background(), idToken)
 
 		if err != nil {
-			log.Fatalf("error verifying ID token: %v\n", err)
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
 			return
 		}
