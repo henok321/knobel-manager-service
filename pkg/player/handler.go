@@ -5,15 +5,19 @@ import (
 	"net/http"
 )
 
-type PlayersHandler struct {
+type PlayersHandler interface {
+	GetPlayers(c *gin.Context)
+}
+
+type playersHandler struct {
 	playersService PlayersService
 }
 
-func NewPlayersHandler(playersService PlayersService) *PlayersHandler {
-	return &PlayersHandler{playersService}
+func NewPlayersHandler(playersService PlayersService) PlayersHandler {
+	return &playersHandler{playersService}
 }
 
-func (h *PlayersHandler) GetPlayers(c *gin.Context) {
+func (h *playersHandler) GetPlayers(c *gin.Context) {
 	players, err := h.playersService.FindAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
