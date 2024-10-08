@@ -13,6 +13,10 @@ func InitializeRoutes(router *gin.Engine, playersHandler handlers.PlayersHandler
 	// health check
 	unauthenticated.GET("/health", handlers.HealthCheck)
 
+	// openapi
+	router.StaticFile("/openapi.yaml", "./openapi.yaml")
+	router.StaticFile("/docs", "./redoc.html")
+
 	// Authenticated routes
 	authenticated := router.Group("/")
 	authenticated.Use(middleware.AuthMiddleware(), middleware.RateLimiterMiddleware(5, 10), middleware.ErrorHandler())
