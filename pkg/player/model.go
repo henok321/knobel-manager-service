@@ -10,5 +10,5 @@ type Player struct {
 type Team struct {
 	ID      uint     `gorm:"primaryKey"`
 	Name    string   `gorm:"size:255"`
-	members []Player `gorm:"foreignKey:TeamID;constraint:OnDelete:CASCADE;"`
+	members []Player `gorm:"foreignKey:TeamID;constraint:OnDelete:CASCADE;"` //nolint:unused
 }
