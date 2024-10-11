@@ -5,9 +5,9 @@ import (
 )
 
 func main() {
-	app := &app.App{}
-	app.Initialize()
-	err := app.Router.Run("0.0.0.0:8080")
+	instance := &app.App{}
+	instance.Initialize()
+	err := instance.Router.Run("0.0.0.0:8080")
 	if err != nil {
 		return
 	}
