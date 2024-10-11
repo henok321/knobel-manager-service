@@ -20,6 +20,7 @@ type App struct {
 
 func (app *App) Initialize() {
 	firebaseauth.InitFirebase()
+
 	app.DB, _ = db.Connect()
 
 	app.PlayersHandler = handlers.NewPlayersHandler(player.InitializePlayerModule(app.DB))

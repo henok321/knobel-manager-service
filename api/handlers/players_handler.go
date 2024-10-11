@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"github.com/henok321/knobel-manager-service/pkg/player"
 	"net/http"
+
+	"github.com/henok321/knobel-manager-service/pkg/player"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,5 +26,6 @@ func (h *playersHandler) GetPlayers(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"players": players})
 }

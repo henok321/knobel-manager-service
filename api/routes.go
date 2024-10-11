@@ -19,7 +19,7 @@ func InitializeRoutes(router *gin.Engine, playersHandler handlers.PlayersHandler
 
 	// Authenticated routes
 	authenticated := router.Group("/")
-	authenticated.Use(middleware.AuthMiddleware(), middleware.RateLimiterMiddleware(5, 10), middleware.ErrorHandler())
+	authenticated.Use(middleware.RateLimiterMiddleware(5, 10), middleware.ErrorHandler(), middleware.AuthMiddleware())
 
 	// player routes
 	authenticated.GET("/players", playersHandler.GetPlayers)

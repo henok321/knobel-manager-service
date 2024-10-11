@@ -22,6 +22,7 @@ func NewGamesRepository(db *gorm.DB) GamesRepository {
 func (r *gamesRepository) FindAll() ([]Game, error) {
 	var games []Game
 	err := r.db.Find(&games).Error
+
 	return games, err
 }
 
@@ -32,6 +33,7 @@ func (r *gamesRepository) FindById(id uint) (*Game, error) {
 		Where("games.id = ?", id).
 		Preload("Owners").
 		First(&game).Error
+
 	return game, err
 }
 
@@ -42,6 +44,7 @@ func (r *gamesRepository) FindByOwner(sub string) ([]Game, error) {
 		Where("owners.sub = ?", sub).
 		Preload("Owners").
 		Find(&games).Error
+
 	return games, err
 }
 

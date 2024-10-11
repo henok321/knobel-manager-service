@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/henok321/knobel-manager-service/pkg/game"
 	"net/http"
 	"strconv"
+
+	"github.com/henok321/knobel-manager-service/pkg/game"
 
 	"github.com/gin-gonic/gin"
 )
@@ -47,6 +48,7 @@ func (h *gamesHandler) GetGames(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"games": games})
 }
 
@@ -65,6 +67,7 @@ func (h *gamesHandler) GetGameByID(c *gin.Context) {
 	}
 
 	gameById, err := h.service.FindByID(uint(id))
+
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
 		return
@@ -157,13 +160,14 @@ func (h *gamesHandler) DeleteGame(c *gin.Context) {
 		return
 	}
 
-	gameById, err := h.service.FindByID(uint(id))
+	gameByID, err := h.service.FindByID(uint(id))
+
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Game not found"})
 		return
 	}
 
-	if !isOwner(sub, gameById.Owners) {
+	if !isOwner(sub, gameByID.Owners) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the owner of this gameById"})
 		return
 	}
