@@ -17,5 +17,6 @@ func (s *playersService) FindAll() ([]Player, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return players, nil
 }

@@ -25,11 +25,13 @@ func (r *playersRepository) Create(player *Player) error {
 func (r *playersRepository) FindByID(id uint) (*Player, error) {
 	var player Player
 	err := r.db.First(&player, id).Error
+
 	return &player, err
 }
 
 func (r *playersRepository) FindAll() ([]Player, error) {
 	var players []Player
 	err := r.db.Find(&players).Error
+
 	return players, err
 }
