@@ -14,7 +14,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'  # Use the Go version appropriate for your project
+          go-version: '1.23.1'  # Use the Go version appropriate for your project
 
       - name: Cache Go Modules
         uses: actions/cache@v3
@@ -43,7 +43,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'  # Use the Go version appropriate for your project
+          go-version: '1.23.1'
 
       - name: Cache Go Modules
         uses: actions/cache@v3
