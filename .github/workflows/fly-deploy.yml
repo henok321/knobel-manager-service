@@ -17,7 +17,7 @@ jobs:
           go-version: '1.21'  # Use the Go version appropriate for your project
 
       - name: Cache Go Modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
@@ -46,7 +46,7 @@ jobs:
           go-version: '1.21'  # Use the Go version appropriate for your project
 
       - name: Cache Go Modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
