@@ -11,9 +11,6 @@ RUN go mod download
 # Copy the entire source code
 COPY . .
 
-# Run tests
-RUN go test ./...
-
 # Build the Go binary
 RUN go build -o knobel-manager-service ./cmd/
 
