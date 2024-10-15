@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/henok321/knobel-manager-service/api"
 	"github.com/henok321/knobel-manager-service/api/handlers"
+	"github.com/henok321/knobel-manager-service/api/middleware"
 	firebaseauth "github.com/henok321/knobel-manager-service/internal/auth"
 	"github.com/henok321/knobel-manager-service/internal/db"
 	"github.com/henok321/knobel-manager-service/pkg/game"
@@ -27,6 +28,16 @@ func (app *App) Initialize() {
 	app.GamesHandler = handlers.NewGamesHandler(game.InitializeGameModule(app.DB))
 
 	app.Router = gin.Default()
+	api.InitializeRoutes(app.Router, middleware.AuthMiddleware(), app.PlayersHandler, app.GamesHandler)
+}
 
-	api.InitializeRoutes(app.Router, app.PlayersHandler, app.GamesHandler)
+func (app *App) InitializeTest() {
+
+	app.DB, _ = db.ConnectTest()
+
+	app.PlayersHandler = handlers.NewPlayersHandler(player.InitializePlayerModule(app.DB))
+	app.GamesHandler = handlers.NewGamesHandler(game.InitializeGameModule(app.DB))
+
+	app.Router = gin.Default()
+	api.InitializeRoutes(app.Router, middleware.MockAuthMiddleware(), app.PlayersHandler, app.GamesHandler)
 }
