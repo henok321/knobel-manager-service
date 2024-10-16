@@ -33,7 +33,7 @@ func (app *App) Initialize() {
 
 func (app *App) InitializeTest() {
 
-	app.DB, _ = db.ConnectTest()
+	app.DB, _ = db.Connect()
 
 	app.PlayersHandler = handlers.NewPlayersHandler(player.InitializePlayerModule(app.DB))
 	app.GamesHandler = handlers.NewGamesHandler(game.InitializeGameModule(app.DB))
