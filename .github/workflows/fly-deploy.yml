@@ -36,6 +36,11 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+        privileged: true
+        options: --mtu=1460 --registry-mirror=https://mirror.gcr.io
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -55,8 +60,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Configure Docker Host
+        run: echo "::set-env name=DOCKER_HOST::tcp://localhost:2375"
+
+      - name: Wait for Docker
+        run: |
+          for i in {1..30}; do
+            docker info && break
+            sleep 1
+          done
+
       - name: Run Tests
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: true
+          DOCKER_HOST: tcp://localhost:2375
         run: go test -v ./...
+
 
   deploy:
     name: Deploy app
