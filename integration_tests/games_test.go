@@ -12,19 +12,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGames(t *testing.T) {
-	type testCase struct {
-		name               string
-		method             string
-		endpoint           string
-		body               string
-		setup              func(db *sql.DB)
-		expectedStatusCode int
-		expectedBody       string
-		headers            map[string]string
-	}
+type testCase struct {
+	name               string
+	method             string
+	endpoint           string
+	body               string
+	setup              func(db *sql.DB)
+	expectedStatusCode int
+	expectedBody       string
+	headers            map[string]string
+}
 
-	tests := []testCase{
+func testCases(t *testing.T) []testCase {
+	return []testCase{
 		// GET /games when empty
 		{
 			name:     "GET games empty",
@@ -93,6 +93,11 @@ func TestGames(t *testing.T) {
 			headers:            map[string]string{"Authorization": "permitted"},
 		},
 	}
+}
+
+func TestGames(t *testing.T) {
+
+	tests := testCases(t)
 
 	for _, tc := range tests {
 
