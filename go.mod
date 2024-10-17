@@ -5,6 +5,7 @@ go 1.23.1
 require (
 	firebase.google.com/go/v4 v4.14.1
 	github.com/gin-gonic/gin v1.10.0
+	github.com/lib/pq v1.10.9
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.33.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.33.0

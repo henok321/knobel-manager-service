@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"database/sql"
 	"io"
+	"log"
 	"net/http"
 	"testing"
 
+	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -95,11 +97,18 @@ func TestGames(t *testing.T) {
 	for _, tc := range tests {
 
 		t.Run(tc.name, func(t *testing.T) {
-			cleanup, _ := setupTestDatabase()
+			dbConn, cleanup, _ := setupTestDatabase()
 			defer cleanup()
 
-			server, teardown, db := setupTestServer()
+			server, teardown := setupTestServer()
 			defer teardown(server)
+
+			db, err := sql.Open("postgres", dbConn)
+
+			if err != nil {
+				log.Fatalf("Failed to open database connection: %v", err)
+			}
+
 			defer db.Close()
 
 			tc.setup(db)
