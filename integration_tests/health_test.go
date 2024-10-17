@@ -9,10 +9,7 @@ import (
 
 func TestHealthCheck(t *testing.T) {
 	t.Run("health check", func(t *testing.T) {
-		_, cleanup, _ := setupTestDatabase()
-		defer cleanup()
-
-		_, server, teardown := setupTestServer()
+		server, teardown, _ := setupTestServer()
 		defer teardown(server)
 
 		resp, err := http.Get(server.URL + "/health")
