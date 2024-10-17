@@ -18,7 +18,16 @@ func TestGames(t *testing.T) {
 		_, server, teardown := setupTestServer()
 		defer teardown(server)
 
-		resp, err := http.Get(server.URL + "/games")
+		req, err := http.NewRequest("GET", server.URL+"/games", nil)
+
+		if err != nil {
+			t.Fatalf("Failed to create GET request: %v", err)
+		}
+
+		req.Header.Set("Authorization", "permitted")
+
+		resp, err := http.DefaultClient.Do(req)
+
 		if err != nil {
 			t.Fatalf("Failed to perform GET request: %v", err)
 		}
@@ -44,10 +53,20 @@ func TestGames(t *testing.T) {
 		instance.DB.Create(&game.Game{Name: "test game", Owners: owners1})
 		instance.DB.Create(&game.Game{Name: "test game 2", Owners: owners2})
 
-		resp, err := http.Get(server.URL + "/games")
+		req, err := http.NewRequest("GET", server.URL+"/games", nil)
+
+		if err != nil {
+			t.Fatalf("Failed to create GET request: %v", err)
+		}
+
+		req.Header.Set("Authorization", "permitted")
+
+		resp, err := http.DefaultClient.Do(req)
+
 		if err != nil {
 			t.Fatalf("Failed to perform GET request: %v", err)
 		}
+
 		defer resp.Body.Close()
 
 		bodyBytes, _ := io.ReadAll(resp.Body)
