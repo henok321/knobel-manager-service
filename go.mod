@@ -7,6 +7,7 @@ require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.33.0
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.33.0
 	google.golang.org/api v0.201.0
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/gorm v1.25.12

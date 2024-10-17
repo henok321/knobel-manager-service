@@ -9,10 +9,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/henok321/knobel-manager-service/pkg/game"
@@ -37,52 +39,38 @@ func teardown(server *httptest.Server) {
 func startTestDatabase() (*sql.DB, func(), error) {
 	ctx := context.Background()
 
-	dbName := "users"
-	dbUser := "user"
-	dbPassword := "password"
-
-	req := testcontainers.ContainerRequest{
-		Image:        "postgres:16-alpine",
-		Env:          map[string]string{"POSTGRES_DB": dbName, "POSTGRES_USER": dbUser, "POSTGRES_PASSWORD": dbPassword},
-		ExposedPorts: []string{"5432/tcp"},
-		WaitingFor:   wait.ForLog("database system is ready to accept connections").WithOccurrence(2).WithStartupTimeout(5 * time.Second),
-	}
-
-	postgresContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
-		ContainerRequest: req,
-		Started:          true,
-	})
+	pgContainer, err := postgres.Run(ctx, "docker.io/postgres:16-alpine", postgres.WithInitScripts(filepath.Join("..", "testdata", "init-db.sql")), // Path to your init script
+		postgres.WithDatabase("knobel-manager-service"), postgres.WithUsername("test"), postgres.WithPassword("secret"), testcontainers.WithWaitStrategy(wait.ForLog("database system is ready to accept connections").
+			WithOccurrence(2).WithStartupTimeout(5*time.Second)))
 	if err != nil {
 		return nil, func() {}, fmt.Errorf("failed to start container: %w", err)
 	}
 
-	host, err := postgresContainer.Host(ctx)
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {
-		return nil, func() {}, fmt.Errorf("failed to get container host: %w", err)
+		return nil, func() {}, fmt.Errorf("failed to get connection string: %w", err)
 	}
 
-	port, err := postgresContainer.MappedPort(ctx, "5432")
-	if err != nil {
-		return nil, func() {}, fmt.Errorf("failed to get container port: %w", err)
+	if err := os.Setenv("DATABASE_URL", connStr); err != nil {
+		return nil, func() {}, fmt.Errorf("failed to set DATABASE_URL: %w", err)
 	}
 
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port.Port(), dbUser, dbPassword, dbName)
-	os.Setenv("DATABASE_URL", dsn)
-
-	db, err := sql.Open("postgres", dsn)
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		return nil, func() {}, fmt.Errorf("failed to open database: %w", err)
 	}
 
 	cleanup := func() {
-		if err := postgresContainer.Terminate(ctx); err != nil {
+		if err := pgContainer.Terminate(ctx); err != nil {
 			log.Printf("failed to terminate container: %s", err)
 		}
 		db.Close()
 	}
 
+	// Return the database and cleanup function
 	return db, cleanup, nil
 }
+
 func TestAppInitialization(t *testing.T) {
 
 	t.Run("health check", func(t *testing.T) {
