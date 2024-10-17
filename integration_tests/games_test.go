@@ -40,30 +40,13 @@ func TestGames(t *testing.T) {
 			method:   "GET",
 			endpoint: "/games",
 			setup: func(db *sql.DB) {
-				tx, err := db.Begin()
+				err := executeSQLFile(db, "../testdata/games/games_get_by_owner.sql")
 				if err != nil {
-					t.Fatalf("Failed to begin transaction: %v", err)
-				}
-				_, err = tx.Exec(`INSERT INTO owners (id,sub) VALUES (1, 'mock-sub'), (2, 'mock-sub-2')`)
-				if err != nil {
-					t.Fatalf("Failed to insert owners: %v", err)
-				}
-				_, err = tx.Exec(`INSERT INTO games (id, name) VALUES (1, 'test game'), (2, 'test game 2')`)
-				if err != nil {
-					t.Fatalf("Failed to insert games: %v", err)
-				}
-				_, err = tx.Exec(`INSERT INTO game_owners (game_id, owner_id) VALUES (1, 1), (2, 2)`)
-				if err != nil {
-					t.Fatalf("Failed to insert game_owners: %v", err)
-				}
-
-				err = tx.Commit()
-				if err != nil {
-					t.Fatalf("Failed to commit transaction: %v", err)
+					t.Fatalf("Failed to execute SQL file: %v", err)
 				}
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       `{"games":[{"id":1,"name":"test game","owners":[{"id":1,"sub":"mock-sub"}]}]}`,
+			expectedBody:       `{"games":[{"id":1,"name":"game 1","owners":[{"id":1,"sub":"sub-1"}]}]}`,
 			headers:            map[string]string{"Authorization": "permitted"},
 		}, // POST /games to create a new game
 		{
@@ -75,7 +58,7 @@ func TestGames(t *testing.T) {
 				// No initial setup needed
 			},
 			expectedStatusCode: http.StatusCreated,
-			expectedBody:       `{"id":1,"name":"new game","owners":[{"id":1,"sub":"mock-sub"}]}`,
+			expectedBody:       `{"id":1,"name":"new game","owners":[{"id":1,"sub":"sub-1"}]}`,
 			headers:            map[string]string{"Authorization": "permitted", "Content-Type": "application/json"},
 		}, // PUT /games/:id to update a game
 		{
@@ -84,30 +67,13 @@ func TestGames(t *testing.T) {
 			endpoint: "/games/1",
 			body:     `{"name":"updated game"}`,
 			setup: func(db *sql.DB) {
-				tx, err := db.Begin()
+				err := executeSQLFile(db, "../testdata/games/games_update.sql")
 				if err != nil {
-					t.Fatalf("Failed to begin transaction: %v", err)
-				}
-				_, err = tx.Exec(`INSERT INTO owners (id,sub) VALUES (1, 'mock-sub')`)
-				if err != nil {
-					t.Fatalf("Failed to insert owners: %v", err)
-				}
-				_, err = tx.Exec(`INSERT INTO games (id, name) VALUES (1, 'game to update')`)
-				if err != nil {
-					t.Fatalf("Failed to insert games: %v", err)
-				}
-				_, err = tx.Exec(`INSERT INTO game_owners (game_id, owner_id) VALUES (1, 1)`)
-				if err != nil {
-					t.Fatalf("Failed to insert game_owners: %v", err)
-				}
-
-				err = tx.Commit()
-				if err != nil {
-					t.Fatalf("Failed to commit transaction: %v", err)
+					t.Fatalf("Failed to execute SQL file: %v", err)
 				}
 			},
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       `{"id":1,"name":"updated game","owners":[{"id":1,"sub":"mock-sub"}]}`,
+			expectedBody:       `{"id":1,"name":"updated game","owners":[{"id":1,"sub":"sub-1"}]}`,
 			headers:            map[string]string{"Authorization": "permitted", "Content-Type": "application/json"},
 		}, // DELETE /games/:id to delete a game
 		{
@@ -115,26 +81,9 @@ func TestGames(t *testing.T) {
 			method:   "DELETE",
 			endpoint: "/games/1",
 			setup: func(db *sql.DB) {
-				tx, err := db.Begin()
+				err := executeSQLFile(db, "../testdata/games/games_delete.sql")
 				if err != nil {
-					t.Fatalf("Failed to begin transaction: %v", err)
-				}
-				_, err = tx.Exec(`INSERT INTO owners (id,sub) VALUES (1, 'mock-sub')`)
-				if err != nil {
-					t.Fatalf("Failed to insert owners: %v", err)
-				}
-				_, err = tx.Exec(`INSERT INTO games (id, name) VALUES (1, 'game to delete')`)
-				if err != nil {
-					t.Fatalf("Failed to insert games: %v", err)
-				}
-				_, err = tx.Exec(`INSERT INTO game_owners (game_id, owner_id) VALUES (1, 1)`)
-				if err != nil {
-					t.Fatalf("Failed to insert game_owners: %v", err)
-				}
-
-				err = tx.Commit()
-				if err != nil {
-					t.Fatalf("Failed to commit transaction: %v", err)
+					t.Fatalf("Failed to execute SQL file: %v", err)
 				}
 			},
 			expectedStatusCode: http.StatusNoContent,
@@ -144,6 +93,7 @@ func TestGames(t *testing.T) {
 	}
 
 	for _, tc := range tests {
+
 		t.Run(tc.name, func(t *testing.T) {
 			cleanup, _ := setupTestDatabase()
 			defer cleanup()

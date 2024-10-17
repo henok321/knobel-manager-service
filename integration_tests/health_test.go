@@ -9,6 +9,9 @@ import (
 
 func TestHealthCheck(t *testing.T) {
 	t.Run("health check", func(t *testing.T) {
+		cleanup, _ := setupTestDatabase()
+		defer cleanup()
+
 		server, teardown, _ := setupTestServer()
 		defer teardown(server)
 

@@ -16,7 +16,7 @@ func MockAuthMiddleware() gin.HandlerFunc {
 		}
 
 		userInfo := map[string]interface{}{
-			"sub":   "mock-sub",
+			"sub":   "sub-1",
 			"email": "mock@example.com",
 		}
 
