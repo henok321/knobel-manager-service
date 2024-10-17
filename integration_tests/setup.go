@@ -16,15 +16,14 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-func setupTestServer() (*app.App, *httptest.Server) {
+func setupTestServer() (*app.App, *httptest.Server, func(*httptest.Server)) {
 	var testInstance app.App
 	testInstance.InitializeTest()
 	server := httptest.NewServer(testInstance.Router)
-	return &testInstance, server
-}
-
-func teardownTestServer(server *httptest.Server) {
-	server.Close()
+	teardown := func(*httptest.Server) {
+		server.Close()
+	}
+	return &testInstance, server, teardown
 }
 
 func setupTestDatabase() (*sql.DB, func(), error) {
