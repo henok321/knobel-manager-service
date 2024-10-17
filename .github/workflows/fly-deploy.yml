@@ -1,11 +1,10 @@
 name: Build and Deploy
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
-  trigger:
-    branches:
-      - main
+      -
 jobs:
   lint:
     name: Lint Code
