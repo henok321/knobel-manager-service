@@ -16,6 +16,18 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+func executeSQLFile(db *sql.DB, filepath string) error {
+	content, err := os.ReadFile(filepath)
+	if err != nil {
+		return fmt.Errorf("failed to read SQL file: %w", err)
+	}
+	_, err = db.Exec(string(content))
+	if err != nil {
+		return fmt.Errorf("failed to execute SQL file: %w", err)
+	}
+	return nil
+}
+
 func setupTestServer() (*httptest.Server, func(*httptest.Server), *sql.DB) {
 	var testInstance app.App
 	testInstance.InitializeTest()
@@ -32,7 +44,7 @@ func setupTestServer() (*httptest.Server, func(*httptest.Server), *sql.DB) {
 func setupTestDatabase() (func(), error) {
 	ctx := context.Background()
 	pgContainer, err := postgres.Run(ctx, "docker.io/postgres:16-alpine",
-		postgres.WithInitScripts(filepath.Join("..", "testdata", "init-db.sql")),
+		postgres.WithInitScripts(filepath.Join("..", "testdata", "init.sql")),
 		postgres.WithDatabase("knobel-manager-service"),
 		postgres.WithUsername("test"),
 		postgres.WithPassword("secret"),
