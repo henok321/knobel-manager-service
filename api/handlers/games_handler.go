@@ -103,7 +103,7 @@ func (h *gamesHandler) CreateGame(c *gin.Context) {
 	}
 
 	c.Header("Location", fmt.Sprintf("/games/%d", createdGame.ID))
-	c.JSON(http.StatusCreated, gin.H{"createdGame": createdGame})
+	c.JSON(http.StatusCreated, createdGame)
 }
 
 func (h *gamesHandler) UpdateGame(c *gin.Context) {
@@ -143,7 +143,7 @@ func (h *gamesHandler) UpdateGame(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"updatedGame": updatedGame})
+	c.JSON(http.StatusOK, updatedGame)
 }
 
 func (h *gamesHandler) DeleteGame(c *gin.Context) {
