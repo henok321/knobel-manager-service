@@ -9,29 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAppInitialization(t *testing.T) {
-	t.Run("health check", func(t *testing.T) {
-		_, cleanup, _ := setupTestDatabase()
-		defer cleanup()
-
-		_, server := setupTestServer()
-		defer teardownTestServer(server)
-
-		resp, err := http.Get(server.URL + "/health")
-		if err != nil {
-			t.Fatalf("Failed to perform GET request: %v", err)
-		}
-		defer resp.Body.Close()
-
-		assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected status code 200")
-	})
+func TestGames(t *testing.T) {
 
 	t.Run("get games empty", func(t *testing.T) {
 		_, cleanup, _ := setupTestDatabase()
 		defer cleanup()
 
-		_, server := setupTestServer()
-		defer teardownTestServer(server)
+		_, server, teardown := setupTestServer()
+		defer teardown(server)
 
 		resp, err := http.Get(server.URL + "/games")
 		if err != nil {
@@ -50,8 +35,8 @@ func TestAppInitialization(t *testing.T) {
 		_, cleanup, _ := setupTestDatabase()
 		defer cleanup()
 
-		instance, server := setupTestServer()
-		defer teardownTestServer(server)
+		instance, server, teardown := setupTestServer()
+		defer teardown(server)
 
 		owners1 := []game.Owner{{Sub: "mock-sub"}}
 		owners2 := []game.Owner{{Sub: "unknown-sub"}}
