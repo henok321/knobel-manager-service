@@ -28,7 +28,7 @@ func executeSQLFile(db *sql.DB, filepath string) error {
 	return nil
 }
 
-func setupTestServer() (*httptest.Server, func(*httptest.Server), *sql.DB) {
+func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 	var testInstance app.App
 	testInstance.InitializeTest()
 	server := httptest.NewServer(testInstance.Router)
@@ -36,12 +36,10 @@ func setupTestServer() (*httptest.Server, func(*httptest.Server), *sql.DB) {
 		server.Close()
 	}
 
-	db, _ := testInstance.DB.DB()
-
-	return server, teardown, db
+	return server, teardown
 }
 
-func setupTestDatabase() (func(), error) {
+func setupTestDatabase() (string, func(), error) {
 	ctx := context.Background()
 	pgContainer, err := postgres.Run(ctx, "docker.io/postgres:16-alpine",
 		postgres.WithInitScripts(filepath.Join("..", "testdata", "init.sql")),
@@ -51,16 +49,16 @@ func setupTestDatabase() (func(), error) {
 		testcontainers.WithWaitStrategy(wait.ForLog("database system is ready to accept connections").
 			WithOccurrence(2).WithStartupTimeout(5*time.Second)))
 	if err != nil {
-		return func() {}, fmt.Errorf("failed to start container: %w", err)
+		return "", func() {}, fmt.Errorf("failed to start container: %w", err)
 	}
 
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {
-		return func() {}, fmt.Errorf("failed to get connection string: %w", err)
+		return "", func() {}, fmt.Errorf("failed to get connection string: %w", err)
 	}
 
 	if err := os.Setenv("DATABASE_URL", connStr); err != nil {
-		return func() {}, fmt.Errorf("failed to set DATABASE_URL: %w", err)
+		return "", func() {}, fmt.Errorf("failed to set DATABASE_URL: %w", err)
 	}
 
 	cleanup := func() {
@@ -69,5 +67,5 @@ func setupTestDatabase() (func(), error) {
 		}
 	}
 
-	return cleanup, nil
+	return connStr, cleanup, nil
 }
