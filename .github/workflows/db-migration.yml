@@ -1,8 +1,10 @@
 name: Database migration
+
 on:
   workflow_dispatch:
 
 jobs:
+
   db_migration:
     name: DB Migration
     runs-on: ubuntu-latest
@@ -32,7 +34,7 @@ jobs:
           GOOSE_DBSTRING: "postgres://${{ vars.DB_USERNAME }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ vars.DB_NAME }}?sslmode=disable"
           GOOSE_MIGRATION_DIR: "./db_migrations"
         run: |
-          echo $GOOSE_DBSTRING & goose validate
+          goose validate
 
       - name: Apply migration
         env:
