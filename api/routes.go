@@ -23,6 +23,7 @@ func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, player
 
 	// player routes
 	authenticated.GET("/games/:gameID/players", playersHandler.GetPlayersByGame)
+	authenticated.GET("/games/:gameID/teams/:teamID", playersHandler.GetPlayersByTeam)
 
 	// game routes
 	authenticated.GET("/games", gamesHandler.GetGames)

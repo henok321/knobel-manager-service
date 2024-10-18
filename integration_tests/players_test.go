@@ -15,13 +15,27 @@ func playersTestCases(t *testing.T) []testCase {
 			method:   "GET",
 			endpoint: "/games/1/players",
 			setup: func(db *sql.DB) {
-				err := executeSQLFile(db, "./test_data/players/players_get_by_game.sql")
+				err := executeSQLFile(db, "./test_data/players/players_get.sql")
 				if err != nil {
 					t.Fatalf("Failed to execute SQL file: %v", err)
 				}
 			},
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `{"players":[{"id":1,"name":"player 1","teamID":1},{"id":2,"name":"player 2","teamID":2}]}`,
+			headers:            map[string]string{"Authorization": "sub-1", "Content-Type": "application/json"},
+		},
+		{
+			name:     "GET players by teamID",
+			method:   "GET",
+			endpoint: "/games/1/teams/1",
+			setup: func(db *sql.DB) {
+				err := executeSQLFile(db, "./test_data/players/players_get.sql")
+				if err != nil {
+					t.Fatalf("Failed to execute SQL file: %v", err)
+				}
+			},
+			expectedStatusCode: http.StatusOK,
+			expectedBody:       `{"players":[{"id":1,"name":"player 1","teamID":1}]}`,
 			headers:            map[string]string{"Authorization": "sub-1", "Content-Type": "application/json"},
 		},
 	}
