@@ -5,10 +5,13 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/pressly/goose/v3"
 
@@ -41,9 +44,29 @@ func runGooseUp(db *sql.DB) error {
 	return nil
 }
 
+func mockAuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		authorizationHeader := c.GetHeader("Authorization")
+		if authorizationHeader != "permitted" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
+			return
+		}
+
+		userInfo := map[string]interface{}{
+			"sub":   "sub-1",
+			"email": "mock@example.com",
+		}
+
+		c.Set("user", userInfo)
+
+		c.Next()
+	}
+}
+
 func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
-	var testInstance app.App
-	testInstance.InitializeTest()
+	testInstance := &app.App{}
+	testInstance.Initialize(mockAuthMiddleware())
 	server := httptest.NewServer(testInstance.Router)
 	teardown := func(*httptest.Server) {
 		server.Close()
