@@ -5,9 +5,7 @@ import (
 )
 
 type PlayersRepository interface {
-	Create(player *Player) error
-	FindByID(id uint) (*Player, error)
-	FindAll() ([]Player, error)
+	FindByGame(gameID uint, ownerID string) ([]Player, error)
 }
 
 type playersRepository struct {
@@ -18,20 +16,14 @@ func NewPlayerRepository(db *gorm.DB) PlayersRepository {
 	return &playersRepository{db}
 }
 
-func (r *playersRepository) Create(player *Player) error {
-	return r.db.Create(player).Error
-}
-
-func (r *playersRepository) FindByID(id uint) (*Player, error) {
-	var player Player
-	err := r.db.First(&player, id).Error
-
-	return &player, err
-}
-
-func (r *playersRepository) FindAll() ([]Player, error) {
+func (r *playersRepository) FindByGame(gameID uint, ownerID string) ([]Player, error) {
 	var players []Player
-	err := r.db.Find(&players).Error
+	err := r.db.Joins("JOIN teams ON teams.id = players.team_id").
+		Joins("JOIN games ON games.id = teams.game_id").
+		Joins("JOIN game_owners ON game_owners.game_id = games.id").
+		Joins("JOIN owners ON owners.id = game_owners.owner_id").
+		Where("games.id = ? AND owners.sub = ?", gameID, ownerID).
+		Find(&players).Error
 
 	return players, err
 }

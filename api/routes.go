@@ -22,12 +22,12 @@ func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, player
 	authenticated.Use(middleware.RateLimiterMiddleware(5, 10), middleware.ErrorHandler(), authMiddleware)
 
 	// player routes
-	authenticated.GET("/players", playersHandler.GetPlayers)
+	authenticated.GET("/games/:gameID/players", playersHandler.GetPlayersByGame)
 
 	// game routes
 	authenticated.GET("/games", gamesHandler.GetGames)
-	authenticated.GET("/games/:id", gamesHandler.GetGameByID)
+	authenticated.GET("/games/:gameID", gamesHandler.GetGameByID)
 	authenticated.POST("/games", gamesHandler.CreateGame)
-	authenticated.PUT("/games/:id", gamesHandler.UpdateGame)
-	authenticated.DELETE("/games/:id", gamesHandler.DeleteGame)
+	authenticated.PUT("/games/:gameID", gamesHandler.UpdateGame)
+	authenticated.DELETE("/games/:gameID", gamesHandler.DeleteGame)
 }
