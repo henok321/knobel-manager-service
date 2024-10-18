@@ -5,12 +5,14 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/henok321/knobel-manager-service/pkg/model"
+
 	"github.com/henok321/knobel-manager-service/pkg/game"
 
 	"github.com/gin-gonic/gin"
 )
 
-func isOwner(sub string, owners []game.Owner) bool {
+func isOwner(sub string, owners []model.Owner) bool {
 	for _, owner := range owners {
 		if owner.Sub == sub {
 			return true
@@ -74,13 +76,13 @@ func (h *gamesHandler) GetGameByID(c *gin.Context) {
 func (h *gamesHandler) CreateGame(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
 
-	var createdGame game.Game
+	var createdGame model.Game
 	if err := c.BindJSON(&createdGame); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	createdGame.Owners = []game.Owner{{Sub: sub}}
+	createdGame.Owners = []model.Owner{{Sub: sub}}
 
 	if err := h.service.Create(&createdGame); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
