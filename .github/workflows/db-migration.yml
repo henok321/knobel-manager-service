@@ -32,7 +32,7 @@ jobs:
         env:
           GOOSE_DRIVER: "postgres"
           GOOSE_DBSTRING: "postgres://${{ vars.DB_USERNAME }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ vars.DB_NAME }}?sslmode=disable"
-          GOOSE_MIGRATION_DIR: "./db_migrations"
+          GOOSE_MIGRATION_DIR: "./db_migration"
         run: |
           goose validate
 
@@ -40,7 +40,7 @@ jobs:
         env:
           GOOSE_DRIVER: "postgres"
           GOOSE_DBSTRING: "postgres://${{ vars.DB_USERNAME }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ vars.DB_NAME }}?sslmode=disable"
-          GOOSE_MIGRATION_DIR: "./db_migrations"
+          GOOSE_MIGRATION_DIR: "./db_migration"
         run: |
           goose up
 
