@@ -95,28 +95,41 @@ func testCases(t *testing.T) []testCase {
 	}
 }
 
+func cleanupSetup(db *sql.DB, filepath string) {
+	err := executeSQLFile(db, filepath)
+	if err != nil {
+		log.Fatalf("Failed to execute SQL file: %v", err)
+	}
+
+}
+
 func TestGames(t *testing.T) {
 
 	tests := testCases(t)
+	dbConn, teardownDatabase, _ := setupTestDatabase()
+	defer teardownDatabase()
+	db, err := sql.Open("postgres", dbConn)
+
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Fatalf("Failed to close database connection: %v", err)
+		}
+	}(db)
+
+	if err != nil {
+		log.Fatalf("Failed to open database connection: %v", err)
+	}
 
 	for _, tc := range tests {
 
 		t.Run(tc.name, func(t *testing.T) {
-			dbConn, cleanup, _ := setupTestDatabase()
-			defer cleanup()
 
 			server, teardown := setupTestServer()
 			defer teardown(server)
 
-			db, err := sql.Open("postgres", dbConn)
-
-			if err != nil {
-				log.Fatalf("Failed to open database connection: %v", err)
-			}
-
-			defer db.Close()
-
 			tc.setup(db)
+			defer cleanupSetup(db, "../testdata/cleanup.sql")
 
 			var requestBody io.Reader
 			if tc.body != "" {

@@ -61,11 +61,11 @@ func setupTestDatabase() (string, func(), error) {
 		return "", func() {}, fmt.Errorf("failed to set DATABASE_URL: %w", err)
 	}
 
-	cleanup := func() {
+	teardown := func() {
 		if err := pgContainer.Terminate(ctx); err != nil {
 			log.Printf("failed to terminate container: %s", err)
 		}
 	}
 
-	return connStr, cleanup, nil
+	return connStr, teardown, nil
 }
