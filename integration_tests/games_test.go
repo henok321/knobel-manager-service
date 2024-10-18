@@ -106,20 +106,14 @@ func cleanupSetup(db *sql.DB, filepath string) {
 func TestGames(t *testing.T) {
 
 	tests := testCases(t)
+
 	dbConn, teardownDatabase, _ := setupTestDatabase()
 	defer teardownDatabase()
-	db, err := sql.Open("postgres", dbConn)
 
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			log.Fatalf("Failed to close database connection: %v", err)
-		}
-	}(db)
+	db, _ := sql.Open("postgres", dbConn)
+	defer db.Close()
 
-	if err != nil {
-		log.Fatalf("Failed to open database connection: %v", err)
-	}
+	_ = runGooseUp(db)
 
 	for _, tc := range tests {
 

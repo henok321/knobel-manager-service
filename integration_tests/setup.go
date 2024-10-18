@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/pressly/goose/v3"
+
 	"github.com/henok321/knobel-manager-service/internal/app"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -24,6 +26,17 @@ func executeSQLFile(db *sql.DB, filepath string) error {
 	_, err = db.Exec(string(content))
 	if err != nil {
 		return fmt.Errorf("failed to execute SQL file: %w", err)
+	}
+	return nil
+}
+
+func runGooseUp(db *sql.DB) error {
+	migrationsDir := filepath.Join("..", "migrations")
+	if err := goose.SetDialect("postgres"); err != nil {
+		return fmt.Errorf("failed to set dialect: %w", err)
+	}
+	if err := goose.Up(db, migrationsDir); err != nil {
+		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 	return nil
 }
