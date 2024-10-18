@@ -44,4 +44,9 @@ create table game_owners
     primary key (game_id, owner_id)
 );
 
-
+-- +goose Down
+drop table game_owners cascade;
+drop table owners cascade;
+drop table games cascade;
+drop table players cascade;
+drop table teams cascade;
