@@ -1,10 +1,12 @@
 package game
 
+import "github.com/henok321/knobel-manager-service/pkg/model"
+
 type GamesService interface {
-	FindAllByOwner(sub string) ([]Game, error)
-	FindByID(id uint) (*Game, error)
-	Create(game *Game) error
-	Update(game *Game) error
+	FindAllByOwner(sub string) ([]model.Game, error)
+	FindByID(id uint) (*model.Game, error)
+	Create(game *model.Game) error
+	Update(game *model.Game) error
 	Delete(id uint) error
 }
 
@@ -16,20 +18,20 @@ func NewGamesService(repo GamesRepository) GamesService {
 	return &gamesService{repo}
 }
 
-func (s *gamesService) FindAllByOwner(sub string) ([]Game, error) {
+func (s *gamesService) FindAllByOwner(sub string) ([]model.Game, error) {
 	return s.repo.FindByOwner(sub)
 }
 
-func (s *gamesService) FindByID(id uint) (*Game, error) {
+func (s *gamesService) FindByID(id uint) (*model.Game, error) {
 	return s.repo.FindById(id)
 
 }
 
-func (s *gamesService) Create(game *Game) error {
+func (s *gamesService) Create(game *model.Game) error {
 	return s.repo.Create(game)
 }
 
-func (s *gamesService) Update(game *Game) error {
+func (s *gamesService) Update(game *model.Game) error {
 	return s.repo.Update(game)
 }
 
