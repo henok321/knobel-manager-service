@@ -27,7 +27,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			method:   "GET",
 			endpoint: "/games",
 			setup: func(db *sql.DB) {
-				err := executeSQLFile(db, "../test_data/games/games_get_by_owner.sql")
+				err := executeSQLFile(db, "./test_data/games/games_get_by_owner.sql")
 				if err != nil {
 					t.Fatalf("Failed to execute SQL file: %v", err)
 				}
@@ -54,7 +54,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			endpoint: "/games/1",
 			body:     `{"name":"updated game"}`,
 			setup: func(db *sql.DB) {
-				err := executeSQLFile(db, "../test_data/games/games_update.sql")
+				err := executeSQLFile(db, "./test_data/games/games_update.sql")
 				if err != nil {
 					t.Fatalf("Failed to execute SQL file: %v", err)
 				}
@@ -68,7 +68,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			method:   "DELETE",
 			endpoint: "/games/1",
 			setup: func(db *sql.DB) {
-				err := executeSQLFile(db, "../test_data/games/games_delete.sql")
+				err := executeSQLFile(db, "./test_data/games/games_delete.sql")
 				if err != nil {
 					t.Fatalf("Failed to execute SQL file: %v", err)
 				}
@@ -100,7 +100,7 @@ func TestGames(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 
 			tc.setup(db)
-			defer cleanupSetup(db, "../test_data/cleanup.sql")
+			defer cleanupSetup(db, "./test_data/cleanup.sql")
 
 			newTestRequest(t, tc, server)
 		})

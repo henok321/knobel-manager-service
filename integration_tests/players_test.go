@@ -15,7 +15,7 @@ func playersTestCases(t *testing.T) []testCase {
 			method:   "GET",
 			endpoint: "/games/1/players",
 			setup: func(db *sql.DB) {
-				err := executeSQLFile(db, "../test_data/players/players_get_by_game.sql")
+				err := executeSQLFile(db, "./test_data/players/players_get_by_game.sql")
 				if err != nil {
 					t.Fatalf("Failed to execute SQL file: %v", err)
 				}
@@ -47,7 +47,7 @@ func TestPlayers(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 
 			tc.setup(db)
-			defer cleanupSetup(db, "../test_data/cleanup.sql")
+			defer cleanupSetup(db, "./test_data/cleanup.sql")
 
 			newTestRequest(t, tc, server)
 		})
