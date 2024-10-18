@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -54,4 +55,12 @@ func newTestRequest(t *testing.T, tc testCase, server *httptest.Server) {
 	} else {
 		assert.Empty(t, bodyString)
 	}
+}
+
+func cleanupSetup(db *sql.DB, filepath string) {
+	err := executeSQLFile(db, filepath)
+	if err != nil {
+		log.Fatalf("Failed to execute SQL file: %v", err)
+	}
+
 }

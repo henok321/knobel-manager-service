@@ -34,7 +34,7 @@ func executeSQLFile(db *sql.DB, filepath string) error {
 }
 
 func runGooseUp(db *sql.DB) error {
-	migrationsDir := filepath.Join("..", "migrations")
+	migrationsDir := filepath.Join("..", "db_migration")
 	if err := goose.SetDialect("postgres"); err != nil {
 		return fmt.Errorf("failed to set dialect: %w", err)
 	}
@@ -78,7 +78,6 @@ func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 func setupTestDatabase() (string, func(), error) {
 	ctx := context.Background()
 	pgContainer, err := postgres.Run(ctx, "docker.io/postgres:16-alpine",
-		postgres.WithInitScripts(filepath.Join("..", "testdata", "init.sql")),
 		postgres.WithDatabase("knobel-manager-service"),
 		postgres.WithUsername("test"),
 		postgres.WithPassword("secret"),
