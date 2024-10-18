@@ -1,0 +1,46 @@
+name: Database migration
+on:
+  workflow_dispatch:
+
+jobs:
+  db_migration:
+    name: DB Migration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23.1'
+
+      - name: Set up Flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Start Fly Proxy to Database
+        run: flyctl proxy 5432 -a database-postgres &
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_DB_TOKEN }}
+
+      - name: Install Goose
+        run: go install github.com/pressly/goose/v3/cmd/goose@latest
+
+      - name: Validate migration
+        env:
+          GOOSE_DRIVER: "postgres"
+          GOOSE_DBSTRING: "postgres://${{ vars.DB_USERNAME }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ vars.DB_NAME }}?sslmode=disable"
+          GOOSE_MIGRATION_DIR: "./db_migrations"
+        run: |
+          echo $GOOSE_DBSTRING & goose validate
+
+      - name: Apply migration
+        env:
+          GOOSE_DRIVER: "postgres"
+          GOOSE_DBSTRING: "postgres://${{ vars.DB_USERNAME }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ vars.DB_NAME }}?sslmode=disable"
+          GOOSE_MIGRATION_DIR: "./db_migrations"
+        run: |
+          goose up
+
+      - name: Stop Fly Proxy
+        run: pkill -f "flyctl proxy"
