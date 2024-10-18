@@ -1,7 +1,7 @@
 package player
 
 type PlayersService interface {
-	FindAll() ([]Player, error)
+	FindByGame(teamID uint, ownerID string) ([]Player, error)
 }
 
 type playersService struct {
@@ -12,11 +12,6 @@ func NewPlayersService(playerRepository PlayersRepository) PlayersService {
 	return &playersService{playerRepository}
 }
 
-func (s *playersService) FindAll() ([]Player, error) {
-	players, err := s.playerRepository.FindAll()
-	if err != nil {
-		return nil, err
-	}
-
-	return players, nil
+func (s *playersService) FindByGame(teamID uint, ownerID string) ([]Player, error) {
+	return s.playerRepository.FindByGame(teamID, ownerID)
 }

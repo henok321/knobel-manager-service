@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/henok321/knobel-manager-service/pkg/player"
 
@@ -9,7 +10,7 @@ import (
 )
 
 type PlayersHandler interface {
-	GetPlayers(c *gin.Context)
+	GetPlayersByGame(c *gin.Context)
 }
 
 type playersHandler struct {
@@ -20,8 +21,17 @@ func NewPlayersHandler(playersService player.PlayersService) PlayersHandler {
 	return &playersHandler{playersService}
 }
 
-func (h *playersHandler) GetPlayers(c *gin.Context) {
-	players, err := h.playersService.FindAll()
+func (h *playersHandler) GetPlayersByGame(c *gin.Context) {
+	sub := c.GetStringMap("user")["sub"].(string)
+
+	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid game ID"})
+		return
+	}
+
+	players, err := h.playersService.FindByGame(uint(gameID), sub)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

@@ -38,11 +38,6 @@ func NewGamesHandler(service game.GamesService) GamesHandler {
 func (h *gamesHandler) GetGames(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
 
-	if sub == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
-		return
-	}
-
 	games, err := h.service.FindAllByOwner(sub)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -55,12 +50,7 @@ func (h *gamesHandler) GetGames(c *gin.Context) {
 func (h *gamesHandler) GetGameByID(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
 
-	if sub == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
-		return
-	}
-
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -84,11 +74,6 @@ func (h *gamesHandler) GetGameByID(c *gin.Context) {
 func (h *gamesHandler) CreateGame(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
 
-	if sub == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
-		return
-	}
-
 	var createdGame game.Game
 	if err := c.BindJSON(&createdGame); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -109,12 +94,7 @@ func (h *gamesHandler) CreateGame(c *gin.Context) {
 func (h *gamesHandler) UpdateGame(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
 
-	if sub == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
-		return
-	}
-
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -149,12 +129,7 @@ func (h *gamesHandler) UpdateGame(c *gin.Context) {
 func (h *gamesHandler) DeleteGame(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
 
-	if sub == "" {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
-		return
-	}
-
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	id, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
