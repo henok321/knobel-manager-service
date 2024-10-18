@@ -2,7 +2,6 @@ package integration_tests
 
 import (
 	"database/sql"
-	"log"
 	"net/http"
 	"testing"
 
@@ -79,14 +78,6 @@ func testCases(t *testing.T) []testCase {
 			headers:            map[string]string{"Authorization": "permitted"},
 		},
 	}
-}
-
-func cleanupSetup(db *sql.DB, filepath string) {
-	err := executeSQLFile(db, filepath)
-	if err != nil {
-		log.Fatalf("Failed to execute SQL file: %v", err)
-	}
-
 }
 
 func TestGames(t *testing.T) {
