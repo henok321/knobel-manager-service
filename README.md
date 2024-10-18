@@ -44,9 +44,9 @@ curl http://localhost:8080/health
 
 ## CI/CD
 
-The project uses GitHub Actions for CI/CD. The workflow can be found [here](.github/build-deploy.yml).
+The project uses GitHub Actions for CI/CD. The workflow can be found [here](.github/workflows/build-deploy.yml).
 
 ## Persistence
 
 The service uses a Postgres database and `goose` for database migrations. There is a Github Action that runs the
-database migrations on every push to the `main` branch. The migrations can be found [here](.github/db-migration.yml).
+database migrations on every push to the `main` branch. The migrations can be found [here](.github/workflows/db-migration.yml).
