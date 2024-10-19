@@ -26,3 +26,26 @@ type Team struct {
 	GameID  uint     `gorm:"not null"`
 	members []Player `gorm:"foreignKey:TeamID;constraint:OnDelete:CASCADE;"` //nolint:unused
 }
+
+type Round struct {
+	ID          uint     `gorm:"primaryKey"`
+	RoundNumber int      `gorm:"not null"`
+	GameID      uint     `gorm:"not null"`
+	Game        Game     `gorm:"foreignKey:GameID"`
+	Tables      []*Table `gorm:"foreignKey:RoundID"`
+}
+
+type Table struct {
+	ID      uint      `gorm:"primaryKey"`
+	RoundID uint      `gorm:"not null"`
+	Round   Round     `gorm:"foreignKey:RoundID"`
+	Players []*Player `gorm:"many2many:table_players"`
+}
+
+type PlayerScore struct {
+	PlayerID uint   `gorm:"primaryKey"`
+	RoundID  uint   `gorm:"primaryKey"`
+	Score    int    `gorm:"not null"`
+	Player   Player `gorm:"foreignKey:PlayerID"`
+	Round    Round  `gorm:"foreignKey:RoundID"`
+}
