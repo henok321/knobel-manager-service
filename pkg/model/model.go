@@ -21,7 +21,7 @@ type Game struct {
 	TableSize      uint           `gorm:"not null" json:"table_size"`
 	NumberOfRounds uint           `gorm:"not null" json:"number_of_rounds"`
 	Status         GameStatus     `gorm:"size:50;not null" json:"status"`
-	Owners         []*Owner       `gorm:"many2many:game_owners" json:"owners,omitempty"`
+	Owners         []*GameOwner   `gorm:"foreignKey:GameID;constraint:OnDelete:CASCADE" json:"owners,omitempty"`
 	Teams          []*Team        `gorm:"foreignKey:GameID" json:"teams,omitempty"`
 	Rounds         []*Round       `gorm:"foreignKey:GameID" json:"rounds,omitempty"`
 	CreatedAt      time.Time      `json:"created_at"`
@@ -29,10 +29,9 @@ type Game struct {
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
-type Owner struct {
-	ID    uint    `gorm:"primaryKey" json:"id"`
-	Sub   string  `gorm:"not null;unique" json:"sub"`
-	Games []*Game `gorm:"many2many:game_owners;constraint:OnDelete:CASCADE,OnUpdate:CASCADE" json:"games,omitempty"`
+type GameOwner struct {
+	GameID   uint   `gorm:"primaryKey" json:"game_id"`
+	OwnerSub string `gorm:"primaryKey;size:255;not null" json:"owner_sub"`
 }
 
 type Team struct {
