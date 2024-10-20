@@ -10,7 +10,6 @@ import (
 
 func gamesTestCases(t *testing.T) []testCase {
 	return []testCase{
-		// GET /games when empty
 		{
 			name:     "GET games empty",
 			method:   "GET",
@@ -21,7 +20,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `{"games":[]}`,
 			headers:            map[string]string{"Authorization": "sub-1"},
-		}, // GET /games with data
+		},
 	}
 }
 
@@ -29,13 +28,13 @@ func TestGames(t *testing.T) {
 
 	tests := gamesTestCases(t)
 
-	dbConn, teardownDatabase, _ := setupTestDatabase()
+	dbConn, teardownDatabase, _ := setupTestDatabase(t)
 	defer teardownDatabase()
 
 	db, _ := sql.Open("postgres", dbConn)
 	defer db.Close()
 
-	_ = runGooseUp(db)
+	_ = runGooseUp(t, db)
 
 	server, teardown := setupTestServer()
 	defer teardown(server)
@@ -45,7 +44,7 @@ func TestGames(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 
 			tc.setup(db)
-			defer cleanupSetup(db, "./test_data/cleanup.sql")
+			defer cleanupSetup(t, db, "./test_data/cleanup.sql")
 
 			newTestRequest(t, tc, server)
 		})

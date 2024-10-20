@@ -22,8 +22,11 @@ func (r *gamesRepository) FindAllByOwner(sub string) ([]model.Game, error) {
 
 	err := r.db.Joins("JOIN game_owners ON game_owners.game_id = games.id").
 		Where("game_owners.owner_sub = ?", sub).
-		Preload("Teams.Players").
+		Preload("Teams.Players.Scores").
+		Preload("Rounds.Tables.Players").
+		Preload("Rounds.Tables.Scores").
 		Preload("Rounds").
+		Preload("Teams").
 		Find(&games).Error
 	if err != nil {
 		return nil, err
