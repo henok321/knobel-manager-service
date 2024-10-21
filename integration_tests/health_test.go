@@ -1,6 +1,7 @@
 package integration_tests
 
 import (
+	"database/sql"
 	"net/http"
 	"testing"
 
@@ -9,6 +10,23 @@ import (
 
 func TestHealthCheck(t *testing.T) {
 	t.Run("health check", func(t *testing.T) {
+		dbConn, teardownDatabase, _ := setupTestDatabase(t)
+		defer teardownDatabase()
+
+		db, err := sql.Open("postgres", dbConn)
+
+		if err != nil {
+			t.Fatalf("Failed to open database connection: %v", err)
+		}
+
+		defer db.Close()
+
+		err = runGooseUp(t, db)
+
+		if err != nil {
+			t.Fatalf("Failed to run goose up: %v", err)
+		}
+
 		server, teardown := setupTestServer()
 		defer teardown(server)
 

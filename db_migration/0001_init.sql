@@ -20,7 +20,7 @@ CREATE TABLE games (
 -- Index for soft delete
 CREATE INDEX idx_games_deleted_at ON games (deleted_at);
 
--- Table: game_owners (many-to-many relationship between games and owner_sub strings)
+-- Table: game_owners
 CREATE TABLE game_owners (
                              game_id INTEGER NOT NULL REFERENCES games(id) ON DELETE CASCADE,
                              owner_sub VARCHAR(255) NOT NULL,
@@ -64,7 +64,7 @@ CREATE TABLE rounds (
 -- Index on game_id
 CREATE INDEX idx_rounds_game_id ON rounds (game_id);
 
--- Table: game_tables (renamed from 'tables' to avoid SQL keyword conflict)
+-- Table: game_tables
 CREATE TABLE game_tables (
                              id SERIAL PRIMARY KEY,
                              table_number INTEGER NOT NULL,
@@ -75,7 +75,7 @@ CREATE TABLE game_tables (
 -- Index on round_id
 CREATE INDEX idx_game_tables_round_id ON game_tables (round_id);
 
--- Table: table_players (many-to-many relationship between game_tables and players)
+-- Table: table_players
 CREATE TABLE table_players (
                                table_id INTEGER NOT NULL REFERENCES game_tables(id) ON DELETE CASCADE,
                                player_id INTEGER NOT NULL REFERENCES players(id) ON DELETE CASCADE,
