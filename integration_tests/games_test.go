@@ -21,6 +21,20 @@ func gamesTestCases(t *testing.T) []testCase {
 			expectedBody:       `{"games":[]}`,
 			headers:            map[string]string{"Authorization": "sub-1"},
 		},
+		{
+			name:     "GET games",
+			method:   "GET",
+			endpoint: "/games",
+			setup: func(db *sql.DB) {
+				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
+				if err != nil {
+					t.Fatalf("Failed to execute SQL file: %v", err)
+				}
+			},
+			expectedStatusCode: http.StatusOK,
+			expectedBody:       readContentFromFile(t, "./test_data/games_setup.json"),
+			headers:            map[string]string{"Authorization": "sub-1"},
+		},
 	}
 }
 

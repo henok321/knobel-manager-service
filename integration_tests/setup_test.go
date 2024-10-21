@@ -21,6 +21,15 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+func readContentFromFile(t *testing.T, filepath string) string {
+	content, err := os.ReadFile(filepath)
+	if err != nil {
+		t.Fatalf("failed to read JSON file: %v", err)
+	}
+
+	return string(content)
+}
+
 func executeSQLFile(t *testing.T, db *sql.DB, filepath string) error {
 	content, err := os.ReadFile(filepath)
 	if err != nil {

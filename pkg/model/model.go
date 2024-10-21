@@ -24,8 +24,8 @@ type Game struct {
 	Owners         []*GameOwner   `gorm:"foreignKey:GameID;constraint:OnDelete:CASCADE" json:"owners,omitempty"`
 	Teams          []*Team        `gorm:"foreignKey:GameID" json:"teams,omitempty"`
 	Rounds         []*Round       `gorm:"foreignKey:GameID" json:"rounds,omitempty"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
+	CreatedAt      time.Time      `json:"-"`
+	UpdatedAt      time.Time      `json:"-"`
 	DeletedAt      gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
