@@ -31,10 +31,19 @@ func TestGames(t *testing.T) {
 	dbConn, teardownDatabase, _ := setupTestDatabase(t)
 	defer teardownDatabase()
 
-	db, _ := sql.Open("postgres", dbConn)
+	db, err := sql.Open("postgres", dbConn)
+
+	if err != nil {
+		t.Fatalf("Failed to open database connection: %v", err)
+	}
+
 	defer db.Close()
 
-	_ = runGooseUp(t, db)
+	err = runGooseUp(t, db)
+
+	if err != nil {
+		t.Fatalf("Failed to run goose up: %v", err)
+	}
 
 	server, teardown := setupTestServer()
 	defer teardown(server)
