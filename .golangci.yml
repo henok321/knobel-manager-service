@@ -1,7 +1,8 @@
 linters-settings:
   gocyclo:
     min-complexity: 10  # Cyclomatic complexity threshold.
-
+  gofmt:
+    simplify: true      # Simplify code.
   revive:
     ignore-generated-header: true
 

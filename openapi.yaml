@@ -130,7 +130,7 @@ components:
       flows:
         implicit:
           authorizationUrl: "https://knobel-manager-webapp.firebaseapp.com/login"
-          scopes: {}
+          scopes: { }
       scheme: bearer
       bearerFormat: JWT
       x-google-issuer: "https://securetoken.google.com/knobel-manager-webapp"
@@ -139,4 +139,4 @@ components:
       description: |
         Firebase Authentication is used to secure this API. Clients must provide a valid Firebase ID token in the `Authorization` header.
 security:
-  - firebaseAuth: []
+  - firebaseAuth: [ ]
