@@ -3,12 +3,12 @@ package integration_tests
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -21,25 +21,25 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-func executeSQLFile(db *sql.DB, filepath string) error {
+func executeSQLFile(t *testing.T, db *sql.DB, filepath string) error {
 	content, err := os.ReadFile(filepath)
 	if err != nil {
-		return fmt.Errorf("failed to read SQL file: %w", err)
+		t.Fatalf("failed to read SQL file: %v", err)
 	}
 	_, err = db.Exec(string(content))
 	if err != nil {
-		return fmt.Errorf("failed to execute SQL file: %w", err)
+		t.Fatalf("failed to execute SQL file: %v", err)
 	}
 	return nil
 }
 
-func runGooseUp(db *sql.DB) error {
+func runGooseUp(t *testing.T, db *sql.DB) error {
 	migrationsDir := filepath.Join("..", "db_migration")
 	if err := goose.SetDialect("postgres"); err != nil {
-		return fmt.Errorf("failed to set dialect: %w", err)
+		t.Fatalf("failed to set dialect: %v", err)
 	}
 	if err := goose.Up(db, migrationsDir); err != nil {
-		return fmt.Errorf("failed to run migrations: %w", err)
+		t.Fatalf("failed to run migrations: %v", err)
 	}
 	return nil
 }
@@ -75,25 +75,21 @@ func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 	return server, teardown
 }
 
-func setupTestDatabase() (string, func(), error) {
+func setupTestDatabase(t *testing.T) (string, func(), error) {
 	ctx := context.Background()
-	pgContainer, err := postgres.Run(ctx, "docker.io/postgres:16-alpine",
-		postgres.WithDatabase("knobel-manager-service"),
-		postgres.WithUsername("test"),
-		postgres.WithPassword("secret"),
-		testcontainers.WithWaitStrategy(wait.ForLog("database system is ready to accept connections").
-			WithOccurrence(2).WithStartupTimeout(5*time.Second)))
+	pgContainer, err := postgres.Run(ctx, "docker.io/postgres:16-alpine", postgres.WithDatabase("knobel-manager-service"), postgres.WithUsername("test"), postgres.WithPassword("secret"), testcontainers.WithWaitStrategy(wait.ForLog("database system is ready to accept connections").
+		WithOccurrence(2).WithStartupTimeout(5*time.Second)))
 	if err != nil {
-		return "", func() {}, fmt.Errorf("failed to start container: %w", err)
+		t.Fatalf("failed to start container: %v", err)
 	}
 
 	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {
-		return "", func() {}, fmt.Errorf("failed to get connection string: %w", err)
+		t.Fatalf("failed to get connection string: %v", err)
 	}
 
 	if err := os.Setenv("DATABASE_URL", connStr); err != nil {
-		return "", func() {}, fmt.Errorf("failed to set DATABASE_URL: %w", err)
+		t.Fatalf("failed to set DATABASE_URL: %v", err)
 	}
 
 	teardown := func() {
