@@ -2,7 +2,7 @@
 
 ## Synopsis
 
-The main goal of this project is to learn the programming language Go and to get familiar with the Go ecosystem. 
+The main goal of this project is to learn the programming language Go and to get familiar with the Go ecosystem.
 
 This service is a small tournament manager for the dice game "Knobeln" or "Schocken". It is implemented in Java and uses
 the Spring
@@ -48,9 +48,11 @@ The project uses GitHub Actions for CI/CD. The workflow can be found [here](.git
 ## Persistence
 
 The service uses a Postgres database and `goose` for database migrations. There is a Github Action that runs the
-database migrations on every push to the `main` branch. The migrations can be found [here](.github/workflows/db-migration.yml).
+database migrations on every push to the `main` branch. The migrations can be
+found [here](.github/workflows/db-migration.yml).
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ```
