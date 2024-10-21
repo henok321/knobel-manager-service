@@ -57,8 +57,8 @@ func newTestRequest(t *testing.T, tc testCase, server *httptest.Server) {
 	}
 }
 
-func cleanupSetup(db *sql.DB, filepath string) {
-	err := executeSQLFile(db, filepath)
+func cleanupSetup(t *testing.T, db *sql.DB, filepath string) {
+	err := executeSQLFile(t, db, filepath)
 	if err != nil {
 		log.Fatalf("Failed to execute SQL file: %v", err)
 	}
