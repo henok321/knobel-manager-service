@@ -30,7 +30,7 @@ type Game struct {
 }
 
 type GameOwner struct {
-	GameID   uint   `gorm:"primaryKey" json:"game_id"`
+	GameID   uint   `gorm:"primaryKey" json:"gameID"`
 	OwnerSub string `gorm:"primaryKey;size:255;not null" json:"ownerSub"`
 }
 

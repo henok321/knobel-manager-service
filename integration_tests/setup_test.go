@@ -53,11 +53,11 @@ func runGooseUp(t *testing.T, db *sql.DB) error {
 	return nil
 }
 
-func mockAuthMiddleware(sub string) gin.HandlerFunc {
+func mockAuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		authorizationHeader := c.GetHeader("Authorization")
-		if authorizationHeader != "sub-1" {
+		sub := c.GetHeader("Authorization")
+		if sub == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
 			return
 		}
@@ -75,7 +75,7 @@ func mockAuthMiddleware(sub string) gin.HandlerFunc {
 
 func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 	testInstance := &app.App{}
-	testInstance.Initialize(mockAuthMiddleware("sub-1"))
+	testInstance.Initialize(mockAuthMiddleware())
 	server := httptest.NewServer(testInstance.Router)
 	teardown := func(*httptest.Server) {
 		server.Close()

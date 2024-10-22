@@ -35,6 +35,60 @@ func gamesTestCases(t *testing.T) []testCase {
 			expectedBody:       readContentFromFile(t, "./test_data/games_setup.json"),
 			headers:            map[string]string{"Authorization": "sub-1"},
 		},
+		{
+			name:     "GET game by id - ok",
+			method:   "GET",
+			endpoint: "/games/1",
+			setup: func(db *sql.DB) {
+				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
+				if err != nil {
+					t.Fatalf("Failed to execute SQL file: %v", err)
+				}
+			},
+			expectedStatusCode: http.StatusOK,
+			expectedBody:       readContentFromFile(t, "./test_data/games_setup_by_id.json"),
+			headers:            map[string]string{"Authorization": "sub-1"},
+		},
+		{
+			name:     "GET game by id - not found",
+			method:   "GET",
+			endpoint: "/games/2",
+			setup: func(db *sql.DB) {
+				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
+				if err != nil {
+					t.Fatalf("Failed to execute SQL file: %v", err)
+				}
+			},
+			expectedStatusCode: http.StatusNotFound,
+			expectedBody:       `{"error":"game not found"}`,
+			headers:            map[string]string{"Authorization": "sub-1"},
+		}, {
+			name:     "GET game by id - invalid id",
+			method:   "GET",
+			endpoint: "/games/invalid",
+			setup: func(db *sql.DB) {
+				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
+				if err != nil {
+					t.Fatalf("Failed to execute SQL file: %v", err)
+				}
+			},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedBody:       `{"error":"invalid id"}`,
+			headers:            map[string]string{"Authorization": "sub-1"},
+		}, {
+			name:     "GET game by id  - not owner",
+			method:   "GET",
+			endpoint: "/games/1",
+			setup: func(db *sql.DB) {
+				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
+				if err != nil {
+					t.Fatalf("Failed to execute SQL file: %v", err)
+				}
+			},
+			expectedStatusCode: http.StatusForbidden,
+			expectedBody:       `{"error":"user is not the owner of the game"}`,
+			headers:            map[string]string{"Authorization": "sub-2"},
+		},
 	}
 }
 
