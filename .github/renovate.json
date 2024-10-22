@@ -4,7 +4,9 @@
     "config:base"
   ],
   "enabledManagers": [
-    "gomod"
+    "gomod",
+    "dockerfile",
+    "docker-compose"
   ],
   "automerge": true,
   "requiredStatusChecks": [
