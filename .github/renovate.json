@@ -6,7 +6,8 @@
   "enabledManagers": [
     "gomod",
     "dockerfile",
-    "docker-compose"
+    "docker-compose",
+    "github-actions"
   ],
   "automerge": true,
   "requiredStatusChecks": [
