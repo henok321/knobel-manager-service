@@ -21,15 +21,35 @@ The service uses JWT for authentication that is provided by Firebase Authenticat
 
 ## Build and run
 
+### Tools
+
+#### Install git hooks
+
+```bash
+./scripts/install_hooks.sh
+```
+
+#### Lint and fix code
+
+```bash
+./scripts/lint_fix.sh
+```
+
+#### Proxy to live database
+
+```bash
+./scripts/fly_db_proxy.sh
+```
+
 ### Local
 
-Start the Postgres database:
+#### Start the Postgres database
 
 ```bash
 docker-compose up -d
 ```
 
-Start the application:
+#### Start the application
 
 ```bash
 go run cmd/main.go
@@ -47,11 +67,17 @@ The project uses GitHub Actions for CI/CD. The CI workflow runs on push for main
 found [here](.github/workflows/ci.yml). The CD workflow runs on push to the main branch and can be
 found [here](.github/workflows/deploy.yml).
 
+## Database migration
+
+The project uses `goose` for database migrations. The migrations can be found [here](db/migrations). Use the [GitHub
+action to run the migrations.
+
 ## Persistence
 
-The service uses a Postgres database and `goose` for database migrations. There is a Github Action that runs the
+The service uses a Postgres database and `goose` for database migrations. There is
+a [GitHub Action](.github/workflows/db_migration.yml) that runs the
 database migrations on every push to the `main` branch. The migrations can be
-found [here](.github/workflows/db-migration.yml).
+found [here](.github/workflows/db_migration.yml).
 
 ## License
 
