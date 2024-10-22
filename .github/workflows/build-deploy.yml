@@ -5,9 +5,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
-
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
@@ -18,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.23.1'  # Use the Go version appropriate for your project
+          go-version: '1.23.1'
 
       - name: Cache Go Modules
         uses: actions/cache@v3
@@ -31,8 +31,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0 
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
 
       - name: Run golangci-lint
         run: golangci-lint run --timeout 5m
@@ -50,8 +49,7 @@ jobs:
           go-version: '1.23.1'
 
       - name: Start Docker
-        run: |
-          sudo systemctl start docker
+        run: sudo systemctl start docker
 
       - name: Cache Go Modules
         uses: actions/cache@v3
@@ -69,12 +67,12 @@ jobs:
         run: go test -v ./...
 
   deploy:
-    name: Deploy app
+    name: Deploy App
+    runs-on: ubuntu-latest
     needs:
       - lint
       - test
-    runs-on: ubuntu-latest
-    concurrency: deploy-group
+    if: github.ref == 'refs/heads/main'  # Only deploy on pushes to main branch
     steps:
       - name: Check out code
         uses: actions/checkout@v4
