@@ -1,9 +1,18 @@
 package game
 
-import "github.com/henok321/knobel-manager-service/pkg/model"
+import (
+	"errors"
+
+	"github.com/henok321/knobel-manager-service/pkg/model"
+	"gorm.io/gorm"
+)
+
+var ErrorGameNotFound = errors.New("game not found")
+var ErrorNotOwner = errors.New("user is not the owner of the game")
 
 type GamesService interface {
 	FindAllByOwner(sub string) ([]model.Game, error)
+	FindByID(id uint, sub string) (model.Game, error)
 }
 
 type gamesService struct {
@@ -16,4 +25,30 @@ func NewGamesService(repo GamesRepository) GamesService {
 
 func (s *gamesService) FindAllByOwner(sub string) ([]model.Game, error) {
 	return s.repo.FindAllByOwner(sub)
+}
+
+func (s *gamesService) FindByID(id uint, sub string) (model.Game, error) {
+	gameByID, err := s.repo.FindByID(id)
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.Game{}, ErrorGameNotFound
+		}
+		return model.Game{}, err
+	}
+
+	if !isOwner(gameByID, sub) {
+		return model.Game{}, ErrorNotOwner
+	}
+
+	return gameByID, nil
+}
+
+func isOwner(game model.Game, sub string) bool {
+	for _, owner := range game.Owners {
+		if owner.OwnerSub == sub {
+			return true
+		}
+	}
+	return false
 }
