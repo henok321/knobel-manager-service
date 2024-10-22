@@ -1,14 +1,7 @@
 name: Database migration
 
 on:
-  workflow_run:
-    workflows: [ "CI" ]
-    branches:
-      - main
-    paths:
-      - 'db_migration/**'
-    types:
-      - completed
+  workflow_dispatch:
 
 jobs:
   db_migration:
