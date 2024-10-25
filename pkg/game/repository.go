@@ -1,14 +1,14 @@
 package game
 
 import (
-	"github.com/henok321/knobel-manager-service/pkg/model"
+	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"gorm.io/gorm"
 )
 
 type GamesRepository interface {
-	FindAllByOwner(sub string) ([]model.Game, error)
-	FindByID(id uint) (model.Game, error)
-	CreateOrUpdateGame(game *model.Game) (model.Game, error)
+	FindAllByOwner(sub string) ([]entity.Game, error)
+	FindByID(id uint) (entity.Game, error)
+	CreateOrUpdateGame(game *entity.Game) (entity.Game, error)
 	DeleteGame(id uint) error
 }
 
@@ -20,8 +20,8 @@ func NewGamesRepository(db *gorm.DB) GamesRepository {
 	return &gamesRepository{db}
 }
 
-func (r *gamesRepository) FindAllByOwner(sub string) ([]model.Game, error) {
-	var games []model.Game
+func (r *gamesRepository) FindAllByOwner(sub string) ([]entity.Game, error) {
+	var games []entity.Game
 
 	err := r.db.
 		Joins("JOIN game_owners ON game_owners.game_id = games.id").Where("game_owners.owner_sub = ?", sub).
@@ -40,8 +40,8 @@ func (r *gamesRepository) FindAllByOwner(sub string) ([]model.Game, error) {
 	return games, nil
 }
 
-func (r *gamesRepository) FindByID(id uint) (model.Game, error) {
-	var game model.Game
+func (r *gamesRepository) FindByID(id uint) (entity.Game, error) {
+	var game entity.Game
 
 	err := r.db.
 		Where("games.id = ?", id).
@@ -52,23 +52,23 @@ func (r *gamesRepository) FindByID(id uint) (model.Game, error) {
 		Preload("Teams").Preload("Owners").
 		First(&game).Error
 	if err != nil {
-		return model.Game{}, err
+		return entity.Game{}, err
 	}
 
 	return game, nil
 }
 
-func (r *gamesRepository) CreateOrUpdateGame(game *model.Game) (model.Game, error) {
+func (r *gamesRepository) CreateOrUpdateGame(game *entity.Game) (entity.Game, error) {
 	err := r.db.Save(game).Error
 	if err != nil {
-		return model.Game{}, err
+		return entity.Game{}, err
 	}
 
 	return *game, nil
 }
 
 func (r *gamesRepository) DeleteGame(id uint) error {
-	err := r.db.Delete(&model.Game{}, id).Error
+	err := r.db.Delete(&entity.Game{}, id).Error
 	if err != nil {
 		return err
 	}

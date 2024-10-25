@@ -32,7 +32,7 @@ CREATE TABLE game_owners
 -- Index on owner_sub
 CREATE INDEX idx_game_owners_owner_sub ON game_owners (owner_sub);
 
--- Table: teams
+-- Table: team
 CREATE TABLE teams
 (
     id      SERIAL PRIMARY KEY,

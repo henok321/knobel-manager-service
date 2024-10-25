@@ -1,4 +1,4 @@
-package model
+package entity
 
 import (
 	"time"
@@ -22,7 +22,7 @@ type Game struct {
 	NumberOfRounds uint           `gorm:"not null" json:"numberOfRounds"`
 	Status         GameStatus     `gorm:"size:50;not null" json:"status"`
 	Owners         []*GameOwner   `gorm:"foreignKey:GameID;constraint:OnDelete:CASCADE" json:"owners,omitempty"`
-	Teams          []*Team        `gorm:"foreignKey:GameID" json:"teams,omitempty"`
+	Teams          []*Team        `gorm:"foreignKey:GameID" json:"team,omitempty"`
 	Rounds         []*Round       `gorm:"foreignKey:GameID" json:"rounds,omitempty"`
 	CreatedAt      time.Time      `json:"-"`
 	UpdatedAt      time.Time      `json:"-"`
