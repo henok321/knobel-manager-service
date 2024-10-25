@@ -16,17 +16,18 @@ type testCase struct {
 	name               string
 	method             string
 	endpoint           string
-	body               string
+	requestBody        string
+	requestHeaders     map[string]string
 	setup              func(db *sql.DB)
 	expectedStatusCode int
 	expectedBody       string
-	headers            map[string]string
+	expectedHeaders    map[string]string
 }
 
 func newTestRequest(t *testing.T, tc testCase, server *httptest.Server) {
 	var requestBody io.Reader
-	if tc.body != "" {
-		requestBody = bytes.NewBuffer([]byte(tc.body))
+	if tc.requestBody != "" {
+		requestBody = bytes.NewBuffer([]byte(tc.requestBody))
 	}
 
 	// Create the HTTP request
@@ -35,8 +36,9 @@ func newTestRequest(t *testing.T, tc testCase, server *httptest.Server) {
 		t.Fatalf("Failed to create %s request: %v", tc.method, err)
 	}
 
-	for key, value := range tc.headers {
+	for key, value := range tc.requestHeaders {
 		req.Header.Set(key, value)
+		req.Header.Set("Content-Type", "application/json")
 	}
 
 	resp, err := http.DefaultClient.Do(req)
@@ -45,15 +47,15 @@ func newTestRequest(t *testing.T, tc testCase, server *httptest.Server) {
 	}
 	defer resp.Body.Close()
 
-	bodyBytes, _ := io.ReadAll(resp.Body)
-	bodyString := string(bodyBytes)
+	responseBodyBytes, _ := io.ReadAll(resp.Body)
+	responseBodyString := string(responseBodyBytes)
 
 	assert.Equal(t, tc.expectedStatusCode, resp.StatusCode, "Expected status code %d", tc.expectedStatusCode)
 
 	if tc.expectedBody != "" {
-		assert.JSONEq(t, tc.expectedBody, bodyString)
+		assert.JSONEq(t, tc.expectedBody, responseBodyString)
 	} else {
-		assert.Empty(t, bodyString)
+		assert.Empty(t, responseBodyString)
 	}
 }
 

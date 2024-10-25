@@ -11,15 +11,12 @@ import (
 func gamesTestCases(t *testing.T) []testCase {
 	return []testCase{
 		{
-			name:     "GET games empty",
-			method:   "GET",
-			endpoint: "/games",
-			setup: func(db *sql.DB) {
-				// No setup needed; database is empty
-			},
+			name:               "GET games empty",
+			method:             "GET",
+			endpoint:           "/games",
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `{"games":[]}`,
-			headers:            map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 		},
 		{
 			name:     "GET games",
@@ -33,7 +30,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			},
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       readContentFromFile(t, "./test_data/games_setup.json"),
-			headers:            map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 		},
 		{
 			name:     "GET game by id - ok",
@@ -47,7 +44,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			},
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       readContentFromFile(t, "./test_data/games_setup_by_id.json"),
-			headers:            map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 		},
 		{
 			name:     "GET game by id - not found",
@@ -61,7 +58,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			},
 			expectedStatusCode: http.StatusNotFound,
 			expectedBody:       `{"error":"game not found"}`,
-			headers:            map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 		}, {
 			name:     "GET game by id - invalid id",
 			method:   "GET",
@@ -74,7 +71,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			},
 			expectedStatusCode: http.StatusBadRequest,
 			expectedBody:       `{"error":"invalid id"}`,
-			headers:            map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 		}, {
 			name:     "GET game by id  - not owner",
 			method:   "GET",
@@ -87,7 +84,17 @@ func gamesTestCases(t *testing.T) []testCase {
 			},
 			expectedStatusCode: http.StatusForbidden,
 			expectedBody:       `{"error":"user is not the owner of the game"}`,
-			headers:            map[string]string{"Authorization": "sub-2"},
+			requestHeaders:     map[string]string{"Authorization": "sub-2"},
+		},
+		{
+			name:               "Create new game",
+			method:             "POST",
+			endpoint:           "/games",
+			expectedStatusCode: http.StatusCreated,
+			requestBody:        `{"name":"Game 1","numberOfRounds":2, "teamSize":4, "tableSize":4}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"setup","owners":[{"gameID":1,"ownerSub":"sub-1"}]}}`,
+			expectedHeaders:    map[string]string{"Location": "/games/1"},
 		},
 	}
 }
@@ -120,7 +127,10 @@ func TestGames(t *testing.T) {
 
 		t.Run(tc.name, func(t *testing.T) {
 
-			tc.setup(db)
+			if tc.setup != nil {
+				tc.setup(db)
+			}
+
 			defer cleanupSetup(t, db, "./test_data/cleanup.sql")
 
 			newTestRequest(t, tc, server)

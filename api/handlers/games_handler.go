@@ -5,14 +5,24 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/henok321/knobel-manager-service/pkg/model"
+
 	"github.com/henok321/knobel-manager-service/pkg/game"
 
 	"github.com/gin-gonic/gin"
 )
 
+type GameRequest struct {
+	Name           string `json:"name" binding:"required"`
+	TeamSize       uint   `json:"teamSize" binding:"required,min=4"`
+	TableSize      uint   `json:"tableSize" binding:"required,min=4"`
+	NumberOfRounds uint   `json:"numberOfRounds" binding:"required,min=1"`
+}
+
 type GamesHandler interface {
 	GetGames(c *gin.Context)
 	GetGameByID(c *gin.Context)
+	CreateGame(c *gin.Context)
 }
 
 type gamesHandler struct {
@@ -62,4 +72,41 @@ func (h *gamesHandler) GetGameByID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"game": gameById})
+}
+
+func (h *gamesHandler) CreateGame(c *gin.Context) {
+
+	contentType := c.GetHeader("Content-Type")
+
+	if contentType != "application/json" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid content type"})
+		return
+	}
+
+	sub := c.GetStringMap("user")["sub"].(string)
+
+	requestBody := GameRequest{}
+
+	if err := c.ShouldBindJSON(&requestBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	newGame := model.Game{
+		Name:           requestBody.Name,
+		TeamSize:       requestBody.TeamSize,
+		TableSize:      requestBody.TableSize,
+		NumberOfRounds: requestBody.NumberOfRounds,
+	}
+
+	createdGame, err := h.service.CreateGame(&newGame, sub)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"game": createdGame})
+	c.Header("Location", "/games/"+strconv.Itoa(int(createdGame.ID)))
+
 }

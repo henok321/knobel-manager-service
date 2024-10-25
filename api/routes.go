@@ -24,4 +24,5 @@ func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesH
 	// games routes
 	authenticated.GET("/games/", gamesHandler.GetGames)
 	authenticated.GET("/games/:id", gamesHandler.GetGameByID)
+	authenticated.POST("/games/", gamesHandler.CreateGame)
 }
