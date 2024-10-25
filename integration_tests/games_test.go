@@ -33,7 +33,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 		},
 		{
-			name:     "GET game by id - ok",
+			name:     "GET game by id ok",
 			method:   "GET",
 			endpoint: "/games/1",
 			setup: func(db *sql.DB) {
@@ -47,7 +47,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 		},
 		{
-			name:     "GET game by id - not found",
+			name:     "GET game by id not found",
 			method:   "GET",
 			endpoint: "/games/2",
 			setup: func(db *sql.DB) {
@@ -60,7 +60,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			expectedBody:       `{"error":"game not found"}`,
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 		}, {
-			name:     "GET game by id - invalid id",
+			name:     "GET game by id invalid id",
 			method:   "GET",
 			endpoint: "/games/invalid",
 			setup: func(db *sql.DB) {
@@ -73,7 +73,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			expectedBody:       `{"error":"invalid id"}`,
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 		}, {
-			name:     "GET game by id  - not owner",
+			name:     "GET game by id not owner",
 			method:   "GET",
 			endpoint: "/games/1",
 			setup: func(db *sql.DB) {
@@ -103,6 +103,51 @@ func gamesTestCases(t *testing.T) []testCase {
 			expectedStatusCode: http.StatusBadRequest,
 			requestBody:        `{}`,
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+		},
+		{
+			name:               "Update an existing game",
+			method:             "PUT",
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			expectedStatusCode: http.StatusOK,
+			expectedBody:       `{"game":{"id":1,"name":"Game 1 updated","teamSize":4,"tableSize":4,"numberOfRounds":3,"status":"setup","owners":[{"gameID":1,"ownerSub":"sub-1"}]}}`,
+			setup: func(db *sql.DB) {
+				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
+				if err != nil {
+					t.Fatalf("Failed to execute SQL file: %v", err)
+				}
+			},
+		},
+		{
+			name:               "Update an existing game invalid request",
+			method:             "PUT",
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			expectedStatusCode: http.StatusBadRequest,
+		},
+		{
+			name:               "Update an existing game not found",
+			method:             "PUT",
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			expectedStatusCode: http.StatusNotFound,
+		},
+		{
+			name:               "Update an existing game not owner",
+			method:             "PUT",
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-2"},
+			expectedStatusCode: http.StatusForbidden,
+			setup: func(db *sql.DB) {
+				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
+				if err != nil {
+					t.Fatalf("Failed to execute SQL file: %v", err)
+				}
+			},
 		},
 	}
 }

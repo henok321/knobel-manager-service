@@ -9,7 +9,7 @@ import (
 func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesHandler handlers.GamesHandler) {
 	// Unauthenticated routes
 	unauthenticated := router
-	unauthenticated.Use(middleware.RateLimiterMiddleware(5, 10), middleware.ErrorHandler())
+	unauthenticated.Use(middleware.RateLimiterMiddleware(20, 100), middleware.ErrorHandler())
 	// health check
 	unauthenticated.GET("/health", handlers.HealthCheck)
 
@@ -19,10 +19,11 @@ func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesH
 
 	// Authenticated routes
 	authenticated := router.Group("/")
-	authenticated.Use(middleware.RateLimiterMiddleware(5, 10), middleware.ErrorHandler(), authMiddleware)
+	authenticated.Use(middleware.RateLimiterMiddleware(20, 100), middleware.ErrorHandler(), authMiddleware)
 
 	// games routes
 	authenticated.GET("/games/", gamesHandler.GetGames)
 	authenticated.GET("/games/:id", gamesHandler.GetGameByID)
 	authenticated.POST("/games/", gamesHandler.CreateGame)
+	authenticated.PUT("/games/:id", gamesHandler.UpdateGame)
 }
