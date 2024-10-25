@@ -60,7 +60,7 @@ func gamesTestCases(t *testing.T) []testCase {
 			expectedBody:       `{"error":"game not found"}`,
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 		}, {
-			name:     "GET game by id invalid id",
+			name:     "GET game by id invalid gameID",
 			method:   "GET",
 			endpoint: "/games/invalid",
 			setup: func(db *sql.DB) {
@@ -70,7 +70,7 @@ func gamesTestCases(t *testing.T) []testCase {
 				}
 			},
 			expectedStatusCode: http.StatusBadRequest,
-			expectedBody:       `{"error":"invalid id"}`,
+			expectedBody:       `{"error":"invalid gameID"}`,
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 		}, {
 			name:     "GET game by id not owner",

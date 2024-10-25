@@ -1,10 +1,12 @@
 package team
 
-import "gorm.io/gorm"
+import (
+	"github.com/henok321/knobel-manager-service/pkg/game"
+	"gorm.io/gorm"
+)
 
-func InitalizeTeamsModule(db *gorm.DB) TeamsService {
-	repository := NewTeamsRepository(db)
-	service := NewTeamsService(repository)
+func InitializeTeamsModule(db *gorm.DB) TeamsService {
+	service := NewTeamsService(NewTeamsRepository(db), game.NewGamesRepository(db))
 
 	return service
 }

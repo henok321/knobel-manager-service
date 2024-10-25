@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/henok321/knobel-manager-service/pkg/entity"
+
 	"github.com/henok321/knobel-manager-service/pkg/game"
 
 	"github.com/gin-gonic/gin"
@@ -40,22 +42,20 @@ func (h *gamesHandler) GetGames(c *gin.Context) {
 
 func (h *gamesHandler) GetGameByID(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
-	id := c.Param("id")
-
-	idUint, err := strconv.ParseUint(id, 10, 64)
+	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid gameID"})
 		return
 	}
 
-	gameById, err := h.service.FindByID(uint(idUint), sub)
+	gameById, err := h.service.FindByID(uint(gameID), sub)
 	if err != nil {
 
-		if errors.Is(err, game.ErrorGameNotFound) {
+		if errors.Is(err, entity.ErrorGameNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "game not found"})
 			return
-		} else if errors.Is(err, game.ErrorNotOwner) {
+		} else if errors.Is(err, entity.ErrorNotOwner) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "user is not the owner of the game"})
 			return
 		}
@@ -98,12 +98,10 @@ func (h *gamesHandler) CreateGame(c *gin.Context) {
 
 func (h *gamesHandler) UpdateGame(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
-	id := c.Param("id")
-
-	gameID, err := strconv.ParseUint(id, 10, 64)
+	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid gameID"})
 		return
 	}
 
@@ -118,11 +116,11 @@ func (h *gamesHandler) UpdateGame(c *gin.Context) {
 
 	if err != nil {
 
-		if errors.Is(err, game.ErrorGameNotFound) {
+		if errors.Is(err, entity.ErrorGameNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "game not found"})
 			return
 		}
-		if errors.Is(err, game.ErrorNotOwner) {
+		if errors.Is(err, entity.ErrorNotOwner) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "user is not the owner of the game"})
 			return
 		}
@@ -136,9 +134,7 @@ func (h *gamesHandler) UpdateGame(c *gin.Context) {
 
 func (h *gamesHandler) DeleteGame(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
-	id := c.Param("id")
-
-	gameID, err := strconv.ParseUint(id, 10, 64)
+	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
@@ -147,11 +143,11 @@ func (h *gamesHandler) DeleteGame(c *gin.Context) {
 	err = h.service.DeleteGame(uint(gameID), sub)
 
 	if err != nil {
-		if errors.Is(err, game.ErrorGameNotFound) {
+		if errors.Is(err, entity.ErrorGameNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "game not found"})
 			return
 		}
-		if errors.Is(err, game.ErrorNotOwner) {
+		if errors.Is(err, entity.ErrorNotOwner) {
 			c.JSON(http.StatusForbidden, gin.H{"error": "user is not the owner of the game"})
 			return
 		}

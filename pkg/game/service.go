@@ -7,9 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-var ErrorGameNotFound = errors.New("game not found")
-var ErrorNotOwner = errors.New("user is not the owner of the game")
-
 type GamesService interface {
 	FindAllByOwner(sub string) ([]entity.Game, error)
 	FindByID(id uint, sub string) (entity.Game, error)
@@ -31,20 +28,20 @@ func (s *gamesService) FindAllByOwner(sub string) ([]entity.Game, error) {
 }
 
 func (s *gamesService) FindByID(id uint, sub string) (entity.Game, error) {
-	gameByID, err := s.repo.FindByID(id)
+	gameById, err := s.repo.FindByID(id)
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Game{}, ErrorGameNotFound
+			return entity.Game{}, entity.ErrorGameNotFound
 		}
 		return entity.Game{}, err
 	}
 
-	if !isOwner(gameByID, sub) {
-		return entity.Game{}, ErrorNotOwner
+	if !entity.IsOwner(gameById, sub) {
+		return entity.Game{}, entity.ErrorNotOwner
 	}
 
-	return gameByID, nil
+	return gameById, nil
 }
 
 func (s *gamesService) CreateGame(sub string, game *GameRequest) (entity.Game, error) {
@@ -59,27 +56,18 @@ func (s *gamesService) CreateGame(sub string, game *GameRequest) (entity.Game, e
 	return s.repo.CreateOrUpdateGame(&gameModel)
 }
 
-func isOwner(game entity.Game, sub string) bool {
-	for _, owner := range game.Owners {
-		if owner.OwnerSub == sub {
-			return true
-		}
-	}
-	return false
-}
-
 func (s *gamesService) UpdateGame(id uint, sub string, game GameRequest) (entity.Game, error) {
 	gameByID, err := s.repo.FindByID(id)
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Game{}, ErrorGameNotFound
+			return entity.Game{}, entity.ErrorGameNotFound
 		}
 		return entity.Game{}, err
 	}
 
-	if !isOwner(gameByID, sub) {
-		return entity.Game{}, ErrorNotOwner
+	if !entity.IsOwner(gameByID, sub) {
+		return entity.Game{}, entity.ErrorNotOwner
 	}
 
 	gameByID.Name = game.Name
@@ -95,12 +83,12 @@ func (s *gamesService) DeleteGame(id uint, sub string) error {
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrorGameNotFound
+			return entity.ErrorGameNotFound
 		}
 		return err
 	}
-	if !isOwner(gameByID, sub) {
-		return ErrorNotOwner
+	if !entity.IsOwner(gameByID, sub) {
+		return entity.ErrorNotOwner
 	}
 	return s.repo.DeleteGame(id)
 }
