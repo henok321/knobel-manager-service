@@ -9,6 +9,7 @@ type GamesRepository interface {
 	FindAllByOwner(sub string) ([]model.Game, error)
 	FindByID(id uint) (model.Game, error)
 	CreateOrUpdateGame(game *model.Game) (model.Game, error)
+	DeleteGame(id uint) error
 }
 
 type gamesRepository struct {
@@ -64,4 +65,13 @@ func (r *gamesRepository) CreateOrUpdateGame(game *model.Game) (model.Game, erro
 	}
 
 	return *game, nil
+}
+
+func (r *gamesRepository) DeleteGame(id uint) error {
+	err := r.db.Delete(&model.Game{}, id).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

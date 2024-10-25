@@ -26,4 +26,5 @@ func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesH
 	authenticated.GET("/games/:id", gamesHandler.GetGameByID)
 	authenticated.POST("/games/", gamesHandler.CreateGame)
 	authenticated.PUT("/games/:id", gamesHandler.UpdateGame)
+	authenticated.DELETE("/games/:id", gamesHandler.DeleteGame)
 }

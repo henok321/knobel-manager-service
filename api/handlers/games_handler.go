@@ -15,6 +15,7 @@ type GamesHandler interface {
 	GetGameByID(c *gin.Context)
 	CreateGame(c *gin.Context)
 	UpdateGame(c *gin.Context)
+	DeleteGame(c *gin.Context)
 }
 
 type gamesHandler struct {
@@ -131,4 +132,32 @@ func (h *gamesHandler) UpdateGame(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"game": updatedGame})
+}
+
+func (h *gamesHandler) DeleteGame(c *gin.Context) {
+	sub := c.GetStringMap("user")["sub"].(string)
+	id := c.Param("id")
+
+	gameID, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+
+	err = h.service.DeleteGame(uint(gameID), sub)
+
+	if err != nil {
+		if errors.Is(err, game.ErrorGameNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "game not found"})
+			return
+		}
+		if errors.Is(err, game.ErrorNotOwner) {
+			c.JSON(http.StatusForbidden, gin.H{"error": "user is not the owner of the game"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

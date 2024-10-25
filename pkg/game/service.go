@@ -15,6 +15,7 @@ type GamesService interface {
 	FindByID(id uint, sub string) (model.Game, error)
 	CreateGame(sub string, game *GameRequest) (model.Game, error)
 	UpdateGame(id uint, sub string, game GameRequest) (model.Game, error)
+	DeleteGame(id uint, sub string) error
 }
 
 type gamesService struct {
@@ -87,4 +88,19 @@ func (s *gamesService) UpdateGame(id uint, sub string, game GameRequest) (model.
 	gameByID.NumberOfRounds = game.NumberOfRounds
 
 	return s.repo.CreateOrUpdateGame(&gameByID)
+}
+
+func (s *gamesService) DeleteGame(id uint, sub string) error {
+	gameByID, err := s.repo.FindByID(id)
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrorGameNotFound
+		}
+		return err
+	}
+	if !isOwner(gameByID, sub) {
+		return ErrorNotOwner
+	}
+	return s.repo.DeleteGame(id)
 }
