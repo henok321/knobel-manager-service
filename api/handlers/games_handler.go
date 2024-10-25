@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/henok321/knobel-manager-service/pkg/model"
-
 	"github.com/henok321/knobel-manager-service/pkg/game"
 
 	"github.com/gin-gonic/gin"
@@ -79,21 +77,14 @@ func (h *gamesHandler) CreateGame(c *gin.Context) {
 
 	sub := c.GetStringMap("user")["sub"].(string)
 
-	requestBody := game.GameRequest{}
+	gameCreateRequest := game.GameRequest{}
 
-	if err := c.ShouldBindJSON(&requestBody); err != nil {
+	if err := c.ShouldBindJSON(&gameCreateRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	newGame := model.Game{
-		Name:           requestBody.Name,
-		TeamSize:       requestBody.TeamSize,
-		TableSize:      requestBody.TableSize,
-		NumberOfRounds: requestBody.NumberOfRounds,
-	}
-
-	createdGame, err := h.service.CreateGame(&newGame, sub)
+	createdGame, err := h.service.CreateGame(sub, &gameCreateRequest)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
