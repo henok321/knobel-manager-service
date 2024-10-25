@@ -55,6 +55,22 @@ func teamTestCases(t *testing.T) []testCase {
 			},
 		},
 		{
+			name:               "Update team invalid teamID",
+			method:             "PUT",
+			endpoint:           "/games/1/teams/invalid",
+			requestBody:        `{"name":"Team 1 updated"}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			expectedStatusCode: http.StatusBadRequest,
+		},
+		{
+			name:               "Update team invalid gameID",
+			method:             "PUT",
+			endpoint:           "/games/invalid/teams/1",
+			requestBody:        `{"name":"Team 1 updated"}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			expectedStatusCode: http.StatusBadRequest,
+		},
+		{
 			name:               "Update team not owner",
 			method:             "PUT",
 			endpoint:           "/games/1/teams/1",
@@ -106,6 +122,20 @@ func teamTestCases(t *testing.T) []testCase {
 					t.Fatalf("Failed to execute SQL file: %v", err)
 				}
 			},
+		},
+		{
+			name:               "Delete team invalid gameID",
+			method:             "DELETE",
+			endpoint:           "/games/invalid/teams/1",
+			requestHeaders:     map[string]string{"Authorization": "sub-2"},
+			expectedStatusCode: http.StatusBadRequest,
+		},
+		{
+			name:               "Delete team invalid teamID",
+			method:             "DELETE",
+			endpoint:           "/games/1/teams/invalid",
+			requestHeaders:     map[string]string{"Authorization": "sub-2"},
+			expectedStatusCode: http.StatusBadRequest,
 		},
 	}
 }
