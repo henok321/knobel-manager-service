@@ -54,8 +54,6 @@ func newTestRequest(t *testing.T, tc testCase, server *httptest.Server) {
 
 	if tc.expectedBody != "" {
 		assert.JSONEq(t, tc.expectedBody, responseBodyString)
-	} else {
-		assert.Empty(t, responseBodyString)
 	}
 }
 

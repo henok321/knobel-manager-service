@@ -1,7 +1,7 @@
 {
   "game": {
     "id": 1,
-    "name": "Peters Game 1",
+    "name": "Game 1",
     "teamSize": 4,
     "tableSize": 4,
     "numberOfRounds": 2,
