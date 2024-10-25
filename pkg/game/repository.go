@@ -8,7 +8,7 @@ import (
 type GamesRepository interface {
 	FindAllByOwner(sub string) ([]model.Game, error)
 	FindByID(id uint) (model.Game, error)
-	CreateGame(game *model.Game) (model.Game, error)
+	CreateOrUpdateGame(game *model.Game) (model.Game, error)
 }
 
 type gamesRepository struct {
@@ -57,8 +57,8 @@ func (r *gamesRepository) FindByID(id uint) (model.Game, error) {
 	return game, nil
 }
 
-func (r *gamesRepository) CreateGame(game *model.Game) (model.Game, error) {
-	err := r.db.Create(game).Error
+func (r *gamesRepository) CreateOrUpdateGame(game *model.Game) (model.Game, error) {
+	err := r.db.Save(game).Error
 	if err != nil {
 		return model.Game{}, err
 	}

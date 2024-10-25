@@ -14,6 +14,7 @@ type GamesService interface {
 	FindAllByOwner(sub string) ([]model.Game, error)
 	FindByID(id uint, sub string) (model.Game, error)
 	CreateGame(game *model.Game, sub string) (model.Game, error)
+	UpdateGame(id uint, sub string, game GameRequest) (model.Game, error)
 }
 
 type gamesService struct {
@@ -48,7 +49,7 @@ func (s *gamesService) FindByID(id uint, sub string) (model.Game, error) {
 func (s *gamesService) CreateGame(game *model.Game, sub string) (model.Game, error) {
 	game.Owners = []*model.GameOwner{{OwnerSub: sub}}
 	game.Status = model.StatusSetup
-	return s.repo.CreateGame(game)
+	return s.repo.CreateOrUpdateGame(game)
 }
 
 func isOwner(game model.Game, sub string) bool {
@@ -58,4 +59,26 @@ func isOwner(game model.Game, sub string) bool {
 		}
 	}
 	return false
+}
+
+func (s *gamesService) UpdateGame(id uint, sub string, game GameRequest) (model.Game, error) {
+	gameByID, err := s.repo.FindByID(id)
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return model.Game{}, ErrorGameNotFound
+		}
+		return model.Game{}, err
+	}
+
+	if !isOwner(gameByID, sub) {
+		return model.Game{}, ErrorNotOwner
+	}
+
+	gameByID.Name = game.Name
+	gameByID.TeamSize = game.TeamSize
+	gameByID.TableSize = game.TableSize
+	gameByID.NumberOfRounds = game.NumberOfRounds
+
+	return s.repo.CreateOrUpdateGame(&gameByID)
 }
