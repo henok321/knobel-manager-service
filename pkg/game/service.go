@@ -3,7 +3,7 @@ package game
 import (
 	"errors"
 
-	"github.com/henok321/knobel-manager-service/pkg/model"
+	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"gorm.io/gorm"
 )
 
@@ -11,10 +11,10 @@ var ErrorGameNotFound = errors.New("game not found")
 var ErrorNotOwner = errors.New("user is not the owner of the game")
 
 type GamesService interface {
-	FindAllByOwner(sub string) ([]model.Game, error)
-	FindByID(id uint, sub string) (model.Game, error)
-	CreateGame(sub string, game *GameRequest) (model.Game, error)
-	UpdateGame(id uint, sub string, game GameRequest) (model.Game, error)
+	FindAllByOwner(sub string) ([]entity.Game, error)
+	FindByID(id uint, sub string) (entity.Game, error)
+	CreateGame(sub string, game *GameRequest) (entity.Game, error)
+	UpdateGame(id uint, sub string, game GameRequest) (entity.Game, error)
 	DeleteGame(id uint, sub string) error
 }
 
@@ -26,40 +26,40 @@ func NewGamesService(repo GamesRepository) GamesService {
 	return &gamesService{repo}
 }
 
-func (s *gamesService) FindAllByOwner(sub string) ([]model.Game, error) {
+func (s *gamesService) FindAllByOwner(sub string) ([]entity.Game, error) {
 	return s.repo.FindAllByOwner(sub)
 }
 
-func (s *gamesService) FindByID(id uint, sub string) (model.Game, error) {
+func (s *gamesService) FindByID(id uint, sub string) (entity.Game, error) {
 	gameByID, err := s.repo.FindByID(id)
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return model.Game{}, ErrorGameNotFound
+			return entity.Game{}, ErrorGameNotFound
 		}
-		return model.Game{}, err
+		return entity.Game{}, err
 	}
 
 	if !isOwner(gameByID, sub) {
-		return model.Game{}, ErrorNotOwner
+		return entity.Game{}, ErrorNotOwner
 	}
 
 	return gameByID, nil
 }
 
-func (s *gamesService) CreateGame(sub string, game *GameRequest) (model.Game, error) {
-	gameModel := model.Game{
+func (s *gamesService) CreateGame(sub string, game *GameRequest) (entity.Game, error) {
+	gameModel := entity.Game{
 		Name:           game.Name,
 		TeamSize:       game.TeamSize,
 		TableSize:      game.TableSize,
 		NumberOfRounds: game.NumberOfRounds,
-		Owners:         []*model.GameOwner{{OwnerSub: sub}},
-		Status:         model.StatusSetup,
+		Owners:         []*entity.GameOwner{{OwnerSub: sub}},
+		Status:         entity.StatusSetup,
 	}
 	return s.repo.CreateOrUpdateGame(&gameModel)
 }
 
-func isOwner(game model.Game, sub string) bool {
+func isOwner(game entity.Game, sub string) bool {
 	for _, owner := range game.Owners {
 		if owner.OwnerSub == sub {
 			return true
@@ -68,18 +68,18 @@ func isOwner(game model.Game, sub string) bool {
 	return false
 }
 
-func (s *gamesService) UpdateGame(id uint, sub string, game GameRequest) (model.Game, error) {
+func (s *gamesService) UpdateGame(id uint, sub string, game GameRequest) (entity.Game, error) {
 	gameByID, err := s.repo.FindByID(id)
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return model.Game{}, ErrorGameNotFound
+			return entity.Game{}, ErrorGameNotFound
 		}
-		return model.Game{}, err
+		return entity.Game{}, err
 	}
 
 	if !isOwner(gameByID, sub) {
-		return model.Game{}, ErrorNotOwner
+		return entity.Game{}, ErrorNotOwner
 	}
 
 	gameByID.Name = game.Name

@@ -6,7 +6,7 @@ import (
 	"github.com/henok321/knobel-manager-service/api/middleware"
 )
 
-func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesHandler handlers.GamesHandler) {
+func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesHandler handlers.GamesHandler, teamsHandler handlers.TeamsHandler) {
 	// Unauthenticated routes
 	unauthenticated := router
 	unauthenticated.Use(middleware.RateLimiterMiddleware(20, 100), middleware.ErrorHandler())
@@ -27,4 +27,9 @@ func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesH
 	authenticated.POST("/games/", gamesHandler.CreateGame)
 	authenticated.PUT("/games/:id", gamesHandler.UpdateGame)
 	authenticated.DELETE("/games/:id", gamesHandler.DeleteGame)
+
+	// teams routes
+	authenticated.POST("/teams/", teamsHandler.CreateTeam)
+	authenticated.PUT("/teams/:id", teamsHandler.UpdateTeam)
+	authenticated.DELETE("/teams/:id", teamsHandler.DeleteTeam)
 }
