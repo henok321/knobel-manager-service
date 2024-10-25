@@ -13,6 +13,7 @@ var ErrorNotOwner = errors.New("user is not the owner of the game")
 type GamesService interface {
 	FindAllByOwner(sub string) ([]model.Game, error)
 	FindByID(id uint, sub string) (model.Game, error)
+	CreateGame(game *model.Game, sub string) (model.Game, error)
 }
 
 type gamesService struct {
@@ -42,6 +43,12 @@ func (s *gamesService) FindByID(id uint, sub string) (model.Game, error) {
 	}
 
 	return gameByID, nil
+}
+
+func (s *gamesService) CreateGame(game *model.Game, sub string) (model.Game, error) {
+	game.Owners = []*model.GameOwner{{OwnerSub: sub}}
+	game.Status = model.StatusSetup
+	return s.repo.CreateGame(game)
 }
 
 func isOwner(game model.Game, sub string) bool {
