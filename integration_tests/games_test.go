@@ -186,40 +186,5 @@ func gamesTestCases(t *testing.T) []testCase {
 }
 
 func TestGames(t *testing.T) {
-
-	tests := gamesTestCases(t)
-
-	dbConn, teardownDatabase, _ := setupTestDatabase(t)
-	defer teardownDatabase()
-
-	db, err := sql.Open("postgres", dbConn)
-
-	if err != nil {
-		t.Fatalf("Failed to open database connection: %v", err)
-	}
-
-	defer db.Close()
-
-	err = runGooseUp(t, db)
-
-	if err != nil {
-		t.Fatalf("Failed to run goose up: %v", err)
-	}
-
-	server, teardown := setupTestServer()
-	defer teardown(server)
-
-	for _, tc := range tests {
-
-		t.Run(tc.name, func(t *testing.T) {
-
-			if tc.setup != nil {
-				tc.setup(db)
-			}
-
-			defer cleanupSetup(t, db, "./test_data/cleanup.sql")
-
-			newTestRequest(t, tc, server)
-		})
-	}
+	RunTestGroup(t, gamesTestCases)
 }
