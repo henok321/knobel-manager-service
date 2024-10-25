@@ -6,8 +6,8 @@ import (
 )
 
 type TeamsRepository interface {
-	CreateTeam(team *entity.Team) (entity.Team, error)
-	UpdateTeam(team *entity.Team) (entity.Team, error)
+	FindById(id uint) (entity.Team, error)
+	CreateOrUpdateTeam(team *entity.Team) (entity.Team, error)
 	DeleteTeam(id uint) error
 }
 
@@ -19,14 +19,27 @@ func NewTeamsRepository(db *gorm.DB) TeamsRepository {
 	return &teamsRepository{db}
 }
 
-func (r *teamsRepository) CreateTeam(team *entity.Team) (entity.Team, error) {
-	return entity.Team{}, nil
+func (r *teamsRepository) FindById(id uint) (entity.Team, error) {
+	team := entity.Team{}
+	err := r.db.Where("id = ?", id).First(&team).Error
+	if err != nil {
+		return entity.Team{}, err
+	}
+	return team, nil
 }
 
-func (r *teamsRepository) UpdateTeam(team *entity.Team) (entity.Team, error) {
-	return entity.Team{}, nil
+func (r *teamsRepository) CreateOrUpdateTeam(team *entity.Team) (entity.Team, error) {
+	err := r.db.Save(team).Error
+	if err != nil {
+		return entity.Team{}, err
+	}
+	return *team, nil
 }
 
 func (r *teamsRepository) DeleteTeam(id uint) error {
+	err := r.db.Delete(&entity.Team{}, id).Error
+	if err != nil {
+		return err
+	}
 	return nil
 }

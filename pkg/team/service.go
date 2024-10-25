@@ -1,26 +1,91 @@
 package team
 
-import "github.com/henok321/knobel-manager-service/pkg/entity"
+import (
+	"errors"
+
+	"github.com/henok321/knobel-manager-service/pkg/entity"
+	"github.com/henok321/knobel-manager-service/pkg/game"
+	"gorm.io/gorm"
+)
 
 type TeamsService interface {
 	CreateTeam(gameID uint, sub string, request TeamsRequest) (entity.Team, error)
-	UpdateTeam(gameID uint, sub string, request TeamsRequest) (entity.Team, error)
+	UpdateTeam(gameID uint, sub string, teamID uint, request TeamsRequest) (entity.Team, error)
+	DeleteTeam(gameID uint, sub string, teamID uint) error
 }
 
 type teamsService struct {
-	repo TeamsRepository
+	teamRepo  TeamsRepository
+	gamesRepo game.GamesRepository
 }
 
-func NewTeamsService(repo TeamsRepository) TeamsService {
+func NewTeamsService(teamRepo TeamsRepository, gameRepo game.GamesRepository) TeamsService {
 	return &teamsService{
-		repo,
+		teamRepo:  teamRepo,
+		gamesRepo: gameRepo,
 	}
 }
 
 func (s *teamsService) CreateTeam(gameID uint, sub string, request TeamsRequest) (entity.Team, error) {
-	return entity.Team{}, nil
+	gameById, err := s.gamesRepo.FindByID(gameID)
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.Team{}, entity.ErrorGameNotFound
+		}
+		return entity.Team{}, err
+	}
+
+	if !entity.IsOwner(gameById, sub) {
+		return entity.Team{}, entity.ErrorNotOwner
+	}
+
+	team := entity.Team{
+		Name:   request.Name,
+		GameID: gameID,
+	}
+
+	return s.teamRepo.CreateOrUpdateTeam(&team)
 }
 
-func (s *teamsService) UpdateTeam(gameID uint, sub string, request TeamsRequest) (entity.Team, error) {
-	return entity.Team{}, nil
+func (s *teamsService) UpdateTeam(gameID uint, sub string, teamID uint, request TeamsRequest) (entity.Team, error) {
+	gameById, err := s.gamesRepo.FindByID(gameID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.Team{}, entity.ErrorGameNotFound
+		}
+		return entity.Team{}, err
+	}
+	if !entity.IsOwner(gameById, sub) {
+		return entity.Team{}, entity.ErrorNotOwner
+	}
+
+	for _, team := range gameById.Teams {
+		if team.ID == teamID {
+			team.Name = request.Name
+			return s.teamRepo.CreateOrUpdateTeam(team)
+		}
+	}
+	return entity.Team{}, entity.ErrorTeamNotFound
+}
+
+func (s *teamsService) DeleteTeam(gameID uint, sub string, teamID uint) error {
+	gameById, err := s.gamesRepo.FindByID(gameID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.ErrorGameNotFound
+		}
+		return err
+	}
+	if !entity.IsOwner(gameById, sub) {
+		return entity.ErrorNotOwner
+	}
+
+	for _, team := range gameById.Teams {
+		if team.ID == teamID {
+			return s.teamRepo.DeleteTeam(teamID)
+		}
+	}
+
+	return entity.ErrorTeamNotFound
 }

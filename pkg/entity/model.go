@@ -1,10 +1,15 @@
 package entity
 
 import (
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
 )
+
+var ErrorGameNotFound = errors.New("game not found")
+var ErrorTeamNotFound = errors.New("team not found")
+var ErrorNotOwner = errors.New("user is not the owner of the game")
 
 type GameStatus string
 
@@ -13,6 +18,15 @@ const (
 	StatusInProgress GameStatus = "in_progress"
 	StatusCompleted  GameStatus = "completed"
 )
+
+func IsOwner(game Game, sub string) bool {
+	for _, owner := range game.Owners {
+		if owner.OwnerSub == sub {
+			return true
+		}
+	}
+	return false
+}
 
 type Game struct {
 	ID             uint           `gorm:"primaryKey" json:"id"`

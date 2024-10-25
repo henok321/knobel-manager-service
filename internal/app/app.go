@@ -22,7 +22,7 @@ func (app *App) Initialize(authMiddleware gin.HandlerFunc) {
 	app.DB, _ = db.Connect()
 
 	app.GamesHandler = handlers.NewGamesHandler(game.InitializeGameModule(app.DB))
-	app.TeamsHandler = handlers.NewTeamsHandler(team.InitalizeTeamsModule(app.DB))
+	app.TeamsHandler = handlers.NewTeamsHandler(team.InitializeTeamsModule(app.DB))
 
 	app.Router = gin.Default()
 	api.InitializeRoutes(app.Router, authMiddleware, app.GamesHandler, app.TeamsHandler)
