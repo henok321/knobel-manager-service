@@ -96,6 +96,14 @@ func gamesTestCases(t *testing.T) []testCase {
 			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"setup","owners":[{"gameID":1,"ownerSub":"sub-1"}]}}`,
 			expectedHeaders:    map[string]string{"Location": "/games/1"},
 		},
+		{
+			name:               "Create new game invalid request",
+			method:             "POST",
+			endpoint:           "/games",
+			expectedStatusCode: http.StatusBadRequest,
+			requestBody:        `{}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+		},
 	}
 }
 
