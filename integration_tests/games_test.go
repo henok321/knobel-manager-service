@@ -149,6 +149,39 @@ func gamesTestCases(t *testing.T) []testCase {
 				}
 			},
 		},
+		{
+			name:               "Delete an existing game",
+			method:             "DELETE",
+			endpoint:           "/games/1",
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			expectedStatusCode: http.StatusNoContent,
+			setup: func(db *sql.DB) {
+				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
+				if err != nil {
+					t.Fatalf("Failed to execute SQL file: %v", err)
+				}
+			},
+		},
+		{
+			name:               "Delete an existing game not found",
+			method:             "DELETE",
+			endpoint:           "/games/1",
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			expectedStatusCode: http.StatusNotFound,
+		},
+		{
+			name:               "Delete an existing game not owner",
+			method:             "DELETE",
+			endpoint:           "/games/1",
+			requestHeaders:     map[string]string{"Authorization": "sub-2"},
+			expectedStatusCode: http.StatusForbidden,
+			setup: func(db *sql.DB) {
+				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
+				if err != nil {
+					t.Fatalf("Failed to execute SQL file: %v", err)
+				}
+			},
+		},
 	}
 }
 
