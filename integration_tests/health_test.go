@@ -10,7 +10,7 @@ import (
 
 func TestHealthCheck(t *testing.T) {
 	t.Run("health check", func(t *testing.T) {
-		dbConn, teardownDatabase, _ := setupTestDatabase(t)
+		dbConn, teardownDatabase := setupTestDatabase(t)
 		defer teardownDatabase()
 
 		db, err := sql.Open("postgres", dbConn)
@@ -21,11 +21,7 @@ func TestHealthCheck(t *testing.T) {
 
 		defer db.Close()
 
-		err = runGooseUp(t, db)
-
-		if err != nil {
-			t.Fatalf("Failed to run goose up: %v", err)
-		}
+		runGooseUp(t, db)
 
 		server, teardown := setupTestServer()
 		defer teardown(server)

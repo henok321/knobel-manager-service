@@ -8,10 +8,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func teamTestCases(t *testing.T) []testCase {
-	return []testCase{
-		{
-			name:               "Create team",
+func TestTeams(t *testing.T) {
+	tests := map[string]testCase{
+		"Create team": {
 			method:             "POST",
 			endpoint:           "/games/1/teams",
 			requestBody:        `{"name":"Team 1"}`,
@@ -19,28 +18,20 @@ func teamTestCases(t *testing.T) []testCase {
 			expectedStatusCode: http.StatusCreated,
 			expectedBody:       `{"team": {"id":1,"name":"Team 1", "gameID":1}}`,
 			setup: func(db *sql.DB) {
-				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
-				if err != nil {
-					t.Fatalf("Failed to execute SQL file: %v", err)
-				}
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
 		},
-		{
-			name:               "Create team not owner",
+		"Create team not owner": {
 			method:             "POST",
 			endpoint:           "/games/1/teams",
 			requestBody:        `{"name":"Team 1"}`,
 			requestHeaders:     map[string]string{"Authorization": "sub-2"},
 			expectedStatusCode: http.StatusForbidden,
 			setup: func(db *sql.DB) {
-				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
-				if err != nil {
-					t.Fatalf("Failed to execute SQL file: %v", err)
-				}
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
 		},
-		{
-			name:               "Update team",
+		"Update team": {
 			method:             "PUT",
 			endpoint:           "/games/1/teams/1",
 			requestBody:        `{"name":"Team 1 updated"}`,
@@ -48,98 +39,97 @@ func teamTestCases(t *testing.T) []testCase {
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `{"team": {"id":1,"name":"Team 1 updated", "gameID":1}}`,
 			setup: func(db *sql.DB) {
-				err := executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
-				if err != nil {
-					t.Fatalf("Failed to execute SQL file: %v", err)
-				}
+				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
 			},
 		},
-		{
-			name:               "Update team invalid teamID",
+		"Update team invalid teamID": {
 			method:             "PUT",
 			endpoint:           "/games/1/teams/invalid",
 			requestBody:        `{"name":"Team 1 updated"}`,
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 			expectedStatusCode: http.StatusBadRequest,
 		},
-		{
-			name:               "Update team invalid gameID",
+		"Update team invalid gameID": {
 			method:             "PUT",
 			endpoint:           "/games/invalid/teams/1",
 			requestBody:        `{"name":"Team 1 updated"}`,
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 			expectedStatusCode: http.StatusBadRequest,
 		},
-		{
-			name:               "Update team not owner",
+		"Update team not owner": {
 			method:             "PUT",
 			endpoint:           "/games/1/teams/1",
 			requestBody:        `{"name":"Team 1 updated"}`,
 			requestHeaders:     map[string]string{"Authorization": "sub-2"},
 			expectedStatusCode: http.StatusForbidden,
 			setup: func(db *sql.DB) {
-				err := executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
-				if err != nil {
-					t.Fatalf("Failed to execute SQL file: %v", err)
-				}
+				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
 			},
 		},
-		{
-			name:               "Delete team",
+		"Delete team": {
 			method:             "DELETE",
 			endpoint:           "/games/1/teams/1",
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 			expectedStatusCode: http.StatusNoContent,
 			setup: func(db *sql.DB) {
-				err := executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
-				if err != nil {
-					t.Fatalf("Failed to execute SQL file: %v", err)
-				}
+				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
 			},
 		},
-		{
-			name:               "Delete team not found",
+		"Delete team not found": {
 			method:             "DELETE",
 			endpoint:           "/games/1/teams/1",
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 			expectedStatusCode: http.StatusNotFound,
 			setup: func(db *sql.DB) {
-				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
-				if err != nil {
-					t.Fatalf("Failed to execute SQL file: %v", err)
-				}
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
 		},
-		{
-			name:               "Delete team not owner",
+		"Delete team not owner": {
 			method:             "DELETE",
 			endpoint:           "/games/1/teams/1",
 			requestHeaders:     map[string]string{"Authorization": "sub-2"},
 			expectedStatusCode: http.StatusForbidden,
 			setup: func(db *sql.DB) {
-				err := executeSQLFile(t, db, "./test_data/games_setup.sql")
-				if err != nil {
-					t.Fatalf("Failed to execute SQL file: %v", err)
-				}
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
 		},
-		{
-			name:               "Delete team invalid gameID",
+		"Delete team invalid gameID": {
 			method:             "DELETE",
 			endpoint:           "/games/invalid/teams/1",
 			requestHeaders:     map[string]string{"Authorization": "sub-2"},
 			expectedStatusCode: http.StatusBadRequest,
 		},
-		{
-			name:               "Delete team invalid teamID",
+		"Delete team invalid teamID": {
 			method:             "DELETE",
 			endpoint:           "/games/1/teams/invalid",
 			requestHeaders:     map[string]string{"Authorization": "sub-2"},
 			expectedStatusCode: http.StatusBadRequest,
 		},
 	}
-}
 
-func TestTeams(t *testing.T) {
-	RunTestGroup(t, teamTestCases)
+	dbConn, teardownDatabase := setupTestDatabase(t)
+	defer teardownDatabase()
+
+	db, err := sql.Open("postgres", dbConn)
+
+	if err != nil {
+		t.Fatalf("Failed to open database connection: %v", err)
+	}
+
+	defer db.Close()
+
+	runGooseUp(t, db)
+
+	server, teardown := setupTestServer()
+	defer teardown(server)
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			if tc.setup != nil {
+				tc.setup(db)
+			}
+			defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+			newTestRequest(t, tc, server)
+		})
+	}
 }
