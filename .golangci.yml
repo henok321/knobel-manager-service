@@ -1,28 +1,28 @@
 linters-settings:
   gocyclo:
-    min-complexity: 10  # Cyclomatic complexity threshold.
+    min-complexity: 10
   gofmt:
-    simplify: true      # Simplify code.
+    simplify: true
   revive:
     ignore-generated-header: true
 
 linters:
   enable:
-    - goimports     # Manages and formats imports.
-    - govet         # Reports suspicious constructs.
-    - staticcheck   # Advanced static analysis.
-    - errcheck      # Checks for unhandled errors.
-    - revive        # Fast, configurable linter.
-    - gocyclo       # Computes cyclomatic complexity.
-    - dupl          # Reports duplicated code.
+    - goimports
+    - govet
+    - staticcheck
+    - errcheck
+    - revive
+    - gocyclo
+    - dupl
 
 run:
-  timeout: 5m       # Set a 5-minute timeout for the linter.
-  tests: true       # Include tests in the linting process.
+  timeout: 5m
+  tests: true
 
 
 issues:
-  max-issues-per-linter: 0   # No limit on issues per linter.
-  max-same-issues: 0         # No limit on the same issue type.
+  max-issues-per-linter: 0
+  max-same-issues: 0
 
 
