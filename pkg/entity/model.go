@@ -9,7 +9,9 @@ import (
 
 var ErrorGameNotFound = errors.New("game not found")
 var ErrorTeamNotFound = errors.New("team not found")
-var ErrorNotOwner = errors.New("user is not the owner of the game")
+var ErrorPlayerNotFound = errors.New("player not found")
+
+var ErrorNotOwner = errors.New("user is not the owner of the requested resource")
 
 type GameStatus string
 
