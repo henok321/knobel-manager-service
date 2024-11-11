@@ -25,7 +25,7 @@ func (h *teamsHandler) CreateTeam(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
 	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid teamID"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid gameID"})
 		return
 	}
 
@@ -51,7 +51,7 @@ func (h *teamsHandler) UpdateTeam(c *gin.Context) {
 	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid teamID"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid gameID"})
 		return
 	}
 
