@@ -4,10 +4,8 @@
 
 The main goal of this project is to learn the programming language Go and to get familiar with the Go ecosystem.
 
-This service is a small tournament manager for the dice game "Knobeln" or "Schocken". It is implemented in Java and uses
-the Spring
-Boot framework. The service provides a REST API to manage players, games and rounds. The service is backed by a Postgres
-database.
+This service is a small tournament manager for the dice game "Knobeln" or "Schocken". The service provides a REST API 
+to manage players, games and rounds. The service is backed by a Postgres database.
 
 This project is WIP and not yet finished.
 
