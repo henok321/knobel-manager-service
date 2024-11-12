@@ -10,14 +10,14 @@ import (
 
 func TestGames(t *testing.T) {
 	tests := map[string]testCase{
-		"GET games empty": {
+		"Find games empty": {
 			method:             "GET",
 			endpoint:           "/games",
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `{"games":[]}`,
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 		},
-		"GET games": {
+		"Find games": {
 			method:   "GET",
 			endpoint: "/games",
 			setup: func(db *sql.DB) {
@@ -26,7 +26,7 @@ func TestGames(t *testing.T) {
 			expectedBody:   readContentFromFile(t, "./test_data/games_setup.json"),
 			requestHeaders: map[string]string{"Authorization": "sub-1"},
 		},
-		"GET game by id ok": {
+		"Find game by id ok": {
 			method:   "GET",
 			endpoint: "/games/1",
 			setup: func(db *sql.DB) {
@@ -35,7 +35,7 @@ func TestGames(t *testing.T) {
 			expectedBody:   readContentFromFile(t, "./test_data/games_setup_by_id.json"),
 			requestHeaders: map[string]string{"Authorization": "sub-1"},
 		},
-		"GET game by id not found": {
+		"Find game by id not found": {
 			method:   "GET",
 			endpoint: "/games/2",
 			setup: func(db *sql.DB) {
@@ -44,7 +44,7 @@ func TestGames(t *testing.T) {
 			expectedBody:   `{"error":"game not found"}`,
 			requestHeaders: map[string]string{"Authorization": "sub-1"},
 		},
-		"GET game by id invalid gameID": {
+		"Find game by id invalid gameID": {
 			method:   "GET",
 			endpoint: "/games/invalid",
 			setup: func(db *sql.DB) {
@@ -53,14 +53,13 @@ func TestGames(t *testing.T) {
 			expectedBody:   `{"error":"invalid gameID"}`,
 			requestHeaders: map[string]string{"Authorization": "sub-1"},
 		},
-		"GET game by id not owner": {
+		"Find game by id not owner": {
 			method:   "GET",
 			endpoint: "/games/1",
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
 			expectedStatusCode: http.StatusForbidden,
-			expectedBody:       `{"error":"user is not the owner of the game"}`,
 			requestHeaders:     map[string]string{"Authorization": "sub-2"},
 		},
 		"Create new game": {

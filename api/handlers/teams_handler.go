@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
+
+	"github.com/henok321/knobel-manager-service/pkg/entity"
 
 	"github.com/gin-gonic/gin"
 	"github.com/henok321/knobel-manager-service/pkg/team"
@@ -32,14 +35,21 @@ func (h *teamsHandler) CreateTeam(c *gin.Context) {
 	request := team.TeamsRequest{}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		_ = c.Error(err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	createdTeam, err := h.service.CreateTeam(uint(gameID), sub, request)
 
 	if err != nil {
-		_ = c.Error(err)
+		switch {
+		case errors.Is(err, entity.ErrorGameNotFound):
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case errors.Is(err, entity.ErrorNotOwner):
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -67,14 +77,23 @@ func (h *teamsHandler) UpdateTeam(c *gin.Context) {
 	err = c.ShouldBindJSON(&request)
 
 	if err != nil {
-		_ = c.Error(err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	updatedTeam, err := h.service.UpdateTeam(uint(gameID), sub, uint(teamID), request)
 
 	if err != nil {
-		_ = c.Error(err)
+		// entity.ErrorNotOwner, entity.ErrorGameNotFound,entity.ErrorTeamNotFound
+
+		switch {
+		case errors.Is(err, entity.ErrorNotOwner):
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case errors.Is(err, entity.ErrorGameNotFound), errors.Is(err, entity.ErrorTeamNotFound):
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -101,7 +120,14 @@ func (h *teamsHandler) DeleteTeam(c *gin.Context) {
 	err = h.service.DeleteTeam(uint(gameID), sub, uint(teamID))
 
 	if err != nil {
-		_ = c.Error(err)
+		switch {
+		case errors.Is(err, entity.ErrorNotOwner):
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case errors.Is(err, entity.ErrorTeamNotFound):
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 	}
 
 	c.Status(http.StatusNoContent)

@@ -57,7 +57,16 @@ func (h playersHandler) CreatePlayer(c *gin.Context) {
 	createPlayer, err := h.playersService.CreatePlayer(request, uint(teamID), sub)
 
 	if err != nil {
-		_ = c.Error(err)
+		switch {
+		case errors.Is(err, entity.ErrorTeamNotFound):
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case errors.Is(err, entity.ErrorNotOwner):
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+
 		return
 	}
 
@@ -90,9 +99,9 @@ func (h playersHandler) UpdatePlayer(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, entity.ErrorTeamNotFound) || errors.Is(err, entity.ErrorPlayerNotFound) {
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
+		} else {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -114,11 +123,12 @@ func (h playersHandler) DeletePlayer(c *gin.Context) {
 	err = h.playersService.DeletePlayer(uint(playerID), sub)
 
 	if err != nil {
-		if errors.Is(err, entity.ErrorPlayerNotFound) {
+		switch {
+		case errors.Is(err, entity.ErrorPlayerNotFound):
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
