@@ -6,6 +6,7 @@ require (
 	firebase.google.com/go/v4 v4.15.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator/v10 v10.22.1
+	github.com/google/martian/v3 v3.3.3
 	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.22.1
 	github.com/stretchr/testify v1.9.0
