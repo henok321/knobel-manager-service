@@ -31,7 +31,7 @@ func TestPlayers(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
 			},
 		},
-		"Create player now found": {
+		"Create player not found": {
 			method:             "POST",
 			endpoint:           "/games/1/teams/1/players",
 			requestBody:        `{"name":"Player 1"}`,

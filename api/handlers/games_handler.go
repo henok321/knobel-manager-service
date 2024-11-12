@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
+
+	"github.com/henok321/knobel-manager-service/pkg/entity"
 
 	"github.com/henok321/knobel-manager-service/pkg/game"
 
@@ -31,7 +34,7 @@ func (h *gamesHandler) GetGames(c *gin.Context) {
 	games, err := h.service.FindAllByOwner(sub)
 
 	if err != nil {
-		_ = c.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -50,7 +53,14 @@ func (h *gamesHandler) GetGameByID(c *gin.Context) {
 	gameById, err := h.service.FindByID(uint(gameID), sub)
 
 	if err != nil {
-		_ = c.Error(err)
+		switch {
+		case errors.Is(err, entity.ErrorNotOwner):
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case errors.Is(err, entity.ErrorGameNotFound):
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -64,14 +74,14 @@ func (h *gamesHandler) CreateGame(c *gin.Context) {
 	gameCreateRequest := game.GameRequest{}
 
 	if err := c.ShouldBindJSON(&gameCreateRequest); err != nil {
-		_ = c.Error(err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	createdGame, err := h.service.CreateGame(sub, &gameCreateRequest)
 
 	if err != nil {
-		_ = c.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -84,21 +94,28 @@ func (h *gamesHandler) UpdateGame(c *gin.Context) {
 	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
 
 	if err != nil {
-		_ = c.Error(err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	gameUpdateRequest := game.GameRequest{}
 
 	if err := c.ShouldBindJSON(&gameUpdateRequest); err != nil {
-		_ = c.Error(err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	updatedGame, err := h.service.UpdateGame(uint(gameID), sub, gameUpdateRequest)
 
 	if err != nil {
-		_ = c.Error(err)
+		switch {
+		case errors.Is(err, entity.ErrorNotOwner):
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case errors.Is(err, entity.ErrorGameNotFound):
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -109,12 +126,19 @@ func (h *gamesHandler) DeleteGame(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
 	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
 	if err != nil {
-		_ = c.Error(err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid gameID"})
 		return
 	}
 
 	if err := h.service.DeleteGame(uint(gameID), sub); err != nil {
-		_ = c.Error(err)
+		switch {
+		case errors.Is(err, entity.ErrorNotOwner):
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		case errors.Is(err, entity.ErrorGameNotFound):
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 	c.Status(http.StatusNoContent)
