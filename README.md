@@ -48,33 +48,20 @@ pre-commit install
 
 #### Start database
 
-##### Docker
-
-```bash
-docker-compose up -d
-```
-
-##### Proxy fly.io
-
-```bash
-fly proxy 5432 -a database-postgres
-```
-
-##### Export database url
-
 ```sh
-export DATABASE_URL="localhost:5432"
+docker-compose up -d
+export DATABASE_URL="postgres://postgres:secret@localhost:5432/postgres?sslmode=disable"
 ```
 
 #### Start the application
 
-```bash
+```sh
 go run cmd/main.go
 ```
 
 ### Health check
 
-```bash
+```sh
 curl http://localhost:8080/health
 ```
 
