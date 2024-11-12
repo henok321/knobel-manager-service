@@ -4,7 +4,7 @@
 
 The main goal of this project is to learn the programming language Go and to get familiar with the Go ecosystem.
 
-This service is a small tournament manager for the dice game "Knobeln" or "Schocken". The service provides a REST API 
+This service is a small tournament manager for the dice game "Knobeln" or "Schocken". The service provides a REST API
 to manage players, games and rounds. The service is backed by a Postgres database.
 
 This project is WIP and not yet finished.
@@ -19,32 +19,51 @@ The service uses JWT for authentication that is provided by Firebase Authenticat
 
 ## Build and run
 
-### Tools
+### Prerequisites
 
-#### Install git hooks
+#### Linting
 
-```bash
-./scripts/install_hooks.sh
+Install [golangci-lint](https://golangci-lint.run/welcome/install/#local-installation) and start linting:
+
+```sh
+golangci-lint run --fix --verbose 
 ```
 
-#### Lint and fix code
+To verify the schema of the `.golangci.yml` config file run:
 
-```bash
-./scripts/lint_fix.sh
+```sh
+golangci-lint config verify --verbose --config .golangci.yml
 ```
 
-#### Proxy to live database
+#### Commit hooks
 
-```bash
-./scripts/fly_db_proxy.sh
+To ensure a consistent code style and apply the linting rules to new code, we use [pre-commit](https://pre-commit.com/).
+To install the commit hooks, run:
+
+```sh
+pre-commit install
 ```
 
 ### Local
 
-#### Start the Postgres database
+#### Start database
+
+##### Docker
 
 ```bash
 docker-compose up -d
+```
+
+##### Proxy fly.io
+
+```bash
+fly proxy 5432 -a database-postgres
+```
+
+##### Export database url
+
+```sh
+export DATABASE_URL="localhost:5432"
 ```
 
 #### Start the application
@@ -67,8 +86,8 @@ found [here](.github/workflows/deploy.yml).
 
 ## Database migration
 
-The project uses `goose` for database migrations. The migrations can be found [here](db/migrations). Use the [GitHub
-action to run the migrations.
+The project uses `goose` for database migrations. The migrations can be found [here](db/migrations). Use
+the [GitHub Action](.github/workflows/db_migration.yml) to run the migrations.
 
 ## Persistence
 
@@ -81,4 +100,3 @@ found [here](.github/workflows/db_migration.yml).
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-```
