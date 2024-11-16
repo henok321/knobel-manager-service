@@ -5,8 +5,6 @@ go 1.23.1
 require (
 	firebase.google.com/go/v4 v4.15.0
 	github.com/gin-gonic/gin v1.10.0
-	github.com/go-playground/validator/v10 v10.22.1
-	github.com/google/martian/v3 v3.3.3
 	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.22.1
 	github.com/stretchr/testify v1.9.0
@@ -62,6 +60,7 @@ require (
 	github.com/go-ole/go-ole v1.3.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/validator/v10 v10.22.1 // indirect
 	github.com/goccy/go-json v0.10.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
