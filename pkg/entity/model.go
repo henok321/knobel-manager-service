@@ -10,7 +10,6 @@ import (
 var ErrorGameNotFound = errors.New("game not found")
 var ErrorTeamNotFound = errors.New("team not found")
 var ErrorPlayerNotFound = errors.New("player not found")
-
 var ErrorNotOwner = errors.New("user is not the owner of the requested resource")
 
 type GameStatus string
@@ -71,7 +70,7 @@ type Round struct {
 	RoundNumber uint         `gorm:"not null;uniqueIndex:idx_game_round" json:"roundNumber"`
 	GameID      uint         `gorm:"not null;uniqueIndex:idx_game_round" json:"gameID"`
 	Status      string       `gorm:"size:50;not null" json:"status"`
-	Tables      []*GameTable `gorm:"foreignKey:RoundID" json:"tables,omitempty"`
+	Tables      []*GameTable `gorm:"foreignKey:RoundID" json:"table,omitempty"`
 }
 
 type GameTable struct {
