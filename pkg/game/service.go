@@ -2,8 +2,11 @@ package game
 
 import (
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/henok321/knobel-manager-service/pkg/entity"
+	"github.com/henok321/knobel-manager-service/pkg/setup"
 	"gorm.io/gorm"
 )
 
@@ -13,6 +16,7 @@ type GamesService interface {
 	CreateGame(sub string, game *GameRequest) (entity.Game, error)
 	UpdateGame(id uint, sub string, game GameRequest) (entity.Game, error)
 	DeleteGame(id uint, sub string) error
+	AssignTables(gameID uint) error
 }
 
 type gamesService struct {
@@ -91,4 +95,52 @@ func (s *gamesService) DeleteGame(id uint, sub string) error {
 		return entity.ErrorNotOwner
 	}
 	return s.repo.DeleteGame(id)
+}
+
+func (s *gamesService) AssignTables(gameID uint) error {
+	game, _ := s.repo.FindByID(gameID)
+	teams := map[int][]int{}
+
+	for _, team := range game.Teams {
+		for _, player := range team.Players {
+			teams[int(team.ID)] = append(teams[int(team.ID)], int(player.ID))
+		}
+	}
+
+	for i := 0; i < int(game.NumberOfRounds); i++ {
+		tables, err := setup.AssignTables(teams, int(game.TeamSize), int(game.TableSize), time.Now().Unix())
+
+		if err != nil {
+			return entity.ErrorTableAssignment
+		}
+
+		round := entity.Round{
+			RoundNumber: uint(i + 1),
+			GameID:      gameID,
+		}
+
+		round, err = s.repo.CreateRound(&round)
+
+		if err != nil {
+			return fmt.Errorf("cannot create round %w", err)
+		}
+
+		gameTables := make([]entity.GameTable, 0, len(tables))
+
+		for tableNumber, players := range tables {
+			gameTable := entity.GameTable{TableNumber: uint(tableNumber), RoundID: round.ID}
+			for _, playerID := range players {
+				gameTable.Players = append(gameTable.Players, &entity.Player{ID: uint(playerID.ID)})
+			}
+			gameTables = append(gameTables, gameTable)
+		}
+		err = s.repo.CreateGameTables(gameTables)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+
 }

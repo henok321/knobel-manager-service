@@ -10,6 +10,8 @@ type GamesRepository interface {
 	FindByID(id uint) (entity.Game, error)
 	CreateOrUpdateGame(game *entity.Game) (entity.Game, error)
 	DeleteGame(id uint) error
+	CreateRound(round *entity.Round) (entity.Round, error)
+	CreateGameTables(gameTables []entity.GameTable) error
 }
 
 type gamesRepository struct {
@@ -30,7 +32,7 @@ func (r *gamesRepository) FindAllByOwner(sub string) ([]entity.Game, error) {
 		Preload("Rounds.Tables.Scores").
 		Preload("Rounds").
 		Preload("Teams").
-		Preload("Teams").
+		Preload("Teams.Players").
 		Preload("Owners").
 		Find(&games).Error
 	if err != nil {
@@ -73,5 +75,22 @@ func (r *gamesRepository) DeleteGame(id uint) error {
 		return err
 	}
 
+	return nil
+}
+
+func (r *gamesRepository) CreateRound(round *entity.Round) (entity.Round, error) {
+	err := r.db.Save(round).Error
+	if err != nil {
+		return entity.Round{}, err
+	}
+	return *round, nil
+}
+
+func (r *gamesRepository) CreateGameTables(gameTables []entity.GameTable) error {
+	err := r.db.Save(gameTables).Error
+
+	if err != nil {
+		return err
+	}
 	return nil
 }

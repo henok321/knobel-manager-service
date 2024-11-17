@@ -11,6 +11,7 @@ var ErrorGameNotFound = errors.New("game not found")
 var ErrorTeamNotFound = errors.New("team not found")
 var ErrorPlayerNotFound = errors.New("player not found")
 var ErrorNotOwner = errors.New("user is not the owner of the requested resource")
+var ErrorTableAssignment = errors.New("cannot not assign players to tables")
 
 type GameStatus string
 
@@ -91,16 +92,16 @@ type Score struct {
 	PlayerID  uint       `gorm:"not null;uniqueIndex:idx_player_table" json:"playerID"`
 	TableID   uint       `gorm:"not null;uniqueIndex:idx_player_table" json:"tableID"`
 	Score     int        `gorm:"not null" json:"score"`
-	Player    *Player    `gorm:"foreignKey:PlayerID" json:"player,omitempty"`
+	Players   []*Player  `gorm:"many2many:table_players" json:"players,omitempty"`
 	GameTable *GameTable `gorm:"foreignKey:TableID" json:"gameTable,omitempty"`
 }
 
 type TablePlayer struct {
-	TableID  uint `gorm:"primaryKey" json:"tableID"`
-	PlayerID uint `gorm:"primaryKey" json:"playerID"`
+	TableID  uint `gorm:"primaryKey;column:game_table_id" json:"tableID"`
+	PlayerID uint `gorm:"primaryKey;column:player_id" json:"playerID"`
 }
 
-// **Add TableName() method for TablePlayer, since the default pluralization might not match 'table_players'**
+// **Add TableName() method for TablePlayer, since the default pluralization might not setup 'table_players'**
 func (TablePlayer) TableName() string {
 	return "table_players"
 }

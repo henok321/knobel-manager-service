@@ -1,4 +1,4 @@
-package match
+package setup
 
 import (
 	"encoding/json"
@@ -126,6 +126,8 @@ func TestAssignTables(t *testing.T) {
 			if tt.err {
 				assert.Error(t, err, "Should fail because of expected error")
 			} else {
+
+				assert.NoError(t, err, "Assignment should not throw error")
 				gotJson, err := json.Marshal(got)
 
 				assert.NoError(t, err, "Could not parse result to json")
