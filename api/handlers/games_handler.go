@@ -18,20 +18,21 @@ type GamesHandler interface {
 	CreateGame(c *gin.Context)
 	UpdateGame(c *gin.Context)
 	DeleteGame(c *gin.Context)
+	GameSetup(c *gin.Context)
 }
 
 type gamesHandler struct {
-	service game.GamesService
+	gamesService game.GamesService
 }
 
-func NewGamesHandler(service game.GamesService) GamesHandler {
-	return &gamesHandler{service}
+func NewGamesHandler(gamesService game.GamesService) GamesHandler {
+	return &gamesHandler{gamesService}
 }
 
 func (h *gamesHandler) GetGames(c *gin.Context) {
 	sub := c.GetStringMap("user")["sub"].(string)
 
-	games, err := h.service.FindAllByOwner(sub)
+	games, err := h.gamesService.FindAllByOwner(sub)
 
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -50,7 +51,7 @@ func (h *gamesHandler) GetGameByID(c *gin.Context) {
 		return
 	}
 
-	gameById, err := h.service.FindByID(uint(gameID), sub)
+	gameById, err := h.gamesService.FindByID(uint(gameID), sub)
 
 	if err != nil {
 		switch {
@@ -78,7 +79,7 @@ func (h *gamesHandler) CreateGame(c *gin.Context) {
 		return
 	}
 
-	createdGame, err := h.service.CreateGame(sub, &gameCreateRequest)
+	createdGame, err := h.gamesService.CreateGame(sub, &gameCreateRequest)
 
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -105,7 +106,7 @@ func (h *gamesHandler) UpdateGame(c *gin.Context) {
 		return
 	}
 
-	updatedGame, err := h.service.UpdateGame(uint(gameID), sub, gameUpdateRequest)
+	updatedGame, err := h.gamesService.UpdateGame(uint(gameID), sub, gameUpdateRequest)
 
 	if err != nil {
 		switch {
@@ -130,7 +131,7 @@ func (h *gamesHandler) DeleteGame(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.DeleteGame(uint(gameID), sub); err != nil {
+	if err := h.gamesService.DeleteGame(uint(gameID), sub); err != nil {
 		switch {
 		case errors.Is(err, entity.ErrorNotOwner):
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
@@ -142,4 +143,23 @@ func (h *gamesHandler) DeleteGame(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+func (h *gamesHandler) GameSetup(c *gin.Context) {
+	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
+
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	err = h.gamesService.AssignTables(uint(gameID))
+
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Header("Location", "/games/"+strconv.Itoa(int(gameID))+"/tables")
+	c.Status(http.StatusCreated)
 }

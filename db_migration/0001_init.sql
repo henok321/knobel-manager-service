@@ -84,13 +84,13 @@ CREATE INDEX idx_game_tables_round_id ON game_tables (round_id);
 -- Table: table_players
 CREATE TABLE table_players
 (
-    table_id  INTEGER NOT NULL REFERENCES game_tables (id) ON DELETE CASCADE,
+    game_table_id  INTEGER NOT NULL REFERENCES game_tables (id) ON DELETE CASCADE,
     player_id INTEGER NOT NULL REFERENCES players (id) ON DELETE CASCADE,
-    PRIMARY KEY (table_id, player_id)
+    PRIMARY KEY (game_table_id, player_id)
 );
 
 -- Indexes on table_players
-CREATE INDEX idx_table_players_table_id ON table_players (table_id);
+CREATE INDEX idx_table_players_game_table_id ON table_players (game_table_id);
 CREATE INDEX idx_table_players_player_id ON table_players (player_id);
 
 -- Table: scores

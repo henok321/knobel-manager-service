@@ -28,6 +28,9 @@ func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesH
 	authenticated.PUT("/games/:gameID", gamesHandler.UpdateGame)
 	authenticated.DELETE("/games/:gameID", gamesHandler.DeleteGame)
 
+	// game setup
+	authenticated.POST("games/:gameID/setup", gamesHandler.GameSetup)
+
 	// teams routes
 	authenticated.POST("/games/:gameID/teams/", teamsHandler.CreateTeam)
 	authenticated.PUT("/games/:gameID/teams/:teamID", teamsHandler.UpdateTeam)
@@ -39,10 +42,7 @@ func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesH
 	authenticated.DELETE("/games/:gameID/teams/:teamID/players/:playerID", playersHandler.DeletePlayer)
 
 	// table routes
-	authenticated.GET("/games/:gameID/tables", func(context *gin.Context) {
-	})
-	authenticated.GET("/games/:gameID/tables/:tableID", func(context *gin.Context) {
-
-	})
+	authenticated.GET("/games/:gameID/tables", func(context *gin.Context) {})
+	authenticated.GET("/games/:gameID/tables/:tableID", func(context *gin.Context) {})
 
 }
