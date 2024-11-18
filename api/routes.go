@@ -6,7 +6,7 @@ import (
 	"github.com/henok321/knobel-manager-service/api/middleware"
 )
 
-func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesHandler handlers.GamesHandler, teamsHandler handlers.TeamsHandler, playersHandler handlers.PlayersHandler) {
+func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesHandler handlers.GamesHandler, teamsHandler handlers.TeamsHandler, playersHandler handlers.PlayersHandler, tablesHandler handlers.TablesHandler) {
 	// Unauthenticated routes
 	unauthenticated := router
 	unauthenticated.Use(middleware.RateLimiterMiddleware(20, 100))
@@ -42,7 +42,7 @@ func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesH
 	authenticated.DELETE("/games/:gameID/teams/:teamID/players/:playerID", playersHandler.DeletePlayer)
 
 	// table routes
-	authenticated.GET("/games/:gameID/tables", func(context *gin.Context) {})
-	authenticated.GET("/games/:gameID/tables/:tableID", func(context *gin.Context) {})
+	authenticated.GET("/games/:gameID/rounds/:roundNumber/tables", tablesHandler.GetTables)
+	authenticated.GET("/games/:gameID/rounds/:roundNumber/tables/:tableNumber", tablesHandler.GetTable)
 
 }
