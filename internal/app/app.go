@@ -17,6 +17,7 @@ type App struct {
 	GamesHandler   handlers.GamesHandler
 	TeamsHandler   handlers.TeamsHandler
 	PlayersHandler handlers.PlayersHandler
+	TablesHandler  handlers.TablesHandler
 }
 
 func (app *App) Initialize(authMiddleware gin.HandlerFunc) {
@@ -26,7 +27,8 @@ func (app *App) Initialize(authMiddleware gin.HandlerFunc) {
 	app.GamesHandler = handlers.NewGamesHandler(game.InitializeGameModule(app.DB))
 	app.TeamsHandler = handlers.NewTeamsHandler(team.InitializeTeamsModule(app.DB))
 	app.PlayersHandler = handlers.NewPlayersHandler(player.InitializePlayerModule(app.DB))
+	app.TablesHandler = handlers.NewTablesHandler(game.InitializeGameModule(app.DB))
 
 	app.Router = gin.Default()
-	api.InitializeRoutes(app.Router, authMiddleware, app.GamesHandler, app.TeamsHandler, app.PlayersHandler)
+	api.InitializeRoutes(app.Router, authMiddleware, app.GamesHandler, app.TeamsHandler, app.PlayersHandler, app.TablesHandler)
 }
