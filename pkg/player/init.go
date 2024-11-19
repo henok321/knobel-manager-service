@@ -6,5 +6,5 @@ import (
 )
 
 func InitializePlayerModule(db *gorm.DB) PlayersService {
-	return playersService{playersRepo: NewPlayersRepository(db), teamsRepo: team.NewTeamsRepository(db)}
+	return NewPlayersService(NewPlayersRepository(db), team.NewTeamsRepository(db))
 }
