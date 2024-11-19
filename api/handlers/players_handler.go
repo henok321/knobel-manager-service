@@ -97,9 +97,10 @@ func (h playersHandler) UpdatePlayer(c *gin.Context) {
 	updatedPlayer, err := h.playersService.UpdatePlayer(uint(playerID), request, sub)
 
 	if err != nil {
-		if errors.Is(err, entity.ErrorTeamNotFound) || errors.Is(err, entity.ErrorPlayerNotFound) {
+		switch {
+		case errors.Is(err, entity.ErrorTeamNotFound), errors.Is(err, entity.ErrorPlayerNotFound):
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		} else {
+		default:
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 		return

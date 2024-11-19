@@ -1,6 +1,8 @@
 package app
 
 import (
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"github.com/henok321/knobel-manager-service/api"
 	"github.com/henok321/knobel-manager-service/api/handlers"
@@ -21,8 +23,12 @@ type App struct {
 }
 
 func (app *App) Initialize(authMiddleware gin.HandlerFunc) {
+	var err error
+	app.DB, err = db.Connect()
 
-	app.DB, _ = db.Connect()
+	if err != nil {
+		log.Fatalln("Starting application failed, cannot start connect to database", err)
+	}
 
 	app.GamesHandler = handlers.NewGamesHandler(game.InitializeGameModule(app.DB))
 	app.TeamsHandler = handlers.NewTeamsHandler(team.InitializeTeamsModule(app.DB))
