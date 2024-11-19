@@ -66,6 +66,26 @@ func TestTeams(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
 			},
 		},
+		"Update team game not found": {
+			method:             "PUT",
+			endpoint:           "/games/2/teams/1",
+			requestBody:        `{"name":"Team 1 updated"}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			expectedStatusCode: http.StatusNotFound,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
+			},
+		},
+		"Update team not found": {
+			method:             "PUT",
+			endpoint:           "/games/1/teams/2",
+			requestBody:        `{"name":"Team 2 updated"}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			expectedStatusCode: http.StatusNotFound,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
+			},
+		},
 		"Delete team": {
 			method:             "DELETE",
 			endpoint:           "/games/1/teams/1",
@@ -75,9 +95,9 @@ func TestTeams(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
 			},
 		},
-		"Delete team not found": {
+		"Delete team game not found": {
 			method:             "DELETE",
-			endpoint:           "/games/1/teams/1",
+			endpoint:           "/games/2/teams/1",
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 			expectedStatusCode: http.StatusNotFound,
 			setup: func(db *sql.DB) {

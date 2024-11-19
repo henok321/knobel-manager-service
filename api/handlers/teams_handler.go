@@ -106,7 +106,7 @@ func (h *teamsHandler) DeleteTeam(c *gin.Context) {
 	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid teamID"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid gameID"})
 		return
 	}
 
@@ -123,10 +123,13 @@ func (h *teamsHandler) DeleteTeam(c *gin.Context) {
 		switch {
 		case errors.Is(err, entity.ErrorNotOwner):
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
-		case errors.Is(err, entity.ErrorTeamNotFound):
+			return
+		case errors.Is(err, entity.ErrorTeamNotFound), errors.Is(err, entity.ErrorGameNotFound):
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
 		default:
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
 		}
 	}
 
