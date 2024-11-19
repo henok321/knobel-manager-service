@@ -84,8 +84,6 @@ func (h *teamsHandler) UpdateTeam(c *gin.Context) {
 	updatedTeam, err := h.service.UpdateTeam(uint(gameID), sub, uint(teamID), request)
 
 	if err != nil {
-		// entity.ErrorNotOwner, entity.ErrorGameNotFound,entity.ErrorTeamNotFound
-
 		switch {
 		case errors.Is(err, entity.ErrorNotOwner):
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
