@@ -44,16 +44,15 @@ func (t tablesHandler) GetTables(c *gin.Context) {
 	gameById, err := t.gamesService.FindByID(uint(gameID), sub)
 
 	if err != nil {
-		if errors.Is(err, entity.ErrorNotOwner) {
+		switch {
+		case errors.Is(err, entity.ErrorNotOwner):
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "forbidden"})
-			return
-		} else if errors.Is(err, entity.ErrorGameNotFound) {
+		case errors.Is(err, entity.ErrorGameNotFound):
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "game not found"})
-			return
-		} else {
+		default:
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
 		}
+		return
 	}
 
 	for _, round := range gameById.Rounds {
@@ -93,13 +92,14 @@ func (t tablesHandler) GetTable(c *gin.Context) {
 	gameById, err := t.gamesService.FindByID(uint(gameID), sub)
 
 	if err != nil {
-		if errors.Is(err, entity.ErrorNotOwner) {
+		switch {
+		case errors.Is(err, entity.ErrorNotOwner):
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "forbidden"})
 			return
-		} else if errors.Is(err, entity.ErrorGameNotFound) {
+		case errors.Is(err, entity.ErrorGameNotFound):
 			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "game not found"})
 			return
-		} else {
+		default:
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
