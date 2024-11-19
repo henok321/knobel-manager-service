@@ -4,14 +4,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/henok321/knobel-manager-service/api/handlers"
 	"github.com/henok321/knobel-manager-service/api/middleware"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesHandler handlers.GamesHandler, teamsHandler handlers.TeamsHandler, playersHandler handlers.PlayersHandler, tablesHandler handlers.TablesHandler) {
 	// Unauthenticated routes
 	unauthenticated := router
 	unauthenticated.Use(middleware.RateLimiterMiddleware(20, 100))
+
 	// health check
 	unauthenticated.GET("/health", handlers.HealthCheck)
+	unauthenticated.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// openapi
 	router.StaticFile("/openapi.yaml", "./openapi.yaml")
@@ -20,6 +23,8 @@ func InitializeRoutes(router *gin.Engine, authMiddleware gin.HandlerFunc, gamesH
 	// Authenticated routes
 	authenticated := router.Group("/")
 	authenticated.Use(middleware.RateLimiterMiddleware(20, 100), authMiddleware)
+	authenticated.Use(middleware.Metrics())
+	authenticated.Use(middleware.RequestLogging())
 
 	// games routes
 	authenticated.GET("/games/", gamesHandler.GetGames)

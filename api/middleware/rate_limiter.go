@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type RateLimiter struct {
+type rateLimiter struct {
 	rate      int
 	burst     int
 	tokens    int
@@ -16,8 +16,8 @@ type RateLimiter struct {
 	mu        sync.Mutex
 }
 
-func NewRateLimiter(rate int, burst int) *RateLimiter {
-	return &RateLimiter{
+func newRateLimiter(rate int, burst int) *rateLimiter {
+	return &rateLimiter{
 		rate:      rate,
 		burst:     burst,
 		tokens:    burst,
@@ -25,7 +25,7 @@ func NewRateLimiter(rate int, burst int) *RateLimiter {
 	}
 }
 
-func (rl *RateLimiter) Allow() bool {
+func (rl *rateLimiter) allow() bool {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
@@ -47,10 +47,10 @@ func (rl *RateLimiter) Allow() bool {
 }
 
 func RateLimiterMiddleware(rate int, burst int) gin.HandlerFunc {
-	limiter := NewRateLimiter(rate, burst)
+	limiter := newRateLimiter(rate, burst)
 
 	return func(c *gin.Context) {
-		if !limiter.Allow() {
+		if !limiter.allow() {
 			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{"error": "too many requests"})
 			return
 		}
