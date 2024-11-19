@@ -65,6 +65,28 @@ func TestTables(t *testing.T) {
 
 			},
 		},
+		"get tables invalid round number": {
+			method:             "GET",
+			endpoint:           "/games/1/rounds/invalid/tables",
+			expectedStatusCode: http.StatusBadRequest,
+
+			requestHeaders: map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+
+			},
+		},
+		"get tables invalid game id": {
+			method:             "GET",
+			endpoint:           "/games/invalid/rounds/1/tables",
+			expectedStatusCode: http.StatusBadRequest,
+
+			requestHeaders: map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+
+			},
+		},
 		"get table for gameID 1 and round number 2 by number 1": {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/1/tables/1",
@@ -113,6 +135,39 @@ func TestTables(t *testing.T) {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/1/tables/40",
 			expectedStatusCode: http.StatusNotFound,
+
+			requestHeaders: map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+
+			},
+		},
+		"get table by number with invalid game id": {
+			method:             "GET",
+			endpoint:           "/games/invalid/rounds/1/tables/invalid",
+			expectedStatusCode: http.StatusBadRequest,
+
+			requestHeaders: map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+
+			},
+		},
+		"get table by number with invalid round number": {
+			method:             "GET",
+			endpoint:           "/games/1/rounds/invalid/tables/1",
+			expectedStatusCode: http.StatusBadRequest,
+
+			requestHeaders: map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+
+			},
+		},
+		"get table by number with invalid table number": {
+			method:             "GET",
+			endpoint:           "/games/1/rounds/1/tables/invalid",
+			expectedStatusCode: http.StatusBadRequest,
 
 			requestHeaders: map[string]string{"Authorization": "sub-1"},
 			setup: func(db *sql.DB) {
