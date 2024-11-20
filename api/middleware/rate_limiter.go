@@ -46,7 +46,7 @@ func (rl *rateLimiter) allow() bool {
 	return false
 }
 
-func RateLimiterMiddleware(rate int, burst int) gin.HandlerFunc {
+func RateLimiter(rate int, burst int) gin.HandlerFunc {
 	limiter := newRateLimiter(rate, burst)
 
 	return func(c *gin.Context) {
