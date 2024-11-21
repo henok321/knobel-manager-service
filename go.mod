@@ -6,7 +6,7 @@ require (
 	firebase.google.com/go/v4 v4.15.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/lib/pq v1.10.9
-	github.com/pressly/goose/v3 v3.22.1
+	github.com/pressly/goose/v3 v3.23.0
 	github.com/prometheus/client_golang v1.20.5
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
