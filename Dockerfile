@@ -8,8 +8,9 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -o knobel-manager-service -a -ldflags="-s -w" -installsuffix cgo ./cmd/
-
+RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
+    go build -o knobel-manager-service \
+    -a -ldflags="-s -w -extldflags '-static'" ./cmd/
 FROM debian:bookworm-slim
 
 RUN apt-get update && \
