@@ -28,27 +28,33 @@ func validInput(teams map[int][]int, teamSize int, tableSize int) bool {
 	return true
 }
 
-func AssignTables(teams map[int][]int, teamSize int, tableSize int, seed int64) (map[int][]player, error) {
+type TeamSetup struct {
+	Teams     map[int][]int
+	TeamSize  int
+	TableSize int
+}
+
+func AssignTables(teamSetup TeamSetup, seed int64) (map[int][]player, error) {
 	for {
-		if !validInput(teams, teamSize, tableSize) {
+		if !validInput(teamSetup.Teams, teamSetup.TeamSize, teamSetup.TableSize) {
 			return nil, fmt.Errorf("Invalid input")
 		}
 
-		numberOfTeams := len(teams)
-		numberOfPlayers := teamSize * numberOfTeams
+		numberOfTeams := len(teamSetup.Teams)
+		numberOfPlayers := teamSetup.TeamSize * numberOfTeams
 
 		playersToAssign := make([]player, 0, numberOfPlayers)
 
 		teamIDs := make([]int, 0, numberOfTeams)
 
-		for id := range teams {
+		for id := range teamSetup.Teams {
 			teamIDs = append(teamIDs, id)
 		}
 
 		sort.Ints(teamIDs)
 
 		for _, teamID := range teamIDs {
-			memberIDs := teams[teamID]
+			memberIDs := teamSetup.Teams[teamID]
 			teamMembers := make([]player, 0, len(memberIDs))
 			for _, id := range memberIDs {
 				teamMembers = append(teamMembers, player{
@@ -65,22 +71,22 @@ func AssignTables(teams map[int][]int, teamSize int, tableSize int, seed int64) 
 			playersToAssign[i], playersToAssign[j] = playersToAssign[j], playersToAssign[i]
 		})
 
-		numberOfTables := numberOfPlayers / tableSize
+		numberOfTables := numberOfPlayers / teamSetup.TableSize
 
 		tables := make(map[int][]player, numberOfTables)
 		for i := 0; i < numberOfTables; i++ {
-			tables[i] = make([]player, 0, tableSize)
+			tables[i] = make([]player, 0, teamSetup.TableSize)
 		}
 
 		tableIDs := make([]int, 0, numberOfTables)
 
-		for tableID := range teams {
+		for tableID := range teamSetup.Teams {
 			tableIDs = append(tableIDs, tableID)
 		}
 
 		sort.Ints(tableIDs)
 
-		for i := 0; i < tableSize; i++ {
+		for i := 0; i < teamSetup.TableSize; i++ {
 			for tableID := range tableIDs {
 				assignedToTable := tables[tableID]
 				for i, playerToAssign := range playersToAssign {
