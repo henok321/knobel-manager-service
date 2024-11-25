@@ -3,34 +3,37 @@ package app
 import (
 	"net/http"
 
+	"gorm.io/gorm"
+
 	"github.com/henok321/knobel-manager-service/api/handlers"
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/pkg/game"
-	"gorm.io/gorm"
 )
 
 type App struct {
-	DB *gorm.DB
+	Database       *gorm.DB
+	AuthMiddleware func(next http.Handler) http.Handler
+	Router         *http.ServeMux
 }
 
-func (app *App) Initialize(authMiddleware func(next http.Handler) http.Handler) http.Handler {
+func (app *App) Initialize() http.Handler {
 
-	gamesHandler := handlers.NewGamesHandler(game.InitializeGameModule(app.DB))
+	gamesHandler := handlers.NewGamesHandler(game.InitializeGameModule(app.Database))
 
 	/*teamHandler := handlers.NewTeamsHandler(team.InitializeTeamsModule(app.DB))
 	playerHandler :=   handlers.NewPlayersHandler(player.InitializePlayerModule(app.DB))
 	app.TablesHandler = handlers.NewTablesHandler(game.InitializeGameModule(app.DB))
 	app.Router = http.NewServeMux()*/
 
-	router := http.NewServeMux()
+	// health
+	app.Router.Handle("GET /health", http.HandlerFunc(handlers.HealthCheck))
 
-	router.Handle("GET /health", http.HandlerFunc(handlers.HealthCheck))
+	// games
+	app.Router.Handle("GET /games", app.AuthMiddleware(http.HandlerFunc(gamesHandler.GetGames)))
+	app.Router.Handle("GET /games/{gameID}", app.AuthMiddleware(http.HandlerFunc(gamesHandler.GetGameByID)))
+	app.Router.Handle("POST /games", app.AuthMiddleware(http.HandlerFunc(gamesHandler.CreateGame)))
+	app.Router.Handle("PUT /games/{gameID}", app.AuthMiddleware(http.HandlerFunc(gamesHandler.UpdateGame)))
+	app.Router.Handle("DELETE /games/{gameID}", app.AuthMiddleware(http.HandlerFunc(gamesHandler.DeleteGame)))
 
-	router.Handle("GET /games", authMiddleware(http.HandlerFunc(gamesHandler.GetGames)))
-	router.Handle("GET /games/{gameID}", authMiddleware(http.HandlerFunc(gamesHandler.GetGameByID)))
-	router.Handle("POST /games", authMiddleware(http.HandlerFunc(gamesHandler.CreateGame)))
-	router.Handle("PUT /games/{gameID}", authMiddleware(http.HandlerFunc(gamesHandler.UpdateGame)))
-	router.Handle("DELETE /games/{gameID}", authMiddleware(http.HandlerFunc(gamesHandler.DeleteGame)))
-
-	return middleware.RequestLogging(router)
+	return middleware.RequestLogging(app.Router)
 }

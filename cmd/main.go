@@ -6,10 +6,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/henok321/knobel-manager-service/api/middleware"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/internal/app"
 	log "github.com/sirupsen/logrus"
 
@@ -36,17 +36,19 @@ func main() {
 	}
 
 	appInstance := app.App{
-		DB: database,
+		Database:       database,
+		Router:         http.NewServeMux(),
+		AuthMiddleware: middleware.Authentication,
 	}
 
-	router := appInstance.Initialize(middleware.Authentication)
+	appInstance.Initialize()
 
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", 8080),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
-		Handler:      router,
+		Handler:      appInstance.Router,
 	}
 
 	log.Infof("Starting server on port %d", 8080)

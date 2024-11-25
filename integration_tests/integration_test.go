@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+
+	pg "gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
 	"io"
 	"log"
 	"net/http"
@@ -107,7 +111,7 @@ func mockAuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		userContext := middleware.User{
+		userContext := &middleware.User{
 			Sub:   sub,
 			Email: "mock@example.org",
 		}
@@ -118,9 +122,22 @@ func mockAuthMiddleware(next http.Handler) http.Handler {
 }
 
 func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
-	testInstance := &app.App{}
-	router := testInstance.Initialize(mockAuthMiddleware)
-	server := httptest.NewServer(router)
+
+	url := os.Getenv("DATABASE_URL")
+	database, err := gorm.Open(pg.Open(url), &gorm.Config{})
+
+	if err != nil {
+		log.Fatalln("Starting application failed, cannot start connect to database", err)
+	}
+
+	testInstance := &app.App{
+		AuthMiddleware: mockAuthMiddleware,
+		Router:         http.NewServeMux(),
+		Database:       database,
+	}
+
+	testInstance.Initialize()
+	server := httptest.NewServer(testInstance.Router)
 	teardown := func(*httptest.Server) {
 		server.Close()
 	}

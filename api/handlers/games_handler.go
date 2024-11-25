@@ -15,11 +15,11 @@ import (
 )
 
 type gameResponse struct {
-	Game entity.Game
+	Game entity.Game `json:"game"`
 }
 
 type gamesResponse struct {
-	Games []entity.Game
+	Games []entity.Game `json:"games"`
 }
 
 type GamesHandler interface {
@@ -40,14 +40,9 @@ func NewGamesHandler(gamesService game.GamesService) GamesHandler {
 }
 
 func (h *gamesHandler) GetGames(writer http.ResponseWriter, request *http.Request) {
-	userContext, err := middleware.GetUserFromCtx(request.Context())
-
-	if err != nil {
-		if errors.Is(err, middleware.ErrUserContextNotFound) {
-			http.Error(writer, "User context not found", http.StatusUnauthorized)
-			return
-		}
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	if !ok {
+		http.Error(writer, `{'error': 'User context not found'}`, http.StatusUnauthorized)
 		return
 	}
 
@@ -56,7 +51,7 @@ func (h *gamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 	games, err := h.gamesService.FindAllByOwner(sub)
 
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		http.Error(writer, "{'error': '"+err.Error()+"'}", http.StatusInternalServerError)
 		return
 	}
 
@@ -73,14 +68,9 @@ func (h *gamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 }
 
 func (h *gamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Request) {
-	userContext, err := middleware.GetUserFromCtx(request.Context())
-
-	if err != nil {
-		if errors.Is(err, middleware.ErrUserContextNotFound) {
-			http.Error(writer, "User context not found", http.StatusUnauthorized)
-			return
-		}
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	if !ok {
+		http.Error(writer, "{'error': 'User context not found'}", http.StatusUnauthorized)
 		return
 	}
 
@@ -89,7 +79,7 @@ func (h *gamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
 
 	if err != nil {
-		http.Error(writer, "Invalid gameID", http.StatusBadRequest)
+		http.Error(writer, `{'error':'Invalid gameID'}`, http.StatusBadRequest)
 		return
 	}
 
@@ -98,12 +88,12 @@ func (h *gamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 	if err != nil {
 		switch {
 		case errors.Is(err, entity.ErrorNotOwner):
-			http.Error(writer, "Forbidden", http.StatusForbidden)
+			http.Error(writer, "{'error':'forbidden'}", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
-			http.Error(writer, "Game not found", http.StatusNotFound)
+			http.Error(writer, "{'error':'Game not found'}", http.StatusNotFound)
 		default:
 
-			http.Error(writer, "Internal server error", http.StatusInternalServerError)
+			http.Error(writer, "{'error':'Internal server error'}", http.StatusInternalServerError)
 		}
 		return
 	}
@@ -123,14 +113,9 @@ func (h *gamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 
 func (h *gamesHandler) CreateGame(writer http.ResponseWriter, request *http.Request) {
 
-	userContext, err := middleware.GetUserFromCtx(request.Context())
-
-	if err != nil {
-		if errors.Is(err, middleware.ErrUserContextNotFound) {
-			http.Error(writer, "User context not found", http.StatusUnauthorized)
-			return
-		}
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	if !ok {
+		http.Error(writer, "{'error': 'User context not found'}", http.StatusUnauthorized)
 		return
 	}
 
@@ -139,14 +124,14 @@ func (h *gamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	gameCreateRequest := game.GameRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameCreateRequest); err != nil {
-		http.Error(writer, "Invalid request body", http.StatusBadRequest)
+		http.Error(writer, "{'error': 'Invalid request body'}", http.StatusBadRequest)
 		return
 	}
 
 	createdGame, err := h.gamesService.CreateGame(sub, &gameCreateRequest)
 
 	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
+		http.Error(writer, "{'error': '"+err.Error()+"'}", http.StatusInternalServerError)
 		return
 	}
 
@@ -164,14 +149,9 @@ func (h *gamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 }
 
 func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Request) {
-	userContext, err := middleware.GetUserFromCtx(request.Context())
-
-	if err != nil {
-		if errors.Is(err, middleware.ErrUserContextNotFound) {
-			http.Error(writer, "User context not found", http.StatusUnauthorized)
-			return
-		}
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	if !ok {
+		http.Error(writer, "{'error': 'User context not found'}", http.StatusUnauthorized)
 		return
 	}
 
@@ -181,14 +161,14 @@ func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 
 	if err != nil {
 		// c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		http.Error(writer, "Invalid gameID", http.StatusBadRequest)
+		http.Error(writer, "{'error':'Invalid gameID'}", http.StatusBadRequest)
 		return
 	}
 
 	gameUpdateRequest := game.GameRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameUpdateRequest); err != nil {
-		http.Error(writer, "Invalid request body", http.StatusBadRequest)
+		http.Error(writer, "{'error': 'Invalid request body'}", http.StatusBadRequest)
 		return
 	}
 
@@ -197,11 +177,11 @@ func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 	if err != nil {
 		switch {
 		case errors.Is(err, entity.ErrorNotOwner):
-			http.Error(writer, "Forbidden", http.StatusForbidden)
+			http.Error(writer, "{'error': 'forbidden'}", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
-			http.Error(writer, "Game not found", http.StatusNotFound)
+			http.Error(writer, "{'error': 'Game not found'}", http.StatusNotFound)
 		default:
-			http.Error(writer, "Internal server error", http.StatusInternalServerError)
+			http.Error(writer, "{'error': 'Internal server error'}", http.StatusInternalServerError)
 		}
 		return
 	}
@@ -214,14 +194,9 @@ func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 }
 
 func (h *gamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Request) {
-	userContext, err := middleware.GetUserFromCtx(request.Context())
-
-	if err != nil {
-		if errors.Is(err, middleware.ErrUserContextNotFound) {
-			http.Error(writer, "User context not found", http.StatusUnauthorized)
-			return
-		}
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	if !ok {
+		http.Error(writer, "{'error': 'User context not found'}", http.StatusUnauthorized)
 		return
 	}
 
@@ -229,20 +204,20 @@ func (h *gamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 
 	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
 	if err != nil {
-		http.Error(writer, "Invalid gameID", http.StatusBadRequest)
+		http.Error(writer, "{'error': 'Invalid gameID'}", http.StatusBadRequest)
 		return
 	}
 
 	if err := h.gamesService.DeleteGame(uint(gameID), sub); err != nil {
 		switch {
 		case errors.Is(err, entity.ErrorNotOwner):
-			http.Error(writer, "Forbidden", http.StatusForbidden)
+			http.Error(writer, "{'error': 'forbidden'}", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
 			//	c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			http.Error(writer, "Game not found", http.StatusNotFound)
+			http.Error(writer, "{'error': 'Game not found'}", http.StatusNotFound)
 		default:
 
-			http.Error(writer, "Internal server error", http.StatusInternalServerError)
+			http.Error(writer, "{'error': 'Internal server error'}", http.StatusInternalServerError)
 		}
 		return
 	}
@@ -251,14 +226,36 @@ func (h *gamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 }
 
 func (h *gamesHandler) GameSetup(writer http.ResponseWriter, request *http.Request) {
-	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
-
-	if err != nil {
-		http.Error(writer, "Invalid gameID", http.StatusBadRequest)
+	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	if !ok {
+		http.Error(writer, "{'error': 'User context not found'}", http.StatusUnauthorized)
 		return
 	}
 
-	err = h.gamesService.AssignTables(uint(gameID))
+	sub := userContext.Sub
+
+	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+
+	if err != nil {
+		http.Error(writer, "{'error': 'Invalid gameID'}", http.StatusBadRequest)
+		return
+	}
+
+	gameToAssign, err := h.gamesService.FindByID(uint(gameID), sub)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, entity.ErrorNotOwner):
+			http.Error(writer, "{'error': 'forbidden'}", http.StatusForbidden)
+		case errors.Is(err, entity.ErrorGameNotFound):
+			http.Error(writer, "{'error': 'Game not found'}", http.StatusNotFound)
+		default:
+			http.Error(writer, "{'error': 'Internal server error'}", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	err = h.gamesService.AssignTables(gameToAssign)
 
 	if err != nil {
 		http.Error(writer, "Internal server error", http.StatusInternalServerError)
