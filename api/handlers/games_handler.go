@@ -1,24 +1,34 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
 
+	"github.com/henok321/knobel-manager-service/api/middleware"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 
 	"github.com/henok321/knobel-manager-service/pkg/game"
-
-	"github.com/gin-gonic/gin"
 )
 
+type gameResponse struct {
+	Game entity.Game
+}
+
+type gamesResponse struct {
+	Games []entity.Game
+}
+
 type GamesHandler interface {
-	GetGames(c *gin.Context)
-	GetGameByID(c *gin.Context)
-	CreateGame(c *gin.Context)
-	UpdateGame(c *gin.Context)
-	DeleteGame(c *gin.Context)
-	GameSetup(c *gin.Context)
+	GetGames(writer http.ResponseWriter, request *http.Request)
+	GetGameByID(writer http.ResponseWriter, request *http.Request)
+	CreateGame(writer http.ResponseWriter, request *http.Request)
+	UpdateGame(writer http.ResponseWriter, request *http.Request)
+	DeleteGame(writer http.ResponseWriter, request *http.Request)
+	GameSetup(writer http.ResponseWriter, request *http.Request)
 }
 
 type gamesHandler struct {
@@ -29,25 +39,57 @@ func NewGamesHandler(gamesService game.GamesService) GamesHandler {
 	return &gamesHandler{gamesService}
 }
 
-func (h *gamesHandler) GetGames(c *gin.Context) {
-	sub := c.GetStringMap("user")["sub"].(string)
+func (h *gamesHandler) GetGames(writer http.ResponseWriter, request *http.Request) {
+	userContext, err := middleware.GetUserFromCtx(request.Context())
+
+	if err != nil {
+		if errors.Is(err, middleware.ErrUserContextNotFound) {
+			http.Error(writer, "User context not found", http.StatusUnauthorized)
+			return
+		}
+		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	sub := userContext.Sub
 
 	games, err := h.gamesService.FindAllByOwner(sub)
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"games": games})
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+
+	gamesResponse := gamesResponse{
+		Games: games,
+	}
+
+	if err := json.NewEncoder(writer).Encode(gamesResponse); err != nil {
+		log.Error("Could not write body", "err", err)
+	}
 }
 
-func (h *gamesHandler) GetGameByID(c *gin.Context) {
-	sub := c.GetStringMap("user")["sub"].(string)
-	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
+func (h *gamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Request) {
+	userContext, err := middleware.GetUserFromCtx(request.Context())
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid gameID"})
+		if errors.Is(err, middleware.ErrUserContextNotFound) {
+			http.Error(writer, "User context not found", http.StatusUnauthorized)
+			return
+		}
+		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	sub := userContext.Sub
+
+	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+
+	if err != nil {
+		http.Error(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
@@ -56,53 +98,97 @@ func (h *gamesHandler) GetGameByID(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, entity.ErrorNotOwner):
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			http.Error(writer, "Forbidden", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			http.Error(writer, "Game not found", http.StatusNotFound)
 		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+			http.Error(writer, "Internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"game": gameById})
+	// c.JSON(http.StatusOK, gin.H{"game": gameById})
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+
+	gameResponse := gameResponse{
+		Game: gameById,
+	}
+
+	if err := json.NewEncoder(writer).Encode(gameResponse); err != nil {
+		log.Error("Could not write body", "err", err)
+	}
 }
 
-func (h *gamesHandler) CreateGame(c *gin.Context) {
+func (h *gamesHandler) CreateGame(writer http.ResponseWriter, request *http.Request) {
 
-	sub := c.GetStringMap("user")["sub"].(string)
+	userContext, err := middleware.GetUserFromCtx(request.Context())
+
+	if err != nil {
+		if errors.Is(err, middleware.ErrUserContextNotFound) {
+			http.Error(writer, "User context not found", http.StatusUnauthorized)
+			return
+		}
+		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	sub := userContext.Sub
 
 	gameCreateRequest := game.GameRequest{}
 
-	if err := c.ShouldBindJSON(&gameCreateRequest); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(request.Body).Decode(&gameCreateRequest); err != nil {
+		http.Error(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	createdGame, err := h.gamesService.CreateGame(sub, &gameCreateRequest)
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"game": createdGame})
-	c.Header("Location", "/games/"+strconv.Itoa(int(createdGame.ID)))
+	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set("Location", "/games/"+strconv.Itoa(int(createdGame.ID)))
+	writer.WriteHeader(http.StatusCreated)
+
+	gameResponse := gameResponse{
+		Game: createdGame,
+	}
+
+	if err := json.NewEncoder(writer).Encode(gameResponse); err != nil {
+		log.Error("Could not write body", "err", err)
+	}
 }
 
-func (h *gamesHandler) UpdateGame(c *gin.Context) {
-	sub := c.GetStringMap("user")["sub"].(string)
-	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
+func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Request) {
+	userContext, err := middleware.GetUserFromCtx(request.Context())
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if errors.Is(err, middleware.ErrUserContextNotFound) {
+			http.Error(writer, "User context not found", http.StatusUnauthorized)
+			return
+		}
+		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	sub := userContext.Sub
+
+	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+
+	if err != nil {
+		// c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		http.Error(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
 	gameUpdateRequest := game.GameRequest{}
 
-	if err := c.ShouldBindJSON(&gameUpdateRequest); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(request.Body).Decode(&gameUpdateRequest); err != nil {
+		http.Error(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
@@ -111,69 +197,74 @@ func (h *gamesHandler) UpdateGame(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, entity.ErrorNotOwner):
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			http.Error(writer, "Forbidden", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			http.Error(writer, "Game not found", http.StatusNotFound)
 		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			http.Error(writer, "Internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"game": updatedGame})
+	responseBody := gameResponse{Game: updatedGame}
+
+	if err := json.NewEncoder(writer).Encode(responseBody); err != nil {
+		log.Error("Could not write body", "err", err)
+	}
 }
 
-func (h *gamesHandler) DeleteGame(c *gin.Context) {
-	sub := c.GetStringMap("user")["sub"].(string)
-	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
+func (h *gamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Request) {
+	userContext, err := middleware.GetUserFromCtx(request.Context())
+
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid gameID"})
+		if errors.Is(err, middleware.ErrUserContextNotFound) {
+			http.Error(writer, "User context not found", http.StatusUnauthorized)
+			return
+		}
+		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	sub := userContext.Sub
+
+	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+	if err != nil {
+		http.Error(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
 	if err := h.gamesService.DeleteGame(uint(gameID), sub); err != nil {
 		switch {
 		case errors.Is(err, entity.ErrorNotOwner):
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			http.Error(writer, "Forbidden", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			//	c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			http.Error(writer, "Game not found", http.StatusNotFound)
 		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+			http.Error(writer, "Internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
-	c.Status(http.StatusNoContent)
+
+	writer.WriteHeader(http.StatusNoContent)
 }
 
-func (h *gamesHandler) GameSetup(c *gin.Context) {
-	sub := c.GetStringMap("user")["sub"].(string)
-
-	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
+func (h *gamesHandler) GameSetup(writer http.ResponseWriter, request *http.Request) {
+	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		http.Error(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
-	gameToSetup, err := h.gamesService.FindByID(uint(gameID), sub)
+	err = h.gamesService.AssignTables(uint(gameID))
 
 	if err != nil {
-		switch {
-		case errors.Is(err, entity.ErrorNotOwner):
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
-		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
+		http.Error(writer, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	err = h.gamesService.AssignTables(gameToSetup)
-
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.Header("Location", "/games/"+strconv.Itoa(int(gameID))+"/tables")
-	c.Status(http.StatusCreated)
+	writer.Header().Set("Location", "/games/"+strconv.Itoa(int(gameID))+"/tables")
+	writer.WriteHeader(http.StatusCreated)
 }

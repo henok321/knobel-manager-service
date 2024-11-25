@@ -1,17 +1,18 @@
 package main
 
 import (
+	"fmt"
+	"net/http"
 	"os"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/internal/app"
+	log "github.com/sirupsen/logrus"
+
 	firebaseauth "github.com/henok321/knobel-manager-service/internal/auth"
 )
 
@@ -27,24 +28,30 @@ func main() {
 	log.Infoln("Starting application ...")
 	firebaseauth.InitFirebase()
 
-	database, err := gorm.Open(postgres.Open(os.Getenv("DATABASE_URL")), &gorm.Config{})
+	url := os.Getenv("DATABASE_URL")
+	database, err := gorm.Open(postgres.Open(url), &gorm.Config{})
 
 	if err != nil {
 		log.Fatalln("Starting application failed, cannot start connect to database", err)
 	}
 
-	router := gin.Default()
-
-	instance := &app.App{
-		DB:             database,
-		Router:         router,
-		AuthMiddleware: middleware.Authentication(),
+	appInstance := app.App{
+		DB: database,
 	}
-	instance.Initialize()
 
-	err = instance.Router.Run("0.0.0.0:8080")
+	router := appInstance.Initialize(middleware.Authentication)
 
-	if err != nil {
-		log.Fatalln("Starting application failed, cannot start router instance", err)
+	server := &http.Server{
+		Addr:         fmt.Sprintf(":%d", 8080),
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  15 * time.Second,
+		Handler:      router,
+	}
+
+	log.Infof("Starting server on port %d", 8080)
+
+	if err := server.ListenAndServe(); err != nil {
+		log.WithError(err).Fatal("Error starting server")
 	}
 }
