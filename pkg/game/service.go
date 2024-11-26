@@ -16,7 +16,7 @@ type GamesService interface {
 	CreateGame(sub string, game *GameRequest) (entity.Game, error)
 	UpdateGame(id uint, sub string, game GameRequest) (entity.Game, error)
 	DeleteGame(id uint, sub string) error
-	AssignTables(gameID uint) error
+	AssignTables(game entity.Game) error
 }
 
 type gamesService struct {
@@ -97,8 +97,7 @@ func (s *gamesService) DeleteGame(id uint, sub string) error {
 	return s.repo.DeleteGame(id)
 }
 
-func (s *gamesService) AssignTables(gameID uint) error {
-	game, _ := s.repo.FindByID(gameID)
+func (s *gamesService) AssignTables(game entity.Game) error {
 	teams := map[int][]int{}
 
 	for _, team := range game.Teams {
@@ -116,7 +115,7 @@ func (s *gamesService) AssignTables(gameID uint) error {
 
 		round := entity.Round{
 			RoundNumber: uint(i + 1),
-			GameID:      gameID,
+			GameID:      game.ID,
 		}
 
 		round, err = s.repo.CreateRound(&round)

@@ -146,6 +146,8 @@ func (h *gamesHandler) DeleteGame(c *gin.Context) {
 }
 
 func (h *gamesHandler) GameSetup(c *gin.Context) {
+	sub := c.GetStringMap("user")["sub"].(string)
+
 	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
 
 	if err != nil {
@@ -153,7 +155,19 @@ func (h *gamesHandler) GameSetup(c *gin.Context) {
 		return
 	}
 
-	err = h.gamesService.AssignTables(uint(gameID))
+	gameToSetup, err := h.gamesService.FindByID(uint(gameID), sub)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, entity.ErrorNotOwner):
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		default:
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	err = h.gamesService.AssignTables(gameToSetup)
 
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
