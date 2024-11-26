@@ -20,6 +20,16 @@ func TestGameSetup(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
 			},
 		},
+		"Try to setup game tables with out permissions": {
+			method:             "POST",
+			endpoint:           "/games/1/setup",
+			expectedStatusCode: http.StatusForbidden,
+			expectedHeaders:    map[string]string{"Location": "/games/1/tables"},
+			requestHeaders:     map[string]string{"Authorization": "sub-2"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
+			},
+		},
 	}
 
 	dbConn, teardownDatabase := setupTestDatabase(t)
