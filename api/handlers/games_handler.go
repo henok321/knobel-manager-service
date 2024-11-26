@@ -258,7 +258,7 @@ func (h *gamesHandler) GameSetup(writer http.ResponseWriter, request *http.Reque
 	err = h.gamesService.AssignTables(gameToAssign)
 
 	if err != nil {
-		http.Error(writer, "Internal server error", http.StatusInternalServerError)
+		http.Error(writer, "{'error': 'Internal server error'}", http.StatusInternalServerError)
 		return
 	}
 
