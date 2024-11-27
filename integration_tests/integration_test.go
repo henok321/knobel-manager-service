@@ -13,11 +13,14 @@ import (
 	"testing"
 	"time"
 
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
 	"github.com/gin-gonic/gin"
 	"github.com/henok321/knobel-manager-service/internal/app"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	tcPostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/stretchr/testify/assert"
@@ -118,8 +121,18 @@ func mockAuthMiddleware() gin.HandlerFunc {
 }
 
 func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
-	testInstance := &app.App{}
-	testInstance.Initialize(mockAuthMiddleware())
+	database, err := gorm.Open(postgres.Open(os.Getenv("DATABASE_URL")), &gorm.Config{})
+
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
+
+	testInstance := &app.App{
+		AuthMiddleware: mockAuthMiddleware(),
+		Router:         gin.Default(),
+		DB:             database,
+	}
+	testInstance.Initialize()
 	server := httptest.NewServer(testInstance.Router)
 	teardown := func(*httptest.Server) {
 		server.Close()
@@ -130,7 +143,7 @@ func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 
 func setupTestDatabase(t *testing.T) (string, func()) {
 	ctx := context.Background()
-	pgContainer, err := postgres.Run(ctx, "docker.io/postgres:16-alpine", postgres.WithDatabase("knobel-manager-service"), postgres.WithUsername("test"), postgres.WithPassword("secret"), testcontainers.WithWaitStrategy(wait.ForLog("database system is ready to accept connections").
+	pgContainer, err := tcPostgres.Run(ctx, "docker.io/postgres:16-alpine", tcPostgres.WithDatabase("knobel-manager-service"), tcPostgres.WithUsername("test"), tcPostgres.WithPassword("secret"), testcontainers.WithWaitStrategy(wait.ForLog("database system is ready to accept connections").
 		WithOccurrence(2).WithStartupTimeout(5*time.Second)))
 	if err != nil {
 		t.Fatalf("failed to start container: %v", err)

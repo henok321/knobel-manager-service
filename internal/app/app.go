@@ -1,12 +1,9 @@
 package app
 
 import (
-	"log"
-
 	"github.com/gin-gonic/gin"
-	"github.com/henok321/knobel-manager-service/api"
 	"github.com/henok321/knobel-manager-service/api/handlers"
-	"github.com/henok321/knobel-manager-service/internal/db"
+	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/pkg/game"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 	"github.com/henok321/knobel-manager-service/pkg/team"
@@ -16,25 +13,52 @@ import (
 type App struct {
 	Router         *gin.Engine
 	DB             *gorm.DB
-	GamesHandler   handlers.GamesHandler
-	TeamsHandler   handlers.TeamsHandler
-	PlayersHandler handlers.PlayersHandler
-	TablesHandler  handlers.TablesHandler
+	AuthMiddleware gin.HandlerFunc
 }
 
-func (app *App) Initialize(authMiddleware gin.HandlerFunc) {
-	var err error
-	app.DB, err = db.Connect()
+func (app *App) Initialize() {
+	gamesHandler := handlers.NewGamesHandler(game.InitializeGameModule(app.DB))
+	teamsHandler := handlers.NewTeamsHandler(team.InitializeTeamsModule(app.DB))
+	playersHandler := handlers.NewPlayersHandler(player.InitializePlayerModule(app.DB))
+	tablesHandler := handlers.NewTablesHandler(game.InitializeGameModule(app.DB))
 
-	if err != nil {
-		log.Fatalln("Starting application failed, cannot start connect to database", err)
-	}
+	// Unauthenticated routes
+	unauthenticated := app.Router
+	unauthenticated.Use(middleware.RateLimiter(20, 100))
 
-	app.GamesHandler = handlers.NewGamesHandler(game.InitializeGameModule(app.DB))
-	app.TeamsHandler = handlers.NewTeamsHandler(team.InitializeTeamsModule(app.DB))
-	app.PlayersHandler = handlers.NewPlayersHandler(player.InitializePlayerModule(app.DB))
-	app.TablesHandler = handlers.NewTablesHandler(game.InitializeGameModule(app.DB))
+	// health check
+	unauthenticated.GET("/health", handlers.HealthCheck)
 
-	app.Router = gin.Default()
-	api.InitializeRoutes(app.Router, authMiddleware, app.GamesHandler, app.TeamsHandler, app.PlayersHandler, app.TablesHandler)
+	// openapi
+	app.Router.StaticFile("/openapi.yaml", "./openapi.yaml")
+	app.Router.StaticFile("/docs", "./redoc.html")
+
+	// Authenticated routes
+	authenticated := app.Router.Group("/")
+	authenticated.Use(middleware.RateLimiter(20, 100), app.AuthMiddleware)
+	authenticated.Use(middleware.RequestLogging())
+
+	// games routes
+	authenticated.GET("/games/", gamesHandler.GetGames)
+	authenticated.GET("/games/:gameID", gamesHandler.GetGameByID)
+	authenticated.POST("/games/", gamesHandler.CreateGame)
+	authenticated.PUT("/games/:gameID", gamesHandler.UpdateGame)
+	authenticated.DELETE("/games/:gameID", gamesHandler.DeleteGame)
+
+	// game setup
+	authenticated.POST("games/:gameID/setup", gamesHandler.GameSetup)
+
+	// teams routes
+	authenticated.POST("/games/:gameID/teams/", teamsHandler.CreateTeam)
+	authenticated.PUT("/games/:gameID/teams/:teamID", teamsHandler.UpdateTeam)
+	authenticated.DELETE("/games/:gameID/teams/:teamID", teamsHandler.DeleteTeam)
+
+	// players routes
+	authenticated.POST("/games/:gameID/teams/:teamID/players", playersHandler.CreatePlayer)
+	authenticated.PUT("/games/:gameID/teams/:teamID/players/:playerID", playersHandler.UpdatePlayer)
+	authenticated.DELETE("/games/:gameID/teams/:teamID/players/:playerID", playersHandler.DeletePlayer)
+
+	// table routes
+	authenticated.GET("/games/:gameID/rounds/:roundNumber/tables", tablesHandler.GetTables)
+	authenticated.GET("/games/:gameID/rounds/:roundNumber/tables/:tableNumber", tablesHandler.GetTable)
 }
