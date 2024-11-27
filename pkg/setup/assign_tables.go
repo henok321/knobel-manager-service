@@ -105,7 +105,7 @@ func AssignTables(teamSetup TeamSetup, seed int64) (map[int][]player, error) {
 		if len(playersToAssign) == 0 {
 			return tables, nil
 		} else {
-			seed = seed + 1
+			seed++
 		}
 	}
 }

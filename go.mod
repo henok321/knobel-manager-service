@@ -19,12 +19,12 @@ require (
 require (
 	cel.dev/expr v0.18.0 // indirect
 	cloud.google.com/go v0.116.0 // indirect
-	cloud.google.com/go/auth v0.10.2 // indirect
-	cloud.google.com/go/auth/oauth2adapt v0.2.5 // indirect
+	cloud.google.com/go/auth v0.11.0 // indirect
+	cloud.google.com/go/auth/oauth2adapt v0.2.6 // indirect
 	cloud.google.com/go/compute/metadata v0.5.2 // indirect
 	cloud.google.com/go/firestore v1.17.0 // indirect
 	cloud.google.com/go/iam v1.2.2 // indirect
-	cloud.google.com/go/longrunning v0.6.2 // indirect
+	cloud.google.com/go/longrunning v0.6.3 // indirect
 	cloud.google.com/go/monitoring v1.21.2 // indirect
 	cloud.google.com/go/storage v1.47.0 // indirect
 	dario.cat/mergo v1.0.1 // indirect
@@ -35,7 +35,7 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.49.0 // indirect
 	github.com/MicahParks/keyfunc v1.9.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
-	github.com/bytedance/sonic v1.12.4 // indirect
+	github.com/bytedance/sonic v1.12.5 // indirect
 	github.com/bytedance/sonic/loader v0.2.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
@@ -54,7 +54,7 @@ require (
 	github.com/envoyproxy/go-control-plane v0.13.1 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.1.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.6 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.7 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect

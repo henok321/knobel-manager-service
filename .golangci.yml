@@ -5,6 +5,16 @@ linters-settings:
     simplify: true
   revive:
     ignore-generated-header: true
+  godox:
+    keywords:
+      - TODO
+  gocritic:
+    disable-all: false
+  govet:
+    disable-all: false
+  loggercheck:
+    slog: true
+    logr: true
 
 linters:
   enable:
@@ -15,6 +25,13 @@ linters:
     - revive
     - gocyclo
     - dupl
+    - testifylint
+    - gosimple
+    - gofmt
+    - godox
+    - revive
+    - gocritic
+    - loggercheck
 
 run:
   timeout: 5m

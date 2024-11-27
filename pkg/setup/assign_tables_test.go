@@ -5,6 +5,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -125,16 +127,16 @@ func TestAssignTables(t *testing.T) {
 			got, err := AssignTables(TeamSetup{Teams: tt.args.teams, TeamSize: tt.args.teamSize, TableSize: tt.args.tableSize}, tt.args.seed)
 
 			if tt.err {
-				assert.Error(t, err, "Should fail because of expected error")
+				require.Error(t, err, "Should fail because of expected error")
 			} else {
 
-				assert.NoError(t, err, "Assignment should not throw error")
+				require.NoError(t, err, "Assignment should not throw error")
 				gotJson, err := json.Marshal(got)
 
-				assert.NoError(t, err, "Could not parse result to json")
+				require.NoError(t, err, "Could not parse result to json")
 
 				expectedJson, err := os.ReadFile(tt.want)
-				assert.NoError(t, err, "Could not read expected json")
+				require.NoError(t, err, "Could not read expected json")
 
 				assert.JSONEq(t, string(expectedJson), string(gotJson))
 			}
