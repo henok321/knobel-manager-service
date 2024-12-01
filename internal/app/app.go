@@ -35,5 +35,8 @@ func (app *App) Initialize() http.Handler {
 	app.Router.Handle("PUT /games/{gameID}", app.AuthMiddleware(http.HandlerFunc(gamesHandler.UpdateGame)))
 	app.Router.Handle("DELETE /games/{gameID}", app.AuthMiddleware(http.HandlerFunc(gamesHandler.DeleteGame)))
 
+	// setup
+	app.Router.Handle("POST /games/{gameID}/setup", app.AuthMiddleware(http.HandlerFunc(gamesHandler.GameSetup)))
+
 	return middleware.RequestLogging(app.Router)
 }
