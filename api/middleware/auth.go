@@ -6,22 +6,29 @@ import (
 	"strings"
 
 	firebaseauth "github.com/henok321/knobel-manager-service/internal/auth"
-
-	"github.com/gin-gonic/gin"
 )
 
-func Authentication() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		authorizationHeader := c.GetHeader("Authorization")
+type ContextKey string
+
+const UserContextKey ContextKey = "user"
+
+type User struct {
+	Sub   string
+	Email string
+}
+
+func Authentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+
+		authorizationHeader := request.Header.Get("Authorization")
+
 		if authorizationHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
-			return
+			http.Error(writer, `{"error": "forbidden"}`, http.StatusUnauthorized)
 		}
 
 		tokenParts := strings.Split(authorizationHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization header format"})
-			return
+			http.Error(writer, `{"error": "forbidden"}`, http.StatusUnauthorized)
 		}
 
 		idToken := tokenParts[1]
@@ -29,25 +36,24 @@ func Authentication() gin.HandlerFunc {
 		firebaseApp := firebaseauth.App
 
 		client, err := firebaseApp.Auth(context.Background())
+
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Failed to initialize Firebase Auth client"})
-			return
+			http.Error(writer, `{"error": "forbidden"}`, http.StatusInternalServerError)
 		}
 
 		token, err := client.VerifyIDToken(context.Background(), idToken)
 
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})
-			return
+			http.Error(writer, `{"error": "forbidden"}`, http.StatusUnauthorized)
 		}
 
-		userInfo := map[string]interface{}{
-			"sub":   token.UID,
-			"email": token.Claims["email"],
+		userContext := &User{
+			Sub:   token.UID,
+			Email: token.Claims["email"].(string),
 		}
 
-		c.Set("user", userInfo)
+		ctx := context.WithValue(request.Context(), UserContextKey, userContext)
+		next.ServeHTTP(writer, request.WithContext(ctx))
 
-		c.Next()
-	}
+	})
 }
