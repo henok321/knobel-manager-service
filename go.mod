@@ -7,7 +7,7 @@ require (
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.23.0
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.34.0
 	google.golang.org/api v0.209.0
