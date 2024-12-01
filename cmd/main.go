@@ -1,19 +1,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"time"
 
+	fbadmin "firebase.google.com/go/v4"
+	"google.golang.org/api/option"
+
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
 	"github.com/henok321/knobel-manager-service/internal/app"
-
-	firebaseauth "github.com/henok321/knobel-manager-service/internal/auth"
 )
 
 func init() {
@@ -22,20 +24,37 @@ func init() {
 }
 
 func main() {
-	slog.Info("Starting application ...")
-	firebaseauth.InitFirebase()
+	exitCode := 0
+
+	defer func() {
+		os.Exit(exitCode)
+	}()
+
+	slog.Info("Initialize application")
+
+	firebaseSecret := []byte(os.Getenv("FIREBASE_SECRET"))
+	opt := option.WithCredentialsJSON(firebaseSecret)
+	firebaseApp, err := fbadmin.NewApp(context.Background(), nil, opt)
+
+	if err != nil {
+		slog.Error("Starting application failed, cannot initialize firebase client", "error", err)
+		exitCode = 1
+		return
+	}
 
 	url := os.Getenv("DATABASE_URL")
 	database, err := gorm.Open(postgres.Open(url), &gorm.Config{})
 
 	if err != nil {
-		slog.Error("Starting application failed, cannot start connect to database", "error", err)
+		slog.Error("Starting application failed, cannot connect to database", "error", err)
+		exitCode = 1
+		return
 	}
 
 	appInstance := app.App{
 		Database:       database,
 		Router:         http.NewServeMux(),
-		AuthMiddleware: middleware.Authentication,
+		AuthMiddleware: middleware.NewAuthenticationMiddleware(firebaseApp),
 	}
 
 	appInstance.Initialize()
@@ -52,5 +71,7 @@ func main() {
 
 	if err := server.ListenAndServe(); err != nil {
 		slog.Error("Error starting server", "error", err)
+		exitCode = 1
+		return
 	}
 }

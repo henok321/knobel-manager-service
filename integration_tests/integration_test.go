@@ -102,7 +102,10 @@ func runGooseUp(t *testing.T, db *sql.DB) {
 	}
 }
 
-func mockAuthMiddleware(next http.Handler) http.Handler {
+type mockAuthMiddleware struct {
+}
+
+func (m mockAuthMiddleware) Authentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		sub := request.Header.Get("Authorization")
 
@@ -131,7 +134,7 @@ func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 	}
 
 	testInstance := &app.App{
-		AuthMiddleware: mockAuthMiddleware,
+		AuthMiddleware: mockAuthMiddleware{},
 		Router:         http.NewServeMux(),
 		Database:       database,
 	}
