@@ -12,6 +12,8 @@ var ErrorTeamNotFound = errors.New("team not found")
 var ErrorPlayerNotFound = errors.New("player not found")
 var ErrorNotOwner = errors.New("user is not the owner of the requested resource")
 var ErrorTableAssignment = errors.New("cannot not assign players to tables")
+var ErrorInvalidScore = errors.New("invalid score")
+var ErrorRoundOrTableNotFound = errors.New("round or table not found")
 
 type GameStatus string
 

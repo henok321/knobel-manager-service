@@ -17,6 +17,7 @@ type GamesService interface {
 	UpdateGame(id uint, sub string, game GameRequest) (entity.Game, error)
 	DeleteGame(id uint, sub string) error
 	AssignTables(game entity.Game) error
+	UpdateScore(gameID uint, roundNumber uint, tableNumber uint, sub string, scoresRequest ScoresRequest) (entity.Game, error)
 }
 
 type gamesService struct {
@@ -141,5 +142,37 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 	}
 
 	return nil
+}
 
+func (s *gamesService) UpdateScore(gameID uint, roundNumber uint, tableNumber uint, sub string, scoresRequest ScoresRequest) (entity.Game, error) {
+	gameById, err := s.FindByID(gameID, sub)
+
+	if err != nil {
+		return entity.Game{}, err
+	}
+
+	if uint(len(scoresRequest.Scores)) != gameById.TableSize {
+		return entity.Game{}, entity.ErrorInvalidScore
+	}
+
+	for _, round := range gameById.Rounds {
+		if round.RoundNumber == uint(roundNumber) {
+			for _, table := range round.Tables {
+				if table.TableNumber == uint(tableNumber) {
+					scores := make([]*entity.Score, 0, gameById.TableSize)
+					for _, s := range scoresRequest.Scores {
+						scores = append(scores, &entity.Score{
+							PlayerID: s.PlayerID,
+							TableID:  table.ID,
+							Score:    int(s.Score),
+						})
+					}
+
+					table.Scores = scores
+					return s.repo.CreateOrUpdateGame(&gameById)
+				}
+			}
+		}
+	}
+	return entity.Game{}, entity.ErrorRoundOrTableNotFound
 }

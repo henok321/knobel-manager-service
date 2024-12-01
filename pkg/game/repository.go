@@ -51,7 +51,8 @@ func (r *gamesRepository) FindByID(id uint) (entity.Game, error) {
 		Preload("Rounds.Tables.Players").
 		Preload("Rounds.Tables.Scores").
 		Preload("Rounds").
-		Preload("Teams").Preload("Owners").
+		Preload("Teams").
+		Preload("Owners").
 		First(&game).Error
 	if err != nil {
 		return entity.Game{}, err
