@@ -1,5 +1,5 @@
 package team
 
 type TeamsRequest struct {
-	Name string `json:"name" binding:"required"`
+	Name string `json:"name" validate:"required"`
 }

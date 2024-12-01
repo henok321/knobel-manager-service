@@ -3,6 +3,8 @@ package app
 import (
 	"net/http"
 
+	"github.com/henok321/knobel-manager-service/pkg/team"
+
 	"github.com/henok321/knobel-manager-service/pkg/player"
 
 	"gorm.io/gorm"
@@ -23,10 +25,7 @@ func (app *App) Initialize() http.Handler {
 	gamesHandler := handlers.NewGamesHandler(game.InitializeGameModule(app.Database))
 	playersHandler := handlers.NewPlayersHandler(player.InitializePlayerModule(app.Database))
 	tablesHandler := handlers.NewTablesHandler(game.InitializeGameModule(app.Database))
-	/*teamHandler := handlers.NewTeamsHandler(team.InitializeTeamsModule(app.DB))
-	playerHandler :=   handlers.NewPlayersHandler(player.InitializePlayerModule(app.DB))
-	app.TablesHandler = handlers.NewTablesHandler(game.InitializeGameModule(app.DB))
-	app.Router = http.NewServeMux()*/
+	teamsHandler := handlers.NewTeamsHandler(team.InitializeTeamsModule(app.Database))
 
 	// health
 	app.Router.Handle("GET /health", http.HandlerFunc(handlers.HealthCheck))
@@ -49,6 +48,11 @@ func (app *App) Initialize() http.Handler {
 	// tables
 	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables", app.AuthMiddleware(http.HandlerFunc(tablesHandler.GetTables)))
 	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", app.AuthMiddleware(http.HandlerFunc(tablesHandler.GetTable)))
+
+	// teams
+	app.Router.Handle("POST /games/{gameID}/teams", app.AuthMiddleware(http.HandlerFunc(teamsHandler.CreateTeam)))
+	app.Router.Handle("PUT /games/{gameID}/teams/{teamID}", app.AuthMiddleware(http.HandlerFunc(teamsHandler.UpdateTeam)))
+	app.Router.Handle("DELETE /games/{gameID}/teams/{teamID}", app.AuthMiddleware(http.HandlerFunc(teamsHandler.DeleteTeam)))
 
 	return middleware.RequestLogging(app.Router)
 }
