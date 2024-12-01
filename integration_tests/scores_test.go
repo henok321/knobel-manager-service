@@ -8,13 +8,6 @@ import (
 	_ "github.com/lib/pq"
 )
 
-/*
-VALUES (1, 1),
-
-	(1, 5),
-	(1, 9),
-	(1, 13),
-*/
 func TestScores(t *testing.T) {
 	tests := map[string]testCase{
 		"Update score for game": {
