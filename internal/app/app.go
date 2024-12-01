@@ -22,6 +22,7 @@ func (app *App) Initialize() http.Handler {
 
 	gamesHandler := handlers.NewGamesHandler(game.InitializeGameModule(app.Database))
 	playersHandler := handlers.NewPlayersHandler(player.InitializePlayerModule(app.Database))
+	tablesHandler := handlers.NewTablesHandler(game.InitializeGameModule(app.Database))
 	/*teamHandler := handlers.NewTeamsHandler(team.InitializeTeamsModule(app.DB))
 	playerHandler :=   handlers.NewPlayersHandler(player.InitializePlayerModule(app.DB))
 	app.TablesHandler = handlers.NewTablesHandler(game.InitializeGameModule(app.DB))
@@ -44,6 +45,10 @@ func (app *App) Initialize() http.Handler {
 	app.Router.Handle("POST /games/{gameID}/teams/{teamID}/players", app.AuthMiddleware(http.HandlerFunc(playersHandler.CreatePlayer)))
 	app.Router.Handle("PUT /games/{gameID}/teams/{teamID}/players/{playerID}", app.AuthMiddleware(http.HandlerFunc(playersHandler.UpdatePlayer)))
 	app.Router.Handle("DELETE /games/{gameID}/teams/{teamID}/players/{playerID}", app.AuthMiddleware(http.HandlerFunc(playersHandler.DeletePlayer)))
+
+	// tables
+	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables", app.AuthMiddleware(http.HandlerFunc(tablesHandler.GetTables)))
+	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", app.AuthMiddleware(http.HandlerFunc(tablesHandler.GetTable)))
 
 	return middleware.RequestLogging(app.Router)
 }
