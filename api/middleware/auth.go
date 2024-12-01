@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
 )
 
 type ContextKey string
@@ -22,12 +22,12 @@ type AuthenticationMiddleware interface {
 }
 
 type authenticationMiddleware struct {
-	firebaseApp *firebase.App
+	authClient *auth.Client
 }
 
-func NewAuthenticationMiddleware(app *firebase.App) AuthenticationMiddleware {
+func NewAuthenticationMiddleware(authClient *auth.Client) AuthenticationMiddleware {
 	return authenticationMiddleware{
-		firebaseApp: app,
+		authClient,
 	}
 }
 
@@ -49,14 +49,7 @@ func (m authenticationMiddleware) Authentication(next http.Handler) http.Handler
 
 		idToken := tokenParts[1]
 
-		client, err := m.firebaseApp.Auth(request.Context())
-
-		if err != nil {
-			http.Error(writer, `{"error": "forbidden"}`, http.StatusInternalServerError)
-			return
-		}
-
-		token, err := client.VerifyIDToken(request.Context(), idToken)
+		token, err := m.authClient.VerifyIDToken(request.Context(), idToken)
 
 		if err != nil {
 			http.Error(writer, `{"error": "forbidden"}`, http.StatusUnauthorized)

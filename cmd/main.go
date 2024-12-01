@@ -32,12 +32,20 @@ func main() {
 
 	slog.Info("Initialize application")
 
-	firebaseSecret := []byte(os.Getenv("FIREBASE_SECRET"))
-	opt := option.WithCredentialsJSON(firebaseSecret)
+	firebaseAdmin := []byte(os.Getenv("FIREBASE_SECRET"))
+	opt := option.WithCredentialsJSON(firebaseAdmin)
 	firebaseApp, err := fbadmin.NewApp(context.Background(), nil, opt)
 
 	if err != nil {
 		slog.Error("Starting application failed, cannot initialize firebase client", "error", err)
+		exitCode = 1
+		return
+	}
+
+	authClient, err := firebaseApp.Auth(context.Background())
+
+	if err != nil {
+		slog.Error("Starting application failed, cannot initialize auth client", "error", err)
 		exitCode = 1
 		return
 	}
@@ -54,7 +62,7 @@ func main() {
 	appInstance := app.App{
 		Database:       database,
 		Router:         http.NewServeMux(),
-		AuthMiddleware: middleware.NewAuthenticationMiddleware(firebaseApp),
+		AuthMiddleware: middleware.NewAuthenticationMiddleware(authClient),
 	}
 
 	appInstance.Initialize()
