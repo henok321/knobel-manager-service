@@ -1,50 +1,56 @@
 package main
 
 import (
+	"fmt"
+	"log/slog"
+	"net/http"
 	"os"
 	"time"
 
+	"github.com/henok321/knobel-manager-service/api/middleware"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
-
-	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/internal/app"
+
 	firebaseauth "github.com/henok321/knobel-manager-service/internal/auth"
 )
 
 func init() {
-	log.SetFormatter(&log.JSONFormatter{
-		TimestampFormat: time.RFC3339,
-	})
-	log.SetLevel(log.InfoLevel)
-	log.SetOutput(os.Stdout)
+	logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
+	slog.SetDefault(slog.New(logHandler))
 }
 
 func main() {
-	log.Infoln("Starting application ...")
+	slog.Info("Starting application ...")
 	firebaseauth.InitFirebase()
 
-	database, err := gorm.Open(postgres.Open(os.Getenv("DATABASE_URL")), &gorm.Config{})
+	url := os.Getenv("DATABASE_URL")
+	database, err := gorm.Open(postgres.Open(url), &gorm.Config{})
 
 	if err != nil {
-		log.Fatalln("Starting application failed, cannot start connect to database", err)
+		slog.Error("Starting application failed, cannot start connect to database", "error", err)
 	}
 
-	router := gin.Default()
-
-	instance := &app.App{
-		DB:             database,
-		Router:         router,
-		AuthMiddleware: middleware.Authentication(),
+	appInstance := app.App{
+		Database:       database,
+		Router:         http.NewServeMux(),
+		AuthMiddleware: middleware.Authentication,
 	}
-	instance.Initialize()
 
-	err = instance.Router.Run("0.0.0.0:8080")
+	appInstance.Initialize()
 
-	if err != nil {
-		log.Fatalln("Starting application failed, cannot start router instance", err)
+	server := &http.Server{
+		Addr:         fmt.Sprintf(":%d", 8080),
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  15 * time.Second,
+		Handler:      appInstance.Router,
+	}
+
+	slog.Info("Starting server", "port", 8080)
+
+	if err := server.ListenAndServe(); err != nil {
+		slog.Error("Error starting server", "error", err)
 	}
 }

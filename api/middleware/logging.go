@@ -1,27 +1,22 @@
 package middleware
 
 import (
+	"log/slog"
+	"net/http"
 	"regexp"
-
-	"github.com/gin-gonic/gin"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var ignorePattern = regexp.MustCompile("^/?(health|metrics)/?$")
 
-func RequestLogging() gin.HandlerFunc {
-	return func(c *gin.Context) {
-
-		path := c.Request.URL.Path
+func RequestLogging(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		path := request.URL.Path
 
 		if ignorePattern.Match([]byte(path)) {
-			log.Debugf("Request: %s %s", c.Request.Method, path)
+			slog.Debug("Incomming request", "Method", request.Method, "Path", path)
 		} else {
-			log.Infof("Request: %s %s", c.Request.Method, path)
+			slog.Info("Incomming request", "Method", request.Method, "Path", path)
 		}
-
-		c.Next()
-	}
-
+		next.ServeHTTP(writer, request)
+	})
 }

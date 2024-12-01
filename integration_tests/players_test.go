@@ -57,7 +57,7 @@ func TestPlayers(t *testing.T) {
 			requestBody:        `{"name":"Player 1 Updated"}`,
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       `{"player": {"id":1,"name":"Player 1 Updated"}}`,
+			expectedBody:       `{"player": {"id":1,"name":"Player 1 Updated","teamID": 1}}`,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_team_player.sql")
 			},

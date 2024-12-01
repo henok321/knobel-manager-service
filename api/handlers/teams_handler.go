@@ -1,20 +1,26 @@
 package handlers
 
 import (
+	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
-
-	"github.com/gin-gonic/gin"
 	"github.com/henok321/knobel-manager-service/pkg/team"
 )
 
+type teamResponse struct {
+	Team entity.Team `json:"team"`
+}
+
 type TeamsHandler interface {
-	CreateTeam(c *gin.Context)
-	UpdateTeam(c *gin.Context)
-	DeleteTeam(c *gin.Context)
+	CreateTeam(writer http.ResponseWriter, request *http.Request)
+	UpdateTeam(writer http.ResponseWriter, request *http.Request)
+	DeleteTeam(writer http.ResponseWriter, request *http.Request)
 }
 type teamsHandler struct {
 	service team.TeamsService
@@ -24,112 +30,159 @@ func NewTeamsHandler(service team.TeamsService) TeamsHandler {
 	return &teamsHandler{service}
 }
 
-func (h *teamsHandler) CreateTeam(c *gin.Context) {
-	sub := c.GetStringMap("user")["sub"].(string)
-	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
+func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Request) {
+	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	if !ok {
+		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		return
+	}
+
+	sub := userContext.Sub
+
+	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid gameID"})
+		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
-	request := team.TeamsRequest{}
+	teamsRequest := team.TeamsRequest{}
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err := json.NewDecoder(request.Body).Decode(&teamsRequest); err != nil {
+		JSONError(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	createdTeam, err := h.service.CreateTeam(uint(gameID), sub, request)
+	validate := validator.New()
+	if err := validate.Struct(teamsRequest); err != nil {
+		JSONError(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	createdTeam, err := t.service.CreateTeam(uint(gameID), sub, teamsRequest)
 
 	if err != nil {
 		switch {
+		case err == entity.ErrorGameNotFound:
+			JSONError(writer, "Game not found", http.StatusNotFound)
+		case err == entity.ErrorNotOwner:
+			JSONError(writer, "Forbidden", http.StatusForbidden)
+		default:
+			JSONError(writer, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	writer.WriteHeader(http.StatusCreated)
+	writer.Header().Set("Content-Type", "application/json")
+	writer.Header().Set("Location", request.URL.String()+"/"+strconv.FormatUint(uint64(createdTeam.ID), 10))
+
+	teamResponse := teamResponse{Team: createdTeam}
+
+	if err := json.NewEncoder(writer).Encode(teamResponse); err != nil {
+		slog.Info("Could not write body", "error", err)
+	}
+
+}
+
+func (t teamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Request) {
+	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	if !ok {
+		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		return
+	}
+
+	sub := userContext.Sub
+
+	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+
+	if err != nil {
+		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
+		return
+	}
+
+	teamID, err := strconv.ParseUint(request.PathValue("teamID"), 10, 64)
+
+	if err != nil {
+		JSONError(writer, "Invalid teamID", http.StatusBadRequest)
+		return
+	}
+
+	teamsRequest := team.TeamsRequest{}
+
+	if err := json.NewDecoder(request.Body).Decode(&teamsRequest); err != nil {
+		JSONError(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	validate := validator.New()
+
+	if err := validate.Struct(teamsRequest); err != nil {
+		JSONError(writer, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	updatedGame, err := t.service.UpdateTeam(uint(gameID), sub, uint(teamID), teamsRequest)
+
+	if err != nil {
+		switch {
+		case err == entity.ErrorNotOwner:
+			JSONError(writer, "Forbidden", http.StatusForbidden)
+		case err == entity.ErrorGameNotFound:
+			JSONError(writer, "Game not found", http.StatusNotFound)
+		case err == entity.ErrorTeamNotFound:
+			JSONError(writer, "Team not found", http.StatusNotFound)
+		}
+		return
+	}
+
+	writer.WriteHeader(http.StatusOK)
+	writer.Header().Set("Content-Type", "application/json")
+
+	response := teamResponse{Team: updatedGame}
+
+	if err := json.NewEncoder(writer).Encode(response); err != nil {
+		slog.Info("Could not write body", "error", err)
+	}
+}
+
+func (t teamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Request) {
+	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	if !ok {
+		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		return
+	}
+
+	sub := userContext.Sub
+
+	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+
+	if err != nil {
+		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
+		return
+	}
+
+	teamID, err := strconv.ParseUint(request.PathValue("teamID"), 10, 64)
+
+	if err != nil {
+		JSONError(writer, "Invalid teamID", http.StatusBadRequest)
+		return
+	}
+
+	err = t.service.DeleteTeam(uint(gameID), sub, uint(teamID))
+
+	if err != nil {
+		switch {
+		case errors.Is(err, entity.ErrorNotOwner):
+			JSONError(writer, "Forbidden", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		case errors.Is(err, entity.ErrorNotOwner):
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
+			JSONError(writer, "Game not found", http.StatusNotFound)
 		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			JSONError(writer, err.Error(), http.StatusInternalServerError)
 		}
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{"team": createdTeam})
-}
+	writer.WriteHeader(http.StatusNoContent)
 
-func (h *teamsHandler) UpdateTeam(c *gin.Context) {
-	sub := c.GetStringMap("user")["sub"].(string)
-	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
-
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid gameID"})
-		return
-	}
-
-	teamID, err := strconv.ParseUint(c.Param("teamID"), 10, 64)
-
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid teamID"})
-		return
-	}
-
-	request := team.TeamsRequest{}
-
-	err = c.ShouldBindJSON(&request)
-
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	updatedTeam, err := h.service.UpdateTeam(uint(gameID), sub, uint(teamID), request)
-
-	if err != nil {
-		switch {
-		case errors.Is(err, entity.ErrorNotOwner):
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
-		case errors.Is(err, entity.ErrorGameNotFound), errors.Is(err, entity.ErrorTeamNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		}
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"team": updatedTeam})
-
-}
-
-func (h *teamsHandler) DeleteTeam(c *gin.Context) {
-	sub := c.GetStringMap("user")["sub"].(string)
-	gameID, err := strconv.ParseUint(c.Param("gameID"), 10, 64)
-
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid gameID"})
-		return
-	}
-
-	teamID, err := strconv.ParseUint(c.Param("teamID"), 10, 64)
-
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid teamID"})
-		return
-	}
-
-	err = h.service.DeleteTeam(uint(gameID), sub, uint(teamID))
-
-	if err != nil {
-		switch {
-		case errors.Is(err, entity.ErrorNotOwner):
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": err.Error()})
-			return
-		case errors.Is(err, entity.ErrorTeamNotFound), errors.Is(err, entity.ErrorGameNotFound):
-			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": err.Error()})
-			return
-		default:
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-	}
-
-	c.Status(http.StatusNoContent)
 }

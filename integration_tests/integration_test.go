@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+
+	pg "gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
 	"io"
 	"log"
 	"net/http"
@@ -13,14 +17,12 @@ import (
 	"testing"
 	"time"
 
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/henok321/knobel-manager-service/api/middleware"
 
-	"github.com/gin-gonic/gin"
 	"github.com/henok321/knobel-manager-service/internal/app"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
-	tcPostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
+	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/stretchr/testify/assert"
@@ -100,38 +102,40 @@ func runGooseUp(t *testing.T, db *sql.DB) {
 	}
 }
 
-func mockAuthMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func mockAuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		sub := request.Header.Get("Authorization")
 
-		sub := c.GetHeader("Authorization")
 		if sub == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header missing"})
+			http.Error(writer, "Authorization header missing", http.StatusUnauthorized)
 			return
 		}
 
-		userInfo := map[string]interface{}{
-			"sub":   sub,
-			"email": "mock@example.com",
+		userContext := &middleware.User{
+			Sub:   sub,
+			Email: "mock@example.org",
 		}
 
-		c.Set("user", userInfo)
-
-		c.Next()
-	}
+		ctx := context.WithValue(request.Context(), middleware.UserContextKey, userContext)
+		next.ServeHTTP(writer, request.WithContext(ctx))
+	})
 }
 
 func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
-	database, err := gorm.Open(postgres.Open(os.Getenv("DATABASE_URL")), &gorm.Config{})
+
+	url := os.Getenv("DATABASE_URL")
+	database, err := gorm.Open(pg.Open(url), &gorm.Config{})
 
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		log.Fatalln("Starting application failed, cannot start connect to database", err)
 	}
 
 	testInstance := &app.App{
-		AuthMiddleware: mockAuthMiddleware(),
-		Router:         gin.Default(),
-		DB:             database,
+		AuthMiddleware: mockAuthMiddleware,
+		Router:         http.NewServeMux(),
+		Database:       database,
 	}
+
 	testInstance.Initialize()
 	server := httptest.NewServer(testInstance.Router)
 	teardown := func(*httptest.Server) {
@@ -143,7 +147,7 @@ func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 
 func setupTestDatabase(t *testing.T) (string, func()) {
 	ctx := context.Background()
-	pgContainer, err := tcPostgres.Run(ctx, "docker.io/postgres:16-alpine", tcPostgres.WithDatabase("knobel-manager-service"), tcPostgres.WithUsername("test"), tcPostgres.WithPassword("secret"), testcontainers.WithWaitStrategy(wait.ForLog("database system is ready to accept connections").
+	pgContainer, err := postgres.Run(ctx, "docker.io/postgres:16-alpine", postgres.WithDatabase("knobel-manager-service"), postgres.WithUsername("test"), postgres.WithPassword("secret"), testcontainers.WithWaitStrategy(wait.ForLog("database system is ready to accept connections").
 		WithOccurrence(2).WithStartupTimeout(5*time.Second)))
 	if err != nil {
 		t.Fatalf("failed to start container: %v", err)
