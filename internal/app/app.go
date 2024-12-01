@@ -16,7 +16,7 @@ import (
 
 type App struct {
 	Database       *gorm.DB
-	AuthMiddleware func(next http.Handler) http.Handler
+	AuthMiddleware middleware.AuthenticationMiddleware
 	Router         *http.ServeMux
 }
 
@@ -31,31 +31,31 @@ func (app *App) Initialize() http.Handler {
 	app.Router.Handle("GET /health", http.HandlerFunc(handlers.HealthCheck))
 
 	// games
-	app.Router.Handle("GET /games", app.AuthMiddleware(http.HandlerFunc(gamesHandler.GetGames)))
-	app.Router.Handle("GET /games/{gameID}", app.AuthMiddleware(http.HandlerFunc(gamesHandler.GetGameByID)))
-	app.Router.Handle("POST /games", app.AuthMiddleware(http.HandlerFunc(gamesHandler.CreateGame)))
-	app.Router.Handle("PUT /games/{gameID}", app.AuthMiddleware(http.HandlerFunc(gamesHandler.UpdateGame)))
-	app.Router.Handle("DELETE /games/{gameID}", app.AuthMiddleware(http.HandlerFunc(gamesHandler.DeleteGame)))
+	app.Router.Handle("GET /games", app.AuthMiddleware.Authentication(http.HandlerFunc(gamesHandler.GetGames)))
+	app.Router.Handle("GET /games/{gameID}", app.AuthMiddleware.Authentication(http.HandlerFunc(gamesHandler.GetGameByID)))
+	app.Router.Handle("POST /games", app.AuthMiddleware.Authentication(http.HandlerFunc(gamesHandler.CreateGame)))
+	app.Router.Handle("PUT /games/{gameID}", app.AuthMiddleware.Authentication(http.HandlerFunc(gamesHandler.UpdateGame)))
+	app.Router.Handle("DELETE /games/{gameID}", app.AuthMiddleware.Authentication(http.HandlerFunc(gamesHandler.DeleteGame)))
 
 	// setup
-	app.Router.Handle("POST /games/{gameID}/setup", app.AuthMiddleware(http.HandlerFunc(gamesHandler.GameSetup)))
+	app.Router.Handle("POST /games/{gameID}/setup", app.AuthMiddleware.Authentication(http.HandlerFunc(gamesHandler.GameSetup)))
 
 	// players
-	app.Router.Handle("POST /games/{gameID}/teams/{teamID}/players", app.AuthMiddleware(http.HandlerFunc(playersHandler.CreatePlayer)))
-	app.Router.Handle("PUT /games/{gameID}/teams/{teamID}/players/{playerID}", app.AuthMiddleware(http.HandlerFunc(playersHandler.UpdatePlayer)))
-	app.Router.Handle("DELETE /games/{gameID}/teams/{teamID}/players/{playerID}", app.AuthMiddleware(http.HandlerFunc(playersHandler.DeletePlayer)))
+	app.Router.Handle("POST /games/{gameID}/teams/{teamID}/players", app.AuthMiddleware.Authentication(http.HandlerFunc(playersHandler.CreatePlayer)))
+	app.Router.Handle("PUT /games/{gameID}/teams/{teamID}/players/{playerID}", app.AuthMiddleware.Authentication(http.HandlerFunc(playersHandler.UpdatePlayer)))
+	app.Router.Handle("DELETE /games/{gameID}/teams/{teamID}/players/{playerID}", app.AuthMiddleware.Authentication(http.HandlerFunc(playersHandler.DeletePlayer)))
 
 	// tables
-	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables", app.AuthMiddleware(http.HandlerFunc(tablesHandler.GetTables)))
-	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", app.AuthMiddleware(http.HandlerFunc(tablesHandler.GetTable)))
+	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables", app.AuthMiddleware.Authentication(http.HandlerFunc(tablesHandler.GetTables)))
+	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", app.AuthMiddleware.Authentication(http.HandlerFunc(tablesHandler.GetTable)))
 
 	// scores
-	app.Router.Handle("PUT /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores", app.AuthMiddleware(http.HandlerFunc(tablesHandler.UpdateTableScore)))
+	app.Router.Handle("PUT /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores", app.AuthMiddleware.Authentication(http.HandlerFunc(tablesHandler.UpdateTableScore)))
 
 	// teams
-	app.Router.Handle("POST /games/{gameID}/teams", app.AuthMiddleware(http.HandlerFunc(teamsHandler.CreateTeam)))
-	app.Router.Handle("PUT /games/{gameID}/teams/{teamID}", app.AuthMiddleware(http.HandlerFunc(teamsHandler.UpdateTeam)))
-	app.Router.Handle("DELETE /games/{gameID}/teams/{teamID}", app.AuthMiddleware(http.HandlerFunc(teamsHandler.DeleteTeam)))
+	app.Router.Handle("POST /games/{gameID}/teams", app.AuthMiddleware.Authentication(http.HandlerFunc(teamsHandler.CreateTeam)))
+	app.Router.Handle("PUT /games/{gameID}/teams/{teamID}", app.AuthMiddleware.Authentication(http.HandlerFunc(teamsHandler.UpdateTeam)))
+	app.Router.Handle("DELETE /games/{gameID}/teams/{teamID}", app.AuthMiddleware.Authentication(http.HandlerFunc(teamsHandler.DeleteTeam)))
 
 	return middleware.RequestLogging(app.Router)
 }
