@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -11,28 +12,24 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/henok321/knobel-manager-service/internal/app"
-	log "github.com/sirupsen/logrus"
 
 	firebaseauth "github.com/henok321/knobel-manager-service/internal/auth"
 )
 
 func init() {
-	log.SetFormatter(&log.JSONFormatter{
-		TimestampFormat: time.RFC3339,
-	})
-	log.SetLevel(log.InfoLevel)
-	log.SetOutput(os.Stdout)
+	logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
+	slog.SetDefault(slog.New(logHandler))
 }
 
 func main() {
-	log.Infoln("Starting application ...")
+	slog.Info("Starting application ...")
 	firebaseauth.InitFirebase()
 
 	url := os.Getenv("DATABASE_URL")
 	database, err := gorm.Open(postgres.Open(url), &gorm.Config{})
 
 	if err != nil {
-		log.Fatalln("Starting application failed, cannot start connect to database", err)
+		slog.Error("Starting application failed, cannot start connect to database", "error", err)
 	}
 
 	appInstance := app.App{
@@ -51,9 +48,9 @@ func main() {
 		Handler:      appInstance.Router,
 	}
 
-	log.Infof("Starting server on port %d", 8080)
+	slog.Info("Starting server", "port", 8080)
 
 	if err := server.ListenAndServe(); err != nil {
-		log.WithError(err).Fatal("Error starting server")
+		slog.Error("Error starting server", "error", err)
 	}
 }

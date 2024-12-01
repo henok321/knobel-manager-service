@@ -1,10 +1,9 @@
 package middleware
 
 import (
+	"log/slog"
 	"net/http"
 	"regexp"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var ignorePattern = regexp.MustCompile("^/?(health|metrics)/?$")
@@ -14,9 +13,9 @@ func RequestLogging(next http.Handler) http.Handler {
 		path := request.URL.Path
 
 		if ignorePattern.Match([]byte(path)) {
-			log.Debugf("Request: %s %s", request.Method, path)
+			slog.Debug("Incomming request", "Method", request.Method, "Path", path)
 		} else {
-			log.Infof("Request: %s %s", request.Method, path)
+			slog.Info("Incomming request", "Method", request.Method, "Path", path)
 		}
 		next.ServeHTTP(writer, request)
 	})

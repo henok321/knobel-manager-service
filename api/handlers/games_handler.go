@@ -3,13 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 
@@ -65,7 +65,7 @@ func (h *gamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 	}
 
 	if err := json.NewEncoder(writer).Encode(gamesResponse); err != nil {
-		log.Error("Could not write body", "err", err)
+		slog.Error("Could not write body", "error", err)
 	}
 }
 
@@ -107,7 +107,7 @@ func (h *gamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 	}
 
 	if err := json.NewEncoder(writer).Encode(gameResponse); err != nil {
-		log.Error("Could not write body", "err", err)
+		slog.Error("Could not write body", "error", err)
 	}
 }
 
@@ -154,7 +154,7 @@ func (h *gamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	}
 
 	if err := json.NewEncoder(writer).Encode(gameResponse); err != nil {
-		log.Error("Could not write body", "err", err)
+		slog.Error("Could not write body", "error", err)
 	}
 }
 
@@ -207,7 +207,7 @@ func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 	responseBody := gameResponse{Game: updatedGame}
 
 	if err := json.NewEncoder(writer).Encode(responseBody); err != nil {
-		log.Error("Could not write body", "err", err)
+		slog.Error("Could not write body", "error", err)
 	}
 }
 

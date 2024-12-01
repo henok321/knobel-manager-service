@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/henok321/knobel-manager-service/api/middleware"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 
@@ -97,7 +97,7 @@ func (h playersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 	}}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		log.Error("Could not write body", "err", err)
+		slog.Error("Could not write body", "error", err)
 	}
 
 }
@@ -158,7 +158,7 @@ func (h playersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.R
 	}}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		log.Error("Could not write body", "err", err)
+		slog.Error("Could not write body", "error", err)
 	}
 }
 

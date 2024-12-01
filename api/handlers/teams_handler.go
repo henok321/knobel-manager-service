@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/team"
-	log "github.com/sirupsen/logrus"
 )
 
 type teamResponse struct {
@@ -80,7 +80,7 @@ func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 	teamResponse := teamResponse{Team: createdTeam}
 
 	if err := json.NewEncoder(writer).Encode(teamResponse); err != nil {
-		log.Info("Could not write body", err)
+		slog.Info("Could not write body", "error", err)
 	}
 
 }
@@ -142,7 +142,7 @@ func (t teamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 	response := teamResponse{Team: updatedGame}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		log.Info("Could not write body", err)
+		slog.Info("Could not write body", "error", err)
 	}
 }
 

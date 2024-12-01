@@ -3,13 +3,13 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strconv"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/game"
-	log "github.com/sirupsen/logrus"
 )
 
 type TablesHandler interface {
@@ -69,7 +69,7 @@ func (t tablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 			tables := round.Tables
 			writer.WriteHeader(http.StatusOK)
 			if err := json.NewEncoder(writer).Encode(tables); err != nil {
-				log.Info("Could not write body", err)
+				slog.Info("Could not write body", "error", err)
 			}
 			return
 		}
@@ -130,7 +130,7 @@ func (t tablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 				if table.TableNumber == uint(tablesNumber) {
 					writer.WriteHeader(http.StatusOK)
 					if err := json.NewEncoder(writer).Encode(table); err != nil {
-						log.Info("Could not write body", err)
+						slog.Info("Could not write body", "error", err)
 					}
 					return
 				}

@@ -1,9 +1,8 @@
 package handlers
 
 import (
+	"log/slog"
 	"net/http"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func HealthCheck(writer http.ResponseWriter, _ *http.Request) {
@@ -12,6 +11,6 @@ func HealthCheck(writer http.ResponseWriter, _ *http.Request) {
 	_, err := writer.Write([]byte(`{"status": "ok"}`))
 
 	if err != nil {
-		log.Error("Failed to write response", "err", err)
+		slog.Error("Failed to write response", "error", err)
 	}
 }
