@@ -8,15 +8,114 @@ import (
 	_ "github.com/lib/pq"
 )
 
+/*
+VALUES (1, 1),
+
+	(1, 5),
+	(1, 9),
+	(1, 13),
+*/
 func TestScores(t *testing.T) {
 	tests := map[string]testCase{
 		"Update score for game": {
 			method:             "PUT",
 			endpoint:           "/games/1/rounds/1/tables/1/scores",
 			expectedStatusCode: http.StatusOK,
-			requestBody:        `{"scores": []}`,
-			expectedBody:       `{"game": {}}`,
+			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			expectedBody:       readContentFromFile(t, "./test_data/game_update_score_response.json"),
 			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+
+			},
+		},
+		"Update score not game owner": {
+			method:             "PUT",
+			endpoint:           "/games/1/rounds/1/tables/1/scores",
+			expectedStatusCode: http.StatusForbidden,
+			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-2"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+
+			},
+		},
+		"Update score game not found": {
+			method:             "PUT",
+			endpoint:           "/games/2/rounds/1/tables/1/scores",
+			expectedStatusCode: http.StatusNotFound,
+			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+
+			},
+		},
+		"Update score round not found": {
+			method:             "PUT",
+			endpoint:           "/games/1/rounds/2/tables/1/scores",
+			expectedStatusCode: http.StatusNotFound,
+			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+
+			},
+		},
+		"Update score table not found": {
+			method:             "PUT",
+			endpoint:           "/games/1/rounds/1/tables/35/scores",
+			expectedStatusCode: http.StatusNotFound,
+			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+
+			},
+		},
+		"Update score invalid gameID": {
+			method:             "PUT",
+			endpoint:           "/games/invalid/rounds/1/tables/1/scores",
+			expectedStatusCode: http.StatusBadRequest,
+			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+
+			},
+		},
+		"Update score invalid roundNumber": {
+			method:             "PUT",
+			endpoint:           "/games/1/rounds/invalid/tables/1/scores",
+			expectedStatusCode: http.StatusBadRequest,
+			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+
+			},
+		},
+		"Update score invalid tableNumber": {
+			method:             "PUT",
+			endpoint:           "/games/1/rounds/1/tables/invalid/scores",
+			expectedStatusCode: http.StatusBadRequest,
+			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+
+			},
+		},
+		"Update score invalid request body": {
+			method:             "PUT",
+			endpoint:           "/games/1/rounds/1/tables/1/scores",
+			expectedStatusCode: http.StatusBadRequest,
+			requestBody:        `{"scores": [{"playerID":1,"score":"invalid"},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+
+			},
 		},
 	}
 

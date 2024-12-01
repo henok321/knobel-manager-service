@@ -151,6 +151,10 @@ func (s *gamesService) UpdateScore(gameID uint, roundNumber uint, tableNumber ui
 		return entity.Game{}, err
 	}
 
+	if uint(len(scoresRequest.Scores)) != gameById.TableSize {
+		return entity.Game{}, entity.ErrorInvalidScore
+	}
+
 	for _, round := range gameById.Rounds {
 		if round.RoundNumber == uint(roundNumber) {
 			for _, table := range round.Tables {
@@ -165,10 +169,10 @@ func (s *gamesService) UpdateScore(gameID uint, roundNumber uint, tableNumber ui
 					}
 
 					table.Scores = scores
+					return s.repo.CreateOrUpdateGame(&gameById)
 				}
 			}
 		}
 	}
-
-	return s.repo.CreateOrUpdateGame(&gameById)
+	return entity.Game{}, entity.ErrorRoundOrTableNotFound
 }

@@ -195,6 +195,10 @@ func (t tablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 			JSONError(writer, "Forbidden", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
+		case errors.Is(err, entity.ErrorInvalidScore):
+			JSONError(writer, "Invalid score", http.StatusBadRequest)
+		case errors.Is(err, entity.ErrorRoundOrTableNotFound):
+			JSONError(writer, "Round or table not found", http.StatusNotFound)
 		default:
 			JSONError(writer, err.Error(), http.StatusInternalServerError)
 		}
