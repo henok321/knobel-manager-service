@@ -49,6 +49,9 @@ func (app *App) Initialize() http.Handler {
 	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables", app.AuthMiddleware(http.HandlerFunc(tablesHandler.GetTables)))
 	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", app.AuthMiddleware(http.HandlerFunc(tablesHandler.GetTable)))
 
+	// scores
+	app.Router.Handle("PUT /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores", app.AuthMiddleware(http.HandlerFunc(tablesHandler.UpdateTableScore)))
+
 	// teams
 	app.Router.Handle("POST /games/{gameID}/teams", app.AuthMiddleware(http.HandlerFunc(teamsHandler.CreateTeam)))
 	app.Router.Handle("PUT /games/{gameID}/teams/{teamID}", app.AuthMiddleware(http.HandlerFunc(teamsHandler.UpdateTeam)))
