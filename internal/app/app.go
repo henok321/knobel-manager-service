@@ -3,6 +3,8 @@ package app
 import (
 	"net/http"
 
+	"github.com/henok321/knobel-manager-service/pkg/player"
+
 	"gorm.io/gorm"
 
 	"github.com/henok321/knobel-manager-service/api/handlers"
@@ -19,7 +21,7 @@ type App struct {
 func (app *App) Initialize() http.Handler {
 
 	gamesHandler := handlers.NewGamesHandler(game.InitializeGameModule(app.Database))
-
+	playersHandler := handlers.NewPlayersHandler(player.InitializePlayerModule(app.Database))
 	/*teamHandler := handlers.NewTeamsHandler(team.InitializeTeamsModule(app.DB))
 	playerHandler :=   handlers.NewPlayersHandler(player.InitializePlayerModule(app.DB))
 	app.TablesHandler = handlers.NewTablesHandler(game.InitializeGameModule(app.DB))
@@ -37,6 +39,11 @@ func (app *App) Initialize() http.Handler {
 
 	// setup
 	app.Router.Handle("POST /games/{gameID}/setup", app.AuthMiddleware(http.HandlerFunc(gamesHandler.GameSetup)))
+
+	// players
+	app.Router.Handle("POST /games/{gameID}/teams/{teamID}/players", app.AuthMiddleware(http.HandlerFunc(playersHandler.CreatePlayer)))
+	app.Router.Handle("PUT /games/{gameID}/teams/{teamID}/players/{playerID}", app.AuthMiddleware(http.HandlerFunc(playersHandler.UpdatePlayer)))
+	app.Router.Handle("DELETE /games/{gameID}/teams/{teamID}/players/{playerID}", app.AuthMiddleware(http.HandlerFunc(playersHandler.DeletePlayer)))
 
 	return middleware.RequestLogging(app.Router)
 }

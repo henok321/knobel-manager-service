@@ -124,7 +124,7 @@ func (h *gamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	gameCreateRequest := game.GameRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameCreateRequest); err != nil {
-		JSONError(writer, "Invalid request body", http.StatusBadRequest)
+		JSONError(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 

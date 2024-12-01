@@ -1,10 +1,15 @@
 package player
 
 type PlayersRequest struct {
-	Name string `json:"name" binding:"required,min=1"`
+	Name string `json:"name" validate:"required,min=1"`
+}
+
+type Player struct {
+	ID     uint   `json:"id"`
+	Name   string `json:"name"`
+	TeamID uint   `json:"teamID"`
 }
 
 type PlayersResponse struct {
-	ID   uint   `json:"id"`
-	Name string `json:"name"`
+	Player Player `json:"player"`
 }
