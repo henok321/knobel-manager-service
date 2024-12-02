@@ -37,6 +37,6 @@ jobs:
             -Dsonar.projectKey=henok321_knobel-manager-service
             -Dsonar.organization=henok321
             -Dsonar.go.coverage.reportPaths=coverage.out
-            -Dsonar.coverage.exclusions=**/integration_tests/**,**/cmd/**,**/*_test.go
+            -Dsonar.coverage.exclusions=**/integration_tests/**,**/cmd/**,**/*_test.go,!**/*.go
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
