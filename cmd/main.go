@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -26,6 +27,11 @@ func init() {
 }
 
 func main() {
+	exitCode := 0
+	defer func() {
+		os.Exit(exitCode)
+	}()
+
 	slog.Info("Initialize application")
 
 	firebaseAdmin := []byte(os.Getenv("FIREBASE_SECRET"))
@@ -34,14 +40,16 @@ func main() {
 
 	if err != nil {
 		slog.Error("Starting application failed, cannot initialize firebase client", "error", err)
-		os.Exit(1)
+		exitCode = 1
+		return
 	}
 
 	authClient, err := firebaseApp.Auth(context.Background())
 
 	if err != nil {
 		slog.Error("Starting application failed, cannot initialize auth client", "error", err)
-		os.Exit(1)
+		exitCode = 1
+		return
 	}
 
 	databaseUrl := os.Getenv("DATABASE_URL")
@@ -49,7 +57,8 @@ func main() {
 
 	if err != nil {
 		slog.Error("Starting application failed, cannot connect to database", "databaseUrl", databaseUrl, "error", err)
-		os.Exit(1)
+		exitCode = 1
+		return
 	}
 
 	appInstance := app.App{
@@ -73,9 +82,10 @@ func main() {
 
 	go func() {
 		slog.Info("Starting server", "port", 8080)
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("Error starting server", "error", err)
-			os.Exit(1)
+			exitCode = 1
+			return
 		}
 	}()
 
@@ -87,6 +97,8 @@ func main() {
 
 	if err := server.Shutdown(ctx); err != nil {
 		slog.Error("Server shutdown failed", "error", err)
+		exitCode = 1
+		return
 	}
 
 	slog.Info("Server exiting")
