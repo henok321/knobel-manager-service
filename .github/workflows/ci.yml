@@ -89,7 +89,7 @@ jobs:
         run: go test ./... -coverprofile=coverage.out
 
       - name: Upload coverage to SonarCloud
-        uses: sonarsource/sonarcloud-github-action@v2
+        uses: sonarsource/sonarcloud-github-action@v3
         with:
           args: >
             -Dsonar.projectKey=henok321_knobel-manager-service
