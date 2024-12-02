@@ -22,8 +22,15 @@ import (
 )
 
 func init() {
-	logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
-	slog.SetDefault(slog.New(logHandler))
+	switch os.Getenv("ENVIRONMENT") {
+	case "local":
+		logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
+		slog.SetDefault(slog.New(logHandler))
+	default:
+		logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
+		slog.SetDefault(slog.New(logHandler))
+	}
+
 }
 
 func main() {
@@ -34,9 +41,9 @@ func main() {
 
 	slog.Info("Initialize application")
 
-	firebaseAdmin := []byte(os.Getenv("FIREBASE_SECRET"))
-	firebaseConfig := option.WithCredentialsJSON(firebaseAdmin)
-	firebaseApp, err := fbadmin.NewApp(context.Background(), nil, firebaseConfig)
+	firebaseSecret := []byte(os.Getenv("FIREBASE_SECRET"))
+	firebaseOption := option.WithCredentialsJSON(firebaseSecret)
+	firebaseApp, err := fbadmin.NewApp(context.Background(), nil, firebaseOption)
 
 	if err != nil {
 		slog.Error("Starting application failed, cannot initialize firebase client", "error", err)
@@ -84,8 +91,7 @@ func main() {
 		slog.Info("Starting server", "port", 8080)
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("Error starting server", "error", err)
-			exitCode = 1
-			return
+			os.Exit(1)
 		}
 	}()
 
