@@ -1,3 +1,9 @@
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=henok321_knobel-manager-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=henok321_knobel-manager-service)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=henok321_knobel-manager-service&metric=bugs)](https://sonarcloud.io/summary/new_code?id=henok321_knobel-manager-service)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=henok321_knobel-manager-service&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=henok321_knobel-manager-service)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=henok321_knobel-manager-service&metric=coverage)](https://sonarcloud.io/summary/new_code?id=henok321_knobel-manager-service)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=henok321_knobel-manager-service&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=henok321_knobel-manager-service)
+
 # Knobel Manager Service
 
 ## Synopsis
