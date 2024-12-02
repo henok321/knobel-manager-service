@@ -2,6 +2,13 @@ name: SonarCloud Analysis
 
 on:
   workflow_dispatch:
+  workflow_run:
+    workflows: [ "CI" ]
+    branches:
+      - main
+    pull_request:
+    types:
+      - completed
 
 jobs:
   sonarcloud:
