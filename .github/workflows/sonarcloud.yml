@@ -26,7 +26,7 @@ jobs:
         uses: sonarsource/sonarcloud-github-action@v2
         with:
           args: >
-            -Dsonar.projectKey=knobel-manager-service
+            -Dsonar.projectKey=henok321_knobel-manager-service
             -Dsonar.organization=henok321
             -Dsonar.go.coverage.reportPaths=coverage.out
         env:
