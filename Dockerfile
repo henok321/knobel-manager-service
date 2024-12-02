@@ -23,4 +23,6 @@ COPY --from=builder /app/knobel-manager-service /knobel-manager-service
 
 EXPOSE 8080
 
+ENV ENVIRONMENT=production
+
 CMD ["/knobel-manager-service"]
