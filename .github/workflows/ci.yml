@@ -74,13 +74,13 @@ jobs:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Check out code
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.x
+          go-version: '1.23.1'
 
       - name: Install dependencies
         run: go mod tidy
@@ -89,7 +89,7 @@ jobs:
         run: go test ./... -coverprofile=coverage.out
 
       - name: Upload coverage to SonarCloud
-        uses: sonarsource/sonarcloud-github-action@v2
+        uses: sonarsource/sonarcloud-github-action@v3
         with:
           args: >
             -Dsonar.projectKey=henok321_knobel-manager-service
