@@ -16,10 +16,6 @@ FROM debian:bookworm-slim
 RUN groupadd --gid 1001 appgroup && \
     useradd --uid 1001 --gid appgroup --create-home appuser
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
-
 WORKDIR /home/appuser
 
 COPY --from=builder /app/knobel-manager-service /home/appuser/knobel-manager-service
