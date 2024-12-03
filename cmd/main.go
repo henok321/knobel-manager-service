@@ -3,13 +3,14 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	fbadmin "firebase.google.com/go/v4"
 	"google.golang.org/api/option"
@@ -76,21 +77,40 @@ func main() {
 
 	appInstance.Initialize()
 
-	server := &http.Server{
-		Addr:         fmt.Sprintf(":%d", 8080),
+	appServer := &http.Server{
+		Addr:         ":8080",
+		Handler:      appInstance.Router,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
-		Handler:      appInstance.Router,
+	}
+
+	metricsRouter := http.NewServeMux()
+	metricsRouter.Handle("GET /metrics", promhttp.Handler())
+
+	metricsServer := &http.Server{
+		Addr:         ":9090",
+		Handler:      metricsRouter,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  15 * time.Second,
 	}
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		slog.Info("Starting server", "port", 8080)
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("Error starting server", "error", err)
+		slog.Info("Starting app server", "port", 8080)
+		if err := appServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("App server error", "error", err)
+			os.Exit(1)
+		}
+	}()
+
+	go func() {
+		slog.Info("Starting metrics server", "port", 9090)
+		if err := metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("Metrics server error", "error", err)
 			os.Exit(1)
 		}
 	}()
@@ -101,11 +121,12 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	if err := server.Shutdown(ctx); err != nil {
-		slog.Error("Server shutdown failed", "error", err)
-		exitCode = 1
-		return
+	if err := appServer.Shutdown(ctx); err != nil {
+		slog.Error("Main server shutdown failed", "error", err)
+	}
+	if err := metricsServer.Shutdown(ctx); err != nil {
+		slog.Error("Metrics server shutdown failed", "error", err)
 	}
 
-	slog.Info("Server exiting")
+	slog.Info("Servers exited")
 }

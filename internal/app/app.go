@@ -4,8 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
 	"github.com/henok321/knobel-manager-service/pkg/team"
 
 	"github.com/henok321/knobel-manager-service/pkg/player"
@@ -42,9 +40,6 @@ func (app *App) Initialize() http.Handler {
 
 	// health
 	app.Router.Handle("GET /health", app.publicEndpoint(http.HandlerFunc(handlers.HealthCheck)))
-
-	// metrics
-	app.Router.Handle("GET /metrics", app.publicEndpoint(promhttp.Handler()))
 
 	// games
 	app.Router.Handle("GET /games", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.GetGames)))
