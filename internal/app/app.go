@@ -4,6 +4,8 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/henok321/knobel-manager-service/pkg/team"
 
 	"github.com/henok321/knobel-manager-service/pkg/player"
@@ -21,6 +23,16 @@ type App struct {
 	Router         *http.ServeMux
 }
 
+func (app *App) publicEndpoint(handler http.Handler) http.Handler {
+	loggingMiddlewareDebug := middleware.NewRequestLoggingMiddleware(slog.LevelDebug)
+	return middleware.Metrics(loggingMiddlewareDebug.RequestLogging(handler))
+}
+
+func (app *App) authenticatedEndpoint(handler http.Handler) http.Handler {
+	loggingMiddlewareInfo := middleware.NewRequestLoggingMiddleware(slog.LevelInfo)
+	return middleware.Metrics(loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(handler)))
+}
+
 func (app *App) Initialize() http.Handler {
 
 	gamesHandler := handlers.NewGamesHandler(game.InitializeGameModule(app.Database))
@@ -28,38 +40,38 @@ func (app *App) Initialize() http.Handler {
 	tablesHandler := handlers.NewTablesHandler(game.InitializeGameModule(app.Database))
 	teamsHandler := handlers.NewTeamsHandler(team.InitializeTeamsModule(app.Database))
 
-	loggingMiddlewareDebug := middleware.NewRequestLoggingMiddleware(slog.LevelDebug)
-	loggingMiddlewareInfo := middleware.NewRequestLoggingMiddleware(slog.LevelInfo)
-
 	// health
-	app.Router.Handle("GET /health", loggingMiddlewareDebug.RequestLogging(http.HandlerFunc(handlers.HealthCheck)))
+	app.Router.Handle("GET /health", app.publicEndpoint(http.HandlerFunc(handlers.HealthCheck)))
+
+	// metrics
+	app.Router.Handle("GET /metrics", app.publicEndpoint(promhttp.Handler()))
 
 	// games
-	app.Router.Handle("GET /games", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(gamesHandler.GetGames))))
-	app.Router.Handle("GET /games/{gameID}", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(gamesHandler.GetGameByID))))
-	app.Router.Handle("POST /games", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(gamesHandler.CreateGame))))
-	app.Router.Handle("PUT /games/{gameID}", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(gamesHandler.UpdateGame))))
-	app.Router.Handle("DELETE /games/{gameID}", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(gamesHandler.DeleteGame))))
+	app.Router.Handle("GET /games", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.GetGames)))
+	app.Router.Handle("GET /games/{gameID}", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.GetGameByID)))
+	app.Router.Handle("POST /games", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.CreateGame)))
+	app.Router.Handle("PUT /games/{gameID}", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.UpdateGame)))
+	app.Router.Handle("DELETE /games/{gameID}", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.DeleteGame)))
 
 	// setup
-	app.Router.Handle("POST /games/{gameID}/setup", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(gamesHandler.GameSetup))))
+	app.Router.Handle("POST /games/{gameID}/setup", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.GameSetup)))
 
 	// players
-	app.Router.Handle("POST /games/{gameID}/teams/{teamID}/players", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(playersHandler.CreatePlayer))))
-	app.Router.Handle("PUT /games/{gameID}/teams/{teamID}/players/{playerID}", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(playersHandler.UpdatePlayer))))
-	app.Router.Handle("DELETE /games/{gameID}/teams/{teamID}/players/{playerID}", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(playersHandler.DeletePlayer))))
+	app.Router.Handle("POST /games/{gameID}/teams/{teamID}/players", app.authenticatedEndpoint(http.HandlerFunc(playersHandler.CreatePlayer)))
+	app.Router.Handle("PUT /games/{gameID}/teams/{teamID}/players/{playerID}", app.authenticatedEndpoint(http.HandlerFunc(playersHandler.UpdatePlayer)))
+	app.Router.Handle("DELETE /games/{gameID}/teams/{teamID}/players/{playerID}", app.authenticatedEndpoint(http.HandlerFunc(playersHandler.DeletePlayer)))
 
 	// tables
-	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(tablesHandler.GetTables))))
-	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(tablesHandler.GetTable))))
+	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables", app.authenticatedEndpoint(http.HandlerFunc(tablesHandler.GetTables)))
+	app.Router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", app.authenticatedEndpoint(http.HandlerFunc(tablesHandler.GetTable)))
 
 	// scores
-	app.Router.Handle("PUT /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(tablesHandler.UpdateTableScore))))
+	app.Router.Handle("PUT /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores", app.authenticatedEndpoint(http.HandlerFunc(tablesHandler.UpdateTableScore)))
 
 	// teams
-	app.Router.Handle("POST /games/{gameID}/teams", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(teamsHandler.CreateTeam))))
-	app.Router.Handle("PUT /games/{gameID}/teams/{teamID}", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(teamsHandler.UpdateTeam))))
-	app.Router.Handle("DELETE /games/{gameID}/teams/{teamID}", loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(http.HandlerFunc(teamsHandler.DeleteTeam))))
+	app.Router.Handle("POST /games/{gameID}/teams", app.authenticatedEndpoint(http.HandlerFunc(teamsHandler.CreateTeam)))
+	app.Router.Handle("PUT /games/{gameID}/teams/{teamID}", app.authenticatedEndpoint(http.HandlerFunc(teamsHandler.UpdateTeam)))
+	app.Router.Handle("DELETE /games/{gameID}/teams/{teamID}", app.authenticatedEndpoint(http.HandlerFunc(teamsHandler.DeleteTeam)))
 
 	return app.Router
 }
