@@ -27,8 +27,8 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
 
-      - name: Run tests and generate coverage
-        run: go test ./... -coverprofile=coverage.out
+      - name: Run tests, generate coverage and report files
+        run: go test ./... -coverprofile=coverage.out --json > test-report.json
 
       - name: Install golangci-lint
         run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.62.2
@@ -44,7 +44,9 @@ jobs:
             -Dsonar.organization=henok321
             -Dsonar.go.coverage.reportPaths=coverage.out
             -Dsonar.go.golangci-lint.reportPaths=golangci-lint-report.xml
+            -Dsonar.go.tests.reportPaths=test-report.json
             -Dsonar.coverage.exclusions=**/integration_tests/**,**/cmd/**,**/*_test.go
+            -Dsonar.cpd.exclusions=**/integration_tests/**,**/cmd/**,**/*_test.go
 
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
