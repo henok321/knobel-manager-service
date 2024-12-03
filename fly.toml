@@ -19,7 +19,7 @@ processes = ['app']
 
 [metrics]
 path = "/metrics"
-port = 8080
+port = 9090
 processes = ['app']
 
 [[vm]]
