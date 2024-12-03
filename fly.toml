@@ -20,7 +20,7 @@ processes = ['app']
 [metrics]
 path = "/metrics"
 port = 8080
-processes = ["web"]
+processes = ['app']
 
 [[vm]]
 size = 'shared-cpu-1x'
