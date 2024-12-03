@@ -74,7 +74,7 @@ curl http://localhost:8080/health
 ## CI/CD
 
 The project uses GitHub Actions for CI/CD. The CI workflow runs on push for main branch and for pull request and can be
-found [here](.github/workflows/continues_integration.yml). The CD workflow runs on push to the main branch and can be
+found [here](.github/workflows/CI.yml). The CD workflow runs on push to the main branch and can be
 found [here](.github/workflows/deploy.yml).
 
 ## Database migration
