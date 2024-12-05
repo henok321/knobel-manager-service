@@ -37,7 +37,7 @@ jobs:
         run: golangci-lint run --timeout 5m --out-format checkstyle > golangci-lint-report.xml
 
       - name: Analyze project and upload coverage
-        uses: sonarsource/sonarcloud-github-action@v3
+        uses: sonarsource/sonarcloud-github-action@v4
         with:
           args: >
             -Dsonar.projectKey=henok321_knobel-manager-service
