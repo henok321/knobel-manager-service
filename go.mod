@@ -3,7 +3,7 @@ module github.com/henok321/knobel-manager-service
 go 1.23.3
 
 require (
-	firebase.google.com/go/v4 v4.15.0
+	firebase.google.com/go/v4 v4.15.1
 	github.com/go-playground/validator/v10 v10.23.0
 	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.23.0
