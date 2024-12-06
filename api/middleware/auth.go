@@ -26,13 +26,13 @@ func Authentication(authClient FirebaseAuth, next http.Handler) http.Handler {
 		authorizationHeader := request.Header.Get("Authorization")
 
 		if authorizationHeader == "" {
-			http.Error(writer, `{"error": "forbidden"}`, http.StatusUnauthorized)
+			http.Error(writer, `{"error": "unauthorized"}`, http.StatusUnauthorized)
 			return
 		}
 
 		tokenParts := strings.Split(authorizationHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			http.Error(writer, `{"error": "forbidden"}`, http.StatusUnauthorized)
+			http.Error(writer, `{"error": "unauthorized"}`, http.StatusUnauthorized)
 			return
 		}
 
@@ -41,7 +41,7 @@ func Authentication(authClient FirebaseAuth, next http.Handler) http.Handler {
 		token, err := authClient.VerifyIDToken(request.Context(), idToken)
 
 		if err != nil {
-			http.Error(writer, `{"error": "forbidden"}`, http.StatusUnauthorized)
+			http.Error(writer, `{"error": "unauthorized"}`, http.StatusUnauthorized)
 			return
 		}
 
