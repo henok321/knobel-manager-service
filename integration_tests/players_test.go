@@ -14,7 +14,7 @@ func TestPlayers(t *testing.T) {
 			method:             "POST",
 			endpoint:           "/games/1/teams/1/players",
 			requestBody:        `{"name":"Player 1"}`,
-			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusCreated,
 			expectedBody:       `{"player": {"id":1,"name":"Player 1", "teamID":1}}`,
 			setup: func(db *sql.DB) {
@@ -25,7 +25,7 @@ func TestPlayers(t *testing.T) {
 			method:             "POST",
 			endpoint:           "/games/1/teams/1/players",
 			requestBody:        `{"invalid":"Player 1"}`,
-			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusBadRequest,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
@@ -35,7 +35,7 @@ func TestPlayers(t *testing.T) {
 			method:             "POST",
 			endpoint:           "/games/1/teams/1/players",
 			requestBody:        `{"name":"Player 1"}`,
-			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNotFound,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
@@ -45,7 +45,7 @@ func TestPlayers(t *testing.T) {
 			method:             "POST",
 			endpoint:           "/games/1/teams/1/players",
 			requestBody:        `{"name":"Player 1"}`,
-			requestHeaders:     map[string]string{"Authorization": "sub-2"},
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			expectedStatusCode: http.StatusForbidden,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
@@ -55,7 +55,7 @@ func TestPlayers(t *testing.T) {
 			method:             "PUT",
 			endpoint:           "/games/1/teams/1/players/1",
 			requestBody:        `{"name":"Player 1 Updated"}`,
-			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `{"player": {"id":1,"name":"Player 1 Updated","teamID": 1}}`,
 			setup: func(db *sql.DB) {
@@ -66,7 +66,7 @@ func TestPlayers(t *testing.T) {
 			method:             "PUT",
 			endpoint:           "/games/1/teams/1/players/1",
 			requestBody:        `{"name":"Player 1 Updated"}`,
-			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNotFound,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
@@ -76,7 +76,7 @@ func TestPlayers(t *testing.T) {
 			method:             "PUT",
 			endpoint:           "/games/1/teams/1/players/1",
 			requestBody:        `{"name":"Player 1 Updated"}`,
-			requestHeaders:     map[string]string{"Authorization": "sub-2"},
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			expectedStatusCode: http.StatusNotFound,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
@@ -85,7 +85,7 @@ func TestPlayers(t *testing.T) {
 		"Delete player": {
 			method:             "DELETE",
 			endpoint:           "/games/1/teams/1/players/1",
-			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNoContent,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_team_player.sql")
@@ -94,7 +94,7 @@ func TestPlayers(t *testing.T) {
 		"Delete player not found": {
 			method:             "DELETE",
 			endpoint:           "/games/1/teams/1/players/1",
-			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNotFound,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")

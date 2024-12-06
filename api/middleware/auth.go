@@ -12,28 +12,17 @@ type ContextKey string
 
 const UserContextKey ContextKey = "user"
 
+type FirebaseAuth interface {
+	VerifyIDToken(ctx context.Context, idToken string) (*auth.Token, error)
+}
+
 type User struct {
 	Sub   string
 	Email string
 }
 
-type AuthenticationMiddleware interface {
-	Authentication(next http.Handler) http.Handler
-}
-
-type authenticationMiddleware struct {
-	authClient *auth.Client
-}
-
-func NewAuthenticationMiddleware(authClient *auth.Client) AuthenticationMiddleware {
-	return authenticationMiddleware{
-		authClient,
-	}
-}
-
-func (m authenticationMiddleware) Authentication(next http.Handler) http.Handler {
+func Authentication(authClient FirebaseAuth, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-
 		authorizationHeader := request.Header.Get("Authorization")
 
 		if authorizationHeader == "" {
@@ -49,7 +38,7 @@ func (m authenticationMiddleware) Authentication(next http.Handler) http.Handler
 
 		idToken := tokenParts[1]
 
-		token, err := m.authClient.VerifyIDToken(request.Context(), idToken)
+		token, err := authClient.VerifyIDToken(request.Context(), idToken)
 
 		if err != nil {
 			http.Error(writer, `{"error": "forbidden"}`, http.StatusUnauthorized)

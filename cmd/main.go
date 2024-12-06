@@ -15,7 +15,6 @@ import (
 	fbadmin "firebase.google.com/go/v4"
 	"google.golang.org/api/option"
 
-	"github.com/henok321/knobel-manager-service/api/middleware"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -70,9 +69,9 @@ func main() {
 	}
 
 	appInstance := app.App{
-		Database:       database,
-		Router:         http.NewServeMux(),
-		AuthMiddleware: middleware.NewAuthenticationMiddleware(authClient),
+		Database:   database,
+		Router:     http.NewServeMux(),
+		AuthClient: authClient,
 	}
 
 	appInstance.Initialize()
