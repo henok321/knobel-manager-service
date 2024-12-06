@@ -15,7 +15,7 @@ func TestGameSetup(t *testing.T) {
 			endpoint:           "/games/1/setup",
 			expectedStatusCode: http.StatusCreated,
 			expectedHeaders:    map[string]string{"Location": "/games/1/tables"},
-			requestHeaders:     map[string]string{"Authorization": "sub-1"},
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
 			},
@@ -25,7 +25,7 @@ func TestGameSetup(t *testing.T) {
 			endpoint:           "/games/1/setup",
 			expectedStatusCode: http.StatusForbidden,
 			expectedHeaders:    map[string]string{"Location": "/games/1/tables"},
-			requestHeaders:     map[string]string{"Authorization": "sub-2"},
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
 			},

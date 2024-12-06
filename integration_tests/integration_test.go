@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/henok321/knobel-manager-service/integration_tests/mock"
 	pg "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -16,8 +17,6 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
-
-	"github.com/henok321/knobel-manager-service/api/middleware"
 
 	"github.com/henok321/knobel-manager-service/internal/app"
 	"github.com/pressly/goose/v3"
@@ -102,28 +101,6 @@ func runGooseUp(t *testing.T, db *sql.DB) {
 	}
 }
 
-type mockAuthMiddleware struct {
-}
-
-func (m mockAuthMiddleware) Authentication(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		sub := request.Header.Get("Authorization")
-
-		if sub == "" {
-			http.Error(writer, "Authorization header missing", http.StatusUnauthorized)
-			return
-		}
-
-		userContext := &middleware.User{
-			Sub:   sub,
-			Email: "mock@example.org",
-		}
-
-		ctx := context.WithValue(request.Context(), middleware.UserContextKey, userContext)
-		next.ServeHTTP(writer, request.WithContext(ctx))
-	})
-}
-
 func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 
 	url := os.Getenv("DATABASE_URL")
@@ -134,9 +111,9 @@ func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 	}
 
 	testInstance := &app.App{
-		AuthMiddleware: mockAuthMiddleware{},
-		Router:         http.NewServeMux(),
-		Database:       database,
+		AuthClient: mock.MockFirebaseAuth{},
+		Router:     http.NewServeMux(),
+		Database:   database,
 	}
 
 	testInstance.Initialize()

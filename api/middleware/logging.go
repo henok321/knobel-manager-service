@@ -5,21 +5,9 @@ import (
 	"net/http"
 )
 
-type RequestLoggingMiddleware interface {
-	RequestLogging(next http.Handler) http.Handler
-}
-
-type requestLoggingMiddleware struct {
-	logLevel slog.Level
-}
-
-func NewRequestLoggingMiddleware(level slog.Level) RequestLoggingMiddleware {
-	return requestLoggingMiddleware{logLevel: level}
-}
-
-func (m requestLoggingMiddleware) RequestLogging(next http.Handler) http.Handler {
+func RequestLogging(logLevel slog.Level, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		switch m.logLevel {
+		switch logLevel {
 		case slog.LevelDebug:
 			slog.Debug("Incoming request", "method", request.Method, "path", request.URL.Path)
 		case slog.LevelInfo:

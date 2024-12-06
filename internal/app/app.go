@@ -16,19 +16,17 @@ import (
 )
 
 type App struct {
-	Database       *gorm.DB
-	AuthMiddleware middleware.AuthenticationMiddleware
-	Router         *http.ServeMux
+	Database   *gorm.DB
+	AuthClient middleware.FirebaseAuth
+	Router     *http.ServeMux
 }
 
 func (app *App) publicEndpoint(handler http.Handler) http.Handler {
-	loggingMiddlewareDebug := middleware.NewRequestLoggingMiddleware(slog.LevelDebug)
-	return middleware.Metrics(loggingMiddlewareDebug.RequestLogging(handler))
+	return middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))
 }
 
 func (app *App) authenticatedEndpoint(handler http.Handler) http.Handler {
-	loggingMiddlewareInfo := middleware.NewRequestLoggingMiddleware(slog.LevelInfo)
-	return middleware.Metrics(loggingMiddlewareInfo.RequestLogging(app.AuthMiddleware.Authentication(handler)))
+	return middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.AuthClient, handler)))
 }
 
 func (app *App) Initialize() http.Handler {
