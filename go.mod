@@ -1,6 +1,6 @@
 module github.com/henok321/knobel-manager-service
 
-go 1.23.3
+go 1.23.4
 
 require (
 	firebase.google.com/go/v4 v4.15.1
