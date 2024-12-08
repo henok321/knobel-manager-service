@@ -16,5 +16,12 @@
   ],
   "schedule": [
     "at any time"
+  ],
+  "packageRules": [
+    {
+      "matchDatasources": ["golang-version"],
+      "enabled": true,
+      "postUpdateOptions": ["gomodTidy"]
+    }
   ]
 }
