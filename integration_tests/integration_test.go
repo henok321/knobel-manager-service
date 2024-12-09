@@ -111,7 +111,7 @@ func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 	}
 
 	testInstance := &app.App{
-		AuthClient: mock.MockFirebaseAuth{},
+		AuthClient: mock.FirebaseAuthMock{},
 		Router:     http.NewServeMux(),
 		Database:   database,
 	}
