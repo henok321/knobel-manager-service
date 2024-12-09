@@ -52,6 +52,14 @@ pre-commit install
 
 ### Local
 
+#### Firebase config
+
+Generate and download a service account config file in the [Firebase Cloud Console](https://console.firebase.google.com/u/1/project/knobel-manager-webapp/settings/serviceaccounts/adminsdk).
+
+```sh
+export FIREBASE_SECRET=$(jq -c . ~/Downloads/firebase-admin-config.json)
+```
+
 #### Start database
 
 ```sh
