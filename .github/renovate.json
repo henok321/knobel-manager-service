@@ -19,12 +19,24 @@
   ],
   "packageRules": [
     {
-      "matchManagers": ["gomod"],
-      "postUpdateOptions": ["gomodTidy"]
+      "matchManagers": [
+        "gomod"
+      ],
+      "postUpdateOptions": [
+        "gomodTidy"
+      ]
     },
     {
-      "matchDatasources": ["golang-version"],
+      "matchDatasources": [
+        "golang-version"
+      ],
       "enabled": true
+    },
+    {
+      "matchDepTypes": [
+        "indirect"
+      ],
+      "enabled": false
     }
   ]
 }
