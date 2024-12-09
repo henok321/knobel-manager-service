@@ -6,10 +6,10 @@ import (
 	"firebase.google.com/go/v4/auth"
 )
 
-type MockFirebaseAuth struct {
+type FirebaseAuthMock struct {
 }
 
-func (m MockFirebaseAuth) VerifyIDToken(_ context.Context, idToken string) (*auth.Token, error) {
+func (m FirebaseAuthMock) VerifyIDToken(_ context.Context, idToken string) (*auth.Token, error) {
 
 	return &auth.Token{
 		UID:    idToken,
