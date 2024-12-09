@@ -10,9 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	firebase "firebase.google.com/go/v4"
+
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	fbadmin "firebase.google.com/go/v4"
 	"google.golang.org/api/option"
 
 	"gorm.io/driver/postgres"
@@ -43,10 +44,10 @@ func main() {
 
 	firebaseSecret := []byte(os.Getenv("FIREBASE_SECRET"))
 	firebaseOption := option.WithCredentialsJSON(firebaseSecret)
-	firebaseApp, err := fbadmin.NewApp(context.Background(), nil, firebaseOption)
+	firebaseApp, err := firebase.NewApp(context.Background(), nil, firebaseOption)
 
 	if err != nil {
-		slog.Error("Starting application failed, cannot initialize firebase client", "error", err)
+		slog.Error("Starting application failed, cannot initialize firebase client. Check if the environment FIREBASE_SECRET is set correctly", "error", err)
 		exitCode = 1
 		return
 	}
