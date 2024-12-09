@@ -19,9 +19,12 @@
   ],
   "packageRules": [
     {
-      "matchDatasources": ["golang-version","go"],
-      "enabled": true,
+      "matchManagers": ["gomod"],
       "postUpdateOptions": ["gomodTidy"]
+    },
+    {
+      "matchDatasources": ["golang-version"],
+      "enabled": true
     }
   ]
 }
