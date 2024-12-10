@@ -1,5 +1,5 @@
-![[CI](https://github.com/henok321/knobel-manager-service/actions/workflows/CI.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/CI.yml)
-![[Deploy](https://github.com/henok321/knobel-manager-service/actions/workflows/deploy.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/deploy.yml)
+[![CI](https://github.com/henok321/knobel-manager-service/actions/workflows/CI.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/CI.yml)
+[![Deploy](https://github.com/henok321/knobel-manager-service/actions/workflows/deploy.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/deploy.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=henok321_knobel-manager-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=henok321_knobel-manager-service)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=henok321_knobel-manager-service&metric=bugs)](https://sonarcloud.io/summary/new_code?id=henok321_knobel-manager-service)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=henok321_knobel-manager-service&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=henok321_knobel-manager-service)
