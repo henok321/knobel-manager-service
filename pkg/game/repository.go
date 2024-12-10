@@ -7,9 +7,9 @@ import (
 
 type GamesRepository interface {
 	FindAllByOwner(sub string) ([]entity.Game, error)
-	FindByID(id uint) (entity.Game, error)
+	FindByID(id int) (entity.Game, error)
 	CreateOrUpdateGame(game *entity.Game) (entity.Game, error)
-	DeleteGame(id uint) error
+	DeleteGame(id int) error
 	CreateRound(round *entity.Round) (entity.Round, error)
 	CreateGameTables(gameTables []entity.GameTable) error
 }
@@ -42,7 +42,7 @@ func (r *gamesRepository) FindAllByOwner(sub string) ([]entity.Game, error) {
 	return games, nil
 }
 
-func (r *gamesRepository) FindByID(id uint) (entity.Game, error) {
+func (r *gamesRepository) FindByID(id int) (entity.Game, error) {
 	var game entity.Game
 
 	err := r.db.
@@ -70,7 +70,7 @@ func (r *gamesRepository) CreateOrUpdateGame(game *entity.Game) (entity.Game, er
 	return *game, nil
 }
 
-func (r *gamesRepository) DeleteGame(id uint) error {
+func (r *gamesRepository) DeleteGame(id int) error {
 	err := r.db.Delete(&entity.Game{}, id).Error
 	if err != nil {
 		return err

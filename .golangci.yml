@@ -35,6 +35,7 @@ linters:
     - revive
     - gocritic
     - loggercheck
+    - gosec
 
 run:
   timeout: 5m

@@ -9,9 +9,9 @@ import (
 )
 
 type PlayersService interface {
-	CreatePlayer(request PlayersRequest, teamId uint, sub string) (entity.Player, error)
-	UpdatePlayer(id uint, request PlayersRequest, sub string) (entity.Player, error)
-	DeletePlayer(id uint, sub string) error
+	CreatePlayer(request PlayersRequest, teamId int, sub string) (entity.Player, error)
+	UpdatePlayer(id int, request PlayersRequest, sub string) (entity.Player, error)
+	DeletePlayer(id int, sub string) error
 }
 
 type playersService struct {
@@ -23,7 +23,7 @@ func NewPlayersService(playersRepo PlayersRepository, teamsRepo team.TeamsReposi
 	return &playersService{playersRepo: playersRepo, teamsRepo: teamsRepo}
 }
 
-func (s playersService) CreatePlayer(request PlayersRequest, teamID uint, sub string) (entity.Player, error) {
+func (s playersService) CreatePlayer(request PlayersRequest, teamID int, sub string) (entity.Player, error) {
 	teamById, err := s.teamsRepo.FindById(teamID)
 
 	if err != nil {
@@ -49,7 +49,7 @@ func (s playersService) CreatePlayer(request PlayersRequest, teamID uint, sub st
 	return createdPlayer, nil
 }
 
-func (s playersService) UpdatePlayer(id uint, request PlayersRequest, sub string) (entity.Player, error) {
+func (s playersService) UpdatePlayer(id int, request PlayersRequest, sub string) (entity.Player, error) {
 
 	player, err := s.playersRepo.FindPlayerById(id)
 
@@ -76,7 +76,7 @@ func (s playersService) UpdatePlayer(id uint, request PlayersRequest, sub string
 	return updatePlayer, nil
 }
 
-func (s playersService) DeletePlayer(id uint, sub string) error {
+func (s playersService) DeletePlayer(id int, sub string) error {
 	player, err := s.playersRepo.FindPlayerById(id)
 
 	if err != nil {

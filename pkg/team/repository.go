@@ -6,9 +6,9 @@ import (
 )
 
 type TeamsRepository interface {
-	FindById(id uint) (entity.Team, error)
+	FindById(id int) (entity.Team, error)
 	CreateOrUpdateTeam(team *entity.Team) (entity.Team, error)
-	DeleteTeam(id uint) error
+	DeleteTeam(id int) error
 }
 
 type teamsRepository struct {
@@ -19,7 +19,7 @@ func NewTeamsRepository(db *gorm.DB) TeamsRepository {
 	return &teamsRepository{db}
 }
 
-func (r *teamsRepository) FindById(id uint) (entity.Team, error) {
+func (r *teamsRepository) FindById(id int) (entity.Team, error) {
 	team := entity.Team{}
 	err := r.db.Where("id = ?", id).Preload("Game").Preload("Game.Owners").First(&team).Error
 	if err != nil {
@@ -36,7 +36,7 @@ func (r *teamsRepository) CreateOrUpdateTeam(team *entity.Team) (entity.Team, er
 	return *team, nil
 }
 
-func (r *teamsRepository) DeleteTeam(id uint) error {
+func (r *teamsRepository) DeleteTeam(id int) error {
 	err := r.db.Delete(&entity.Team{}, id).Error
 	if err != nil {
 		return err

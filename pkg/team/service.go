@@ -9,9 +9,9 @@ import (
 )
 
 type TeamsService interface {
-	CreateTeam(gameID uint, sub string, request TeamsRequest) (entity.Team, error)
-	UpdateTeam(gameID uint, sub string, teamID uint, request TeamsRequest) (entity.Team, error)
-	DeleteTeam(gameID uint, sub string, teamID uint) error
+	CreateTeam(gameID int, sub string, request TeamsRequest) (entity.Team, error)
+	UpdateTeam(gameID int, sub string, teamID int, request TeamsRequest) (entity.Team, error)
+	DeleteTeam(gameID int, sub string, teamID int) error
 }
 
 type teamsService struct {
@@ -26,7 +26,7 @@ func NewTeamsService(teamRepo TeamsRepository, gameRepo game.GamesRepository) Te
 	}
 }
 
-func (s *teamsService) CreateTeam(gameID uint, sub string, request TeamsRequest) (entity.Team, error) {
+func (s *teamsService) CreateTeam(gameID int, sub string, request TeamsRequest) (entity.Team, error) {
 	gameById, err := s.gamesRepo.FindByID(gameID)
 
 	if err != nil {
@@ -48,7 +48,7 @@ func (s *teamsService) CreateTeam(gameID uint, sub string, request TeamsRequest)
 	return s.teamRepo.CreateOrUpdateTeam(&team)
 }
 
-func (s *teamsService) UpdateTeam(gameID uint, sub string, teamID uint, request TeamsRequest) (entity.Team, error) {
+func (s *teamsService) UpdateTeam(gameID int, sub string, teamID int, request TeamsRequest) (entity.Team, error) {
 	gameById, err := s.gamesRepo.FindByID(gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -69,7 +69,7 @@ func (s *teamsService) UpdateTeam(gameID uint, sub string, teamID uint, request 
 	return entity.Team{}, entity.ErrorTeamNotFound
 }
 
-func (s *teamsService) DeleteTeam(gameID uint, sub string, teamID uint) error {
+func (s *teamsService) DeleteTeam(gameID int, sub string, teamID int) error {
 	gameById, err := s.gamesRepo.FindByID(gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

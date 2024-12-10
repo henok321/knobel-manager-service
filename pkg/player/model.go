@@ -5,9 +5,9 @@ type PlayersRequest struct {
 }
 
 type Player struct {
-	ID     uint   `json:"id"`
+	ID     int    `json:"id"`
 	Name   string `json:"name"`
-	TeamID uint   `json:"teamID"`
+	TeamID int    `json:"teamID"`
 }
 
 type PlayersResponse struct {

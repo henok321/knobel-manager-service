@@ -78,14 +78,14 @@ func (h *gamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
-	gameById, err := h.gamesService.FindByID(uint(gameID), sub)
+	gameById, err := h.gamesService.FindByID(int(gameID), sub)
 
 	if err != nil {
 		switch {
@@ -167,7 +167,7 @@ func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
@@ -190,7 +190,7 @@ func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	updatedGame, err := h.gamesService.UpdateGame(uint(gameID), sub, gameUpdateRequest)
+	updatedGame, err := h.gamesService.UpdateGame(int(gameID), sub, gameUpdateRequest)
 
 	if err != nil {
 		switch {
@@ -220,13 +220,13 @@ func (h *gamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
-	if err := h.gamesService.DeleteGame(uint(gameID), sub); err != nil {
+	if err := h.gamesService.DeleteGame(int(gameID), sub); err != nil {
 		switch {
 		case errors.Is(err, entity.ErrorNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
@@ -251,14 +251,14 @@ func (h *gamesHandler) GameSetup(writer http.ResponseWriter, request *http.Reque
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
-	gameToAssign, err := h.gamesService.FindByID(uint(gameID), sub)
+	gameToAssign, err := h.gamesService.FindByID(int(gameID), sub)
 
 	if err != nil {
 		switch {

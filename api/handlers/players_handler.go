@@ -41,14 +41,14 @@ func (h playersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
-	teamID, err := strconv.ParseUint(request.PathValue("teamID"), 10, 64)
+	teamID, err := strconv.ParseInt(request.PathValue("teamID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid teamID", http.StatusBadRequest)
@@ -71,7 +71,7 @@ func (h playersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	createPlayer, err := h.playersService.CreatePlayer(playersRequest, uint(teamID), sub)
+	createPlayer, err := h.playersService.CreatePlayer(playersRequest, int(teamID), sub)
 
 	if err != nil {
 		switch {
@@ -111,7 +111,7 @@ func (h playersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.R
 
 	sub := userContext.Sub
 
-	playerID, err := strconv.ParseUint(request.PathValue("playerID"), 10, 64)
+	playerID, err := strconv.ParseInt(request.PathValue("playerID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid playerID", http.StatusBadRequest)
@@ -134,7 +134,7 @@ func (h playersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	updatePlayer, err := h.playersService.UpdatePlayer(uint(playerID), playersRequest, sub)
+	updatePlayer, err := h.playersService.UpdatePlayer(int(playerID), playersRequest, sub)
 
 	if err != nil {
 		switch {
@@ -171,14 +171,14 @@ func (h playersHandler) DeletePlayer(writer http.ResponseWriter, request *http.R
 
 	sub := userContext.Sub
 
-	playerID, err := strconv.ParseUint(request.PathValue("playerID"), 10, 64)
+	playerID, err := strconv.ParseInt(request.PathValue("playerID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid playerID", http.StatusBadRequest)
 		return
 	}
 
-	err = h.playersService.DeletePlayer(uint(playerID), sub)
+	err = h.playersService.DeletePlayer(int(playerID), sub)
 
 	if err != nil {
 		switch {
