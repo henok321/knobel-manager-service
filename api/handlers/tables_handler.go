@@ -37,21 +37,21 @@ func (t tablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
-	roundNumber, err := strconv.ParseUint(request.PathValue("roundNumber"), 10, 64)
+	roundNumber, err := strconv.ParseInt(request.PathValue("roundNumber"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid roundNumber", http.StatusBadRequest)
 		return
 	}
 
-	gameById, err := t.gamesService.FindByID(uint(gameID), sub)
+	gameById, err := t.gamesService.FindByID(int(gameID), sub)
 
 	if err != nil {
 		switch {
@@ -68,7 +68,7 @@ func (t tablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 	}
 
 	for _, round := range gameById.Rounds {
-		if round.RoundNumber == uint(roundNumber) {
+		if round.RoundNumber == int(roundNumber) {
 			tables := round.Tables
 			writer.WriteHeader(http.StatusOK)
 			if err := json.NewEncoder(writer).Encode(tables); err != nil {
@@ -90,28 +90,28 @@ func (t tablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
-	roundNumber, err := strconv.ParseUint(request.PathValue("roundNumber"), 10, 64)
+	roundNumber, err := strconv.ParseInt(request.PathValue("roundNumber"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid roundNumber", http.StatusBadRequest)
 		return
 	}
 
-	tablesNumber, err := strconv.ParseUint(request.PathValue("tableNumber"), 10, 64)
+	tablesNumber, err := strconv.ParseInt(request.PathValue("tableNumber"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid tableNumber", http.StatusBadRequest)
 		return
 	}
 
-	gameById, err := t.gamesService.FindByID(uint(gameID), sub)
+	gameById, err := t.gamesService.FindByID(int(gameID), sub)
 
 	if err != nil {
 		switch {
@@ -128,9 +128,9 @@ func (t tablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 	}
 
 	for _, round := range gameById.Rounds {
-		if round.RoundNumber == uint(roundNumber) {
+		if round.RoundNumber == int(roundNumber) {
 			for _, table := range round.Tables {
-				if table.TableNumber == uint(tablesNumber) {
+				if table.TableNumber == int(tablesNumber) {
 					writer.WriteHeader(http.StatusOK)
 					if err := json.NewEncoder(writer).Encode(table); err != nil {
 						slog.Info("Could not write body", "error", err)
@@ -152,21 +152,21 @@ func (t tablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
-	roundNumber, err := strconv.ParseUint(request.PathValue("roundNumber"), 10, 64)
+	roundNumber, err := strconv.ParseInt(request.PathValue("roundNumber"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid roundNumber", http.StatusBadRequest)
 		return
 	}
 
-	tableNumber, err := strconv.ParseUint(request.PathValue("tableNumber"), 10, 64)
+	tableNumber, err := strconv.ParseInt(request.PathValue("tableNumber"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid tableNumber", http.StatusBadRequest)
@@ -187,7 +187,7 @@ func (t tablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 		return
 	}
 
-	updatedGame, err := t.gamesService.UpdateScore(uint(gameID), uint(roundNumber), uint(tableNumber), sub, scoresRequest)
+	updatedGame, err := t.gamesService.UpdateScore(int(gameID), int(roundNumber), int(tableNumber), sub, scoresRequest)
 
 	if err != nil {
 		switch {

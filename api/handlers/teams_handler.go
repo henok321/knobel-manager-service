@@ -39,7 +39,7 @@ func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
@@ -59,7 +59,7 @@ func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	createdTeam, err := t.service.CreateTeam(uint(gameID), sub, teamsRequest)
+	createdTeam, err := t.service.CreateTeam(int(gameID), sub, teamsRequest)
 
 	if err != nil {
 		switch {
@@ -75,7 +75,7 @@ func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 
 	writer.WriteHeader(http.StatusCreated)
 	writer.Header().Set("Content-Type", "application/json")
-	writer.Header().Set("Location", request.URL.String()+"/"+strconv.FormatUint(uint64(createdTeam.ID), 10))
+	writer.Header().Set("Location", request.URL.String()+"/"+strconv.FormatInt(int64(createdTeam.ID), 10))
 
 	teamResponse := teamResponse{Team: createdTeam}
 
@@ -94,14 +94,14 @@ func (t teamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
-	teamID, err := strconv.ParseUint(request.PathValue("teamID"), 10, 64)
+	teamID, err := strconv.ParseInt(request.PathValue("teamID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid teamID", http.StatusBadRequest)
@@ -122,7 +122,7 @@ func (t teamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	updatedGame, err := t.service.UpdateTeam(uint(gameID), sub, uint(teamID), teamsRequest)
+	updatedGame, err := t.service.UpdateTeam(int(gameID), sub, int(teamID), teamsRequest)
 
 	if err != nil {
 		switch {
@@ -155,21 +155,21 @@ func (t teamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Reque
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseUint(request.PathValue("gameID"), 10, 64)
+	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
-	teamID, err := strconv.ParseUint(request.PathValue("teamID"), 10, 64)
+	teamID, err := strconv.ParseInt(request.PathValue("teamID"), 10, 64)
 
 	if err != nil {
 		JSONError(writer, "Invalid teamID", http.StatusBadRequest)
 		return
 	}
 
-	err = t.service.DeleteTeam(uint(gameID), sub, uint(teamID))
+	err = t.service.DeleteTeam(int(gameID), sub, int(teamID))
 
 	if err != nil {
 		switch {

@@ -12,12 +12,12 @@ import (
 
 type GamesService interface {
 	FindAllByOwner(sub string) ([]entity.Game, error)
-	FindByID(id uint, sub string) (entity.Game, error)
+	FindByID(id int, sub string) (entity.Game, error)
 	CreateGame(sub string, game *GameRequest) (entity.Game, error)
-	UpdateGame(id uint, sub string, game GameRequest) (entity.Game, error)
-	DeleteGame(id uint, sub string) error
+	UpdateGame(id int, sub string, game GameRequest) (entity.Game, error)
+	DeleteGame(id int, sub string) error
 	AssignTables(game entity.Game) error
-	UpdateScore(gameID uint, roundNumber uint, tableNumber uint, sub string, scoresRequest ScoresRequest) (entity.Game, error)
+	UpdateScore(gameID int, roundNumber int, tableNumber int, sub string, scoresRequest ScoresRequest) (entity.Game, error)
 }
 
 type gamesService struct {
@@ -32,7 +32,7 @@ func (s *gamesService) FindAllByOwner(sub string) ([]entity.Game, error) {
 	return s.repo.FindAllByOwner(sub)
 }
 
-func (s *gamesService) FindByID(id uint, sub string) (entity.Game, error) {
+func (s *gamesService) FindByID(id int, sub string) (entity.Game, error) {
 	gameById, err := s.repo.FindByID(id)
 
 	if err != nil {
@@ -61,7 +61,7 @@ func (s *gamesService) CreateGame(sub string, game *GameRequest) (entity.Game, e
 	return s.repo.CreateOrUpdateGame(&gameModel)
 }
 
-func (s *gamesService) UpdateGame(id uint, sub string, game GameRequest) (entity.Game, error) {
+func (s *gamesService) UpdateGame(id int, sub string, game GameRequest) (entity.Game, error) {
 	gameByID, err := s.repo.FindByID(id)
 
 	if err != nil {
@@ -83,7 +83,7 @@ func (s *gamesService) UpdateGame(id uint, sub string, game GameRequest) (entity
 	return s.repo.CreateOrUpdateGame(&gameByID)
 }
 
-func (s *gamesService) DeleteGame(id uint, sub string) error {
+func (s *gamesService) DeleteGame(id int, sub string) error {
 	gameByID, err := s.repo.FindByID(id)
 
 	if err != nil {
@@ -115,7 +115,7 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 		}
 
 		round := entity.Round{
-			RoundNumber: uint(i + 1),
+			RoundNumber: int(i + 1),
 			GameID:      game.ID,
 		}
 
@@ -128,9 +128,9 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 		gameTables := make([]entity.GameTable, 0, len(tables))
 
 		for tableNumber, players := range tables {
-			gameTable := entity.GameTable{TableNumber: uint(tableNumber), RoundID: round.ID}
+			gameTable := entity.GameTable{TableNumber: int(tableNumber), RoundID: round.ID}
 			for _, playerID := range players {
-				gameTable.Players = append(gameTable.Players, &entity.Player{ID: uint(playerID.ID)})
+				gameTable.Players = append(gameTable.Players, &entity.Player{ID: int(playerID.ID)})
 			}
 			gameTables = append(gameTables, gameTable)
 		}
@@ -144,21 +144,21 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 	return nil
 }
 
-func (s *gamesService) UpdateScore(gameID uint, roundNumber uint, tableNumber uint, sub string, scoresRequest ScoresRequest) (entity.Game, error) {
+func (s *gamesService) UpdateScore(gameID int, roundNumber int, tableNumber int, sub string, scoresRequest ScoresRequest) (entity.Game, error) {
 	gameById, err := s.FindByID(gameID, sub)
 
 	if err != nil {
 		return entity.Game{}, err
 	}
 
-	if uint(len(scoresRequest.Scores)) != gameById.TableSize {
+	if int(len(scoresRequest.Scores)) != gameById.TableSize {
 		return entity.Game{}, entity.ErrorInvalidScore
 	}
 
 	for _, round := range gameById.Rounds {
-		if round.RoundNumber == uint(roundNumber) {
+		if round.RoundNumber == int(roundNumber) {
 			for _, table := range round.Tables {
-				if table.TableNumber == uint(tableNumber) {
+				if table.TableNumber == int(tableNumber) {
 					scores := make([]*entity.Score, 0, gameById.TableSize)
 					for _, s := range scoresRequest.Scores {
 						scores = append(scores, &entity.Score{

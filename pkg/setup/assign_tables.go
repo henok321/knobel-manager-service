@@ -65,7 +65,7 @@ func AssignTables(teamSetup TeamSetup, seed int64) (map[int][]player, error) {
 			playersToAssign = append(playersToAssign, teamMembers...)
 		}
 
-		rnd := rand.New(rand.NewSource(seed))
+		rnd := rand.New(rand.NewSource(seed)) //nolint:gosec
 
 		rnd.Shuffle(numberOfPlayers, func(i, j int) {
 			playersToAssign[i], playersToAssign[j] = playersToAssign[j], playersToAssign[i]
