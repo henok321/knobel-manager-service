@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - main
+    paths-ignored:
+      - 'README.md'
+      - 'LICENSE'
+      - '.pre-commit-config.yaml'
   pull_request:
 
 concurrency:
