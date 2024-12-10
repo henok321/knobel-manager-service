@@ -20,6 +20,9 @@ linters:
   enable:
     - goimports
     - govet
+    - unused
+    - ineffassign
+    - gosimple
     - staticcheck
     - errcheck
     - revive
