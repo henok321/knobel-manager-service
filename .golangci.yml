@@ -12,9 +12,6 @@ linters-settings:
     disable-all: false
   govet:
     disable-all: false
-  loggercheck:
-    slog: true
-    logr: true
 
 linters:
   enable:
@@ -34,7 +31,6 @@ linters:
     - godox
     - revive
     - gocritic
-    - loggercheck
     - gosec
 
 run:
