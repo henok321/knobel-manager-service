@@ -31,7 +31,6 @@ func init() {
 		logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
 		slog.SetDefault(slog.New(logHandler))
 	}
-
 }
 
 func main() {
