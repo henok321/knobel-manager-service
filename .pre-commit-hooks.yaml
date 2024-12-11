@@ -1,6 +1,0 @@
-- id: go-tests
-  name: Run Go unit tests
-
-  entry: go test -v ./...
-  language: system
-  types: [go]
