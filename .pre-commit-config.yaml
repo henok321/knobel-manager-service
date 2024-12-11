@@ -1,4 +1,5 @@
-  repos:
+default_stages: [pre-commit,pre-push,pre-rebase,pre-merge-commit]
+repos:
   - repo: https://github.com/golangci/golangci-lint
     rev: v1.60.1
     hooks:
