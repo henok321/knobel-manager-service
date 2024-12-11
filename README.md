@@ -52,7 +52,8 @@ pre-commit install
 
 #### Firebase config
 
-Generate and download a service account config file in the [Firebase Cloud Console](https://console.firebase.google.com/u/1/project/knobel-manager-webapp/settings/serviceaccounts/adminsdk).
+Generate and download a service account config file in
+the [Firebase Cloud Console](https://console.firebase.google.com/u/1/project/knobel-manager-webapp/settings/serviceaccounts/adminsdk).
 
 ```sh
 export FIREBASE_SECRET=$(jq -c . ./firebaseServiceAccount.json)
@@ -91,9 +92,8 @@ the [GitHub Action](.github/workflows/db_migration.yml) to run the migrations.
 ## Persistence
 
 The service uses a Postgres database and `goose` for database migrations. There is
-a [GitHub Action](.github/workflows/db_migration.yml) that runs the
-database migrations on every push to the `main` branch. The migrations can be
-found [here](.github/workflows/db_migration.yml).
+a [GitHub Action](.github/workflows/db_migration.yml) that runs the database migrations on every push to the `main`
+branch. The migrations can be found [here](.github/workflows/db_migration.yml).
 
 ## License
 
