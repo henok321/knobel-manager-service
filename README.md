@@ -45,7 +45,7 @@ To ensure a consistent code style and apply the linting rules to new code, we us
 To install the commit hooks, run:
 
 ```shell
-pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type pre-rebase --hook-type pre-merge-commit
+pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
 ### Local
