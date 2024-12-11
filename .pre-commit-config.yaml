@@ -7,14 +7,6 @@ repos:
       - id: golangci-lint-full
   - repo: local
     hooks:
-      - id: go-mod-tidy
-        name: god-mod-tidy
-        description: Cleanup modules
-        entry: go mod tidy
-        types: [go]
-        language: golang
-        require_serial: true
-        pass_filenames: false
       - id: go-test
         name: go-test
         stages: [pre-push]
