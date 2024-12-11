@@ -29,13 +29,13 @@ The service uses JWT for authentication that is provided by Firebase Authenticat
 
 Install [golangci-lint](https://golangci-lint.run/welcome/install/#local-installation) and start linting:
 
-```sh
+```shell
 golangci-lint run --fix --verbose 
 ```
 
 To verify the schema of the `.golangci.yml` config file run:
 
-```sh
+```shell
 golangci-lint config verify --verbose --config .golangci.yml
 ```
 
@@ -44,8 +44,8 @@ golangci-lint config verify --verbose --config .golangci.yml
 To ensure a consistent code style and apply the linting rules to new code, we use [pre-commit](https://pre-commit.com/).
 To install the commit hooks, run:
 
-```sh
-pre-commit install
+```shell
+pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type pre-rebase --hook-type pre-merge-commit
 ```
 
 ### Local
@@ -55,26 +55,26 @@ pre-commit install
 Generate and download a service account config file in
 the [Firebase Cloud Console](https://console.firebase.google.com/u/1/project/knobel-manager-webapp/settings/serviceaccounts/adminsdk).
 
-```sh
+```shell
 export FIREBASE_SECRET=$(jq -c . ./firebaseServiceAccount.json)
 ```
 
 #### Start database
 
-```sh
+```shell
 docker-compose up -d
 export DATABASE_URL="postgres://postgres:secret@localhost:5432/postgres?sslmode=disable"
 ```
 
 #### Start the application
 
-```sh
+```shell
 go run cmd/main.go
 ```
 
 ### Health check
 
-```sh
+```shell
 curl http://localhost:8080/health
 ```
 
