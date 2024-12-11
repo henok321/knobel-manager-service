@@ -5,11 +5,15 @@ on:
   push:
     branches:
       - main
-    paths-ignored:
+    paths-ignore:
       - 'README.md'
       - 'LICENSE'
       - '.pre-commit-config.yaml'
   pull_request:
+    paths-ignore:
+      - 'README.md'
+      - 'LICENSE'
+      - '.pre-commit-config.yaml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
