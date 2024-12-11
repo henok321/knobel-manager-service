@@ -1,7 +1,7 @@
 default_stages: [pre-commit,pre-push]
 repos:
   - repo: https://github.com/golangci/golangci-lint
-    rev: v1.60.1
+    rev: v1.62.2
     hooks:
       - id: golangci-lint-config-verify
       - id: golangci-lint-full
