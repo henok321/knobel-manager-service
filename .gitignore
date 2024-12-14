@@ -19,7 +19,11 @@ go.work.sum
 *.iml
 
 # VSCode
-
 .vscode
 knobel-manager-service
+
+# Firebase secret
 firebaseServiceAccount.json
+
+# Air Verse tmp folder
+/tmp
