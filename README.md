@@ -59,6 +59,12 @@ the [Firebase Cloud Console](https://console.firebase.google.com/u/1/project/kno
 export FIREBASE_SECRET=$(jq -c . ./firebaseServiceAccount.json)
 ```
 
+Or use 1password-CLI
+
+```shell
+export FIREBASE_ACCOUNT_SECRET=$(op item get 'Firebase Service Account' --account VGGLJDATCVFRDHX2YEOL2PBEMM --vault private --fields label='json' --reveal)
+```
+
 #### Start database
 
 ```shell
@@ -68,8 +74,16 @@ export DATABASE_URL="postgres://postgres:secret@localhost:5432/postgres?sslmode=
 
 #### Start the application
 
+##### Go run
 ```shell
 go run cmd/main.go
+```
+
+##### Air Verse
+Install [Air Verse](https://github.com/air-verse/air) and start application with live reload.
+
+```shell
+air run
 ```
 
 ### Health check
