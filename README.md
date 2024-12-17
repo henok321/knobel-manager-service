@@ -41,7 +41,7 @@ golangci-lint config verify --verbose --config .golangci.yml
 
 #### Commit hooks
 
-To ensure a consistent code style and apply the linting rules to new code, we use [pre-commit](https://pre-commit.com/).
+To ensure a consistent code style, apply the linting rules to new code and run tests, we use [pre-commit](https://pre-commit.com/). Cod
 To install the commit hooks, run:
 
 ```shell
