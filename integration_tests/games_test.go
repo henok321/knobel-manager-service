@@ -11,14 +11,14 @@ import (
 func TestGames(t *testing.T) {
 	tests := map[string]testCase{
 		"Find games empty": {
-			method:             "GET",
+			method:             http.MethodGet,
 			endpoint:           "/games",
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `{"games":[]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 		},
 		"Find games": {
-			method:   "GET",
+			method:   http.MethodGet,
 			endpoint: "/games",
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
@@ -27,7 +27,7 @@ func TestGames(t *testing.T) {
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
 		"Find game by id ok": {
-			method:   "GET",
+			method:   http.MethodGet,
 			endpoint: "/games/1",
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
@@ -36,7 +36,7 @@ func TestGames(t *testing.T) {
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
 		"Find game by id not found": {
-			method:   "GET",
+			method:   http.MethodGet,
 			endpoint: "/games/2",
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
@@ -45,7 +45,7 @@ func TestGames(t *testing.T) {
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
 		"Find game by id Invalid gameID": {
-			method:   "GET",
+			method:   http.MethodGet,
 			endpoint: "/games/invalid",
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
@@ -54,7 +54,7 @@ func TestGames(t *testing.T) {
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
 		"Find game by id not owner": {
-			method:   "GET",
+			method:   http.MethodGet,
 			endpoint: "/games/1",
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
@@ -63,7 +63,7 @@ func TestGames(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 		},
 		"Create new game": {
-			method:             "POST",
+			method:             http.MethodPost,
 			endpoint:           "/games",
 			expectedStatusCode: http.StatusCreated,
 			requestBody:        `{"name":"Game 1","numberOfRounds":2, "teamSize":4, "tableSize":4}`,
@@ -72,14 +72,14 @@ func TestGames(t *testing.T) {
 			expectedHeaders:    map[string]string{"Location": "/games/1"},
 		},
 		"Create new game invalid request": {
-			method:             "POST",
+			method:             http.MethodPost,
 			endpoint:           "/games",
 			expectedStatusCode: http.StatusBadRequest,
 			requestBody:        `{}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 		},
 		"Update an existing game": {
-			method:             "PUT",
+			method:             http.MethodPut,
 			endpoint:           "/games/1",
 			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
@@ -90,21 +90,21 @@ func TestGames(t *testing.T) {
 			},
 		},
 		"Update an existing game invalid request": {
-			method:             "PUT",
+			method:             http.MethodPut,
 			endpoint:           "/games/1",
 			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusBadRequest,
 		},
 		"Update an existing Game not found": {
-			method:             "PUT",
+			method:             http.MethodPut,
 			endpoint:           "/games/1",
 			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNotFound,
 		},
 		"Update an existing game not owner": {
-			method:             "PUT",
+			method:             http.MethodPut,
 			endpoint:           "/games/1",
 			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
@@ -115,7 +115,7 @@ func TestGames(t *testing.T) {
 			},
 		},
 		"Delete an existing game": {
-			method:             "DELETE",
+			method:             http.MethodDelete,
 			endpoint:           "/games/1",
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNoContent,
@@ -125,16 +125,43 @@ func TestGames(t *testing.T) {
 			},
 		},
 		"Delete an existing Game not found": {
-			method:             "DELETE",
+			method:             http.MethodDelete,
 			endpoint:           "/games/1",
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNotFound,
 		},
 		"Delete an existing game not owner": {
-			method:             "DELETE",
+			method:             http.MethodDelete,
 			endpoint:           "/games/1",
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			expectedStatusCode: http.StatusForbidden,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
+			},
+		},
+		"Set active game": {
+			method:             http.MethodPost,
+			endpoint:           "/games/1/activate",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusNoContent,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
+			},
+		},
+		"Set active game forbidden": {
+			method:             http.MethodPost,
+			endpoint:           "/games/1/activate",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
+			expectedStatusCode: http.StatusForbidden,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
+			},
+		},
+		"Set active game not found": {
+			method:             http.MethodPost,
+			endpoint:           "/games/2/activate",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusNotFound,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},

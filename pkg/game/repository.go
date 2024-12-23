@@ -1,6 +1,8 @@
 package game
 
 import (
+	"errors"
+
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"gorm.io/gorm"
 )
@@ -12,6 +14,8 @@ type GamesRepository interface {
 	DeleteGame(id int) error
 	CreateRound(round *entity.Round) (entity.Round, error)
 	CreateGameTables(gameTables []entity.GameTable) error
+	FindActiveGame(sub string) (entity.Game, error)
+	UpdateActiveGame(game entity.ActiveGame) error
 }
 
 type gamesRepository struct {
@@ -94,4 +98,39 @@ func (r *gamesRepository) CreateGameTables(gameTables []entity.GameTable) error 
 		return err
 	}
 	return nil
+}
+
+func (r *gamesRepository) FindActiveGame(sub string) (entity.Game, error) {
+	var game entity.Game
+
+	err := r.db.Joins("JOIN active_games on active_games.game_id = games.id").Where("active_games.owner_sub = ?", sub).First(&game).Error
+
+	if err != nil {
+		return entity.Game{}, err
+	}
+
+	return game, nil
+}
+
+func (r *gamesRepository) UpdateActiveGame(activeGame entity.ActiveGame) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var game entity.Game
+
+		if err := tx.Where("id = ?", activeGame.GameID).Preload("Owners").First(&game).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return entity.ErrorGameNotFound
+			}
+			return err
+		}
+
+		if !entity.IsOwner(game, activeGame.OwnerSub) {
+			return entity.ErrorNotOwner
+		}
+
+		if err := tx.Save(activeGame).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
