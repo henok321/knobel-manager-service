@@ -72,6 +72,16 @@ docker-compose up -d
 export DATABASE_URL="postgres://postgres:secret@localhost:5432/postgres?sslmode=disable"
 ```
 
+Migrate database schema:
+
+```shell
+export GOOSE_DRIVER=postgres    
+export GOOSE_MIGRATION_DIR="./db_migration"
+export GOOSE_DBSTRING="postgres://postgres:secret@localhost:5432/postgres?sslmode=disable"   
+goose validate
+goose up
+```
+
 #### Start the application
 
 ##### Go run
