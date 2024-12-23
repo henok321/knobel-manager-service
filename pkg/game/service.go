@@ -72,9 +72,6 @@ func (s *gamesService) SetActiveGame(id int, sub string) error {
 	})
 
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.ErrorGameNotFound
-		}
 		return err
 	}
 
