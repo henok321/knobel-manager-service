@@ -21,7 +21,8 @@ type gameResponse struct {
 }
 
 type gamesResponse struct {
-	Games []entity.Game `json:"games"`
+	ActiveGameID int           `json:"activeGameID,omitempty"`
+	Games        []entity.Game `json:"games"`
 }
 
 type GamesHandler interface {
@@ -31,6 +32,7 @@ type GamesHandler interface {
 	UpdateGame(writer http.ResponseWriter, request *http.Request)
 	DeleteGame(writer http.ResponseWriter, request *http.Request)
 	GameSetup(writer http.ResponseWriter, request *http.Request)
+	SetActiveGame(writer http.ResponseWriter, request *http.Request)
 }
 
 type gamesHandler struct {
@@ -56,15 +58,30 @@ func (h *gamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 		http.Error(writer, "{'error': '"+err.Error()+"'}", http.StatusInternalServerError)
 		return
 	}
+	var response gamesResponse
+
+	activeGame, err := h.gamesService.GetActiveGame(sub)
+
+	if err != nil {
+		if !errors.Is(err, entity.ErrorGameNotFound) {
+			JSONError(writer, "Internal server error", http.StatusInternalServerError)
+			return
+		} else {
+			response = gamesResponse{
+				Games: games,
+			}
+		}
+	} else {
+		response = gamesResponse{
+			Games:        games,
+			ActiveGameID: activeGame.ID,
+		}
+	}
 
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	gamesResponse := gamesResponse{
-		Games: games,
-	}
-
-	if err := json.NewEncoder(writer).Encode(gamesResponse); err != nil {
+	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.Error("Could not write body", "error", err)
 	}
 }
@@ -281,4 +298,37 @@ func (h *gamesHandler) GameSetup(writer http.ResponseWriter, request *http.Reque
 
 	writer.Header().Set("Location", "/games/"+strconv.Itoa(int(gameID))+"/tables")
 	writer.WriteHeader(http.StatusCreated)
+}
+
+func (h *gamesHandler) SetActiveGame(writer http.ResponseWriter, request *http.Request) {
+	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	if !ok {
+		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		return
+	}
+
+	sub := userContext.Sub
+
+	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
+
+	if err != nil {
+		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
+		return
+	}
+
+	err = h.gamesService.SetActiveGame(int(gameID), sub)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, entity.ErrorGameNotFound):
+			JSONError(writer, "Game not found", http.StatusNotFound)
+		case errors.Is(err, entity.ErrorNotOwner):
+			JSONError(writer, "Forbidden", http.StatusForbidden)
+		default:
+			JSONError(writer, "Internal server error", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	writer.WriteHeader(http.StatusNoContent)
 }

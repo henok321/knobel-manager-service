@@ -45,6 +45,7 @@ func (app *App) Initialize() http.Handler {
 	app.Router.Handle("POST /games", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.CreateGame)))
 	app.Router.Handle("PUT /games/{gameID}", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.UpdateGame)))
 	app.Router.Handle("DELETE /games/{gameID}", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.DeleteGame)))
+	app.Router.Handle("POST /games/{gameID}/activate", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.SetActiveGame)))
 
 	// setup
 	app.Router.Handle("POST /games/{gameID}/setup", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.GameSetup)))
