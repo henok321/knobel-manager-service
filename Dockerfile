@@ -13,10 +13,10 @@ RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
 
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install -y ca-certificates
-
 RUN groupadd --gid 1001 appgroup && \
     useradd --uid 1001 --gid appgroup --create-home appuser
+
+RUN apt-get update && apt-get install -y ca-certificate && apt-get clean
 
 WORKDIR /home/appuser
 
