@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -32,6 +33,7 @@ func Authentication(authClient FirebaseAuth, next http.Handler) http.Handler {
 
 		tokenParts := strings.Split(authorizationHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
+			slog.Info("Malformed token")
 			http.Error(writer, `{"error": "unauthorized"}`, http.StatusUnauthorized)
 			return
 		}
@@ -41,6 +43,7 @@ func Authentication(authClient FirebaseAuth, next http.Handler) http.Handler {
 		token, err := authClient.VerifyIDToken(request.Context(), idToken)
 
 		if err != nil {
+			slog.Info("Invalid token", "error", err)
 			http.Error(writer, `{"error": "unauthorized"}`, http.StatusUnauthorized)
 			return
 		}
