@@ -26,7 +26,7 @@ func (app *App) publicEndpoint(handler http.Handler) http.Handler {
 }
 
 func (app *App) authenticatedEndpoint(handler http.Handler) http.Handler {
-	return middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.CORS(middleware.Authentication(app.AuthClient, handler))))
+	return middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.AuthClient, handler)))
 }
 
 func (app *App) Initialize() http.Handler {
