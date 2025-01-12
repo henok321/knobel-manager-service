@@ -62,7 +62,7 @@ export FIREBASE_SECRET=$(jq -c . ./firebaseServiceAccount.json)
 Or use 1password-CLI
 
 ```shell
-export FIREBASE_ACCOUNT_SECRET=$(op item get 'Firebase Service Account' --account VGGLJDATCVFRDHX2YEOL2PBEMM --vault private --fields label='json' --reveal)
+export FIREBASE_SECRET=$(op item get 'Firebase Service Account' --account VGGLJDATCVFRDHX2YEOL2PBEMM --vault private --fields label='json' --reveal)
 ```
 
 #### Start database
