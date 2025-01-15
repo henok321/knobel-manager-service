@@ -10,16 +10,18 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/rs/cors"
+
 	firebase "firebase.google.com/go/v4"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"google.golang.org/api/option"
 
+	"github.com/henok321/knobel-manager-service/internal/app"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-
-	"github.com/henok321/knobel-manager-service/internal/app"
 )
 
 func init() {
@@ -79,7 +81,7 @@ func main() {
 
 	appServer := &http.Server{
 		Addr:         ":8080",
-		Handler:      appInstance.Router,
+		Handler:      cors.New(cors.Options{AllowedHeaders: []string{"Authorization", "Content-Type", "Accept", "Accept-Language", "Content-Language"}, MaxAge: 3600}).Handler(appInstance.Router),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
@@ -90,7 +92,7 @@ func main() {
 
 	metricsServer := &http.Server{
 		Addr:         ":9090",
-		Handler:      metricsRouter,
+		Handler:      cors.New(cors.Options{AllowedHeaders: []string{"Content-Type", "Accept", "Accept-Language", "Content-Language"}, MaxAge: 3600}).Handler(metricsRouter),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
