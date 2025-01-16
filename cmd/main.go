@@ -81,7 +81,7 @@ func main() {
 
 	appServer := &http.Server{
 		Addr:         ":8080",
-		Handler:      cors.New(cors.Options{AllowedHeaders: []string{"Authorization", "Content-Type", "Accept", "Accept-Language", "Content-Language"}, MaxAge: 3600}).Handler(appInstance.Router),
+		Handler:      cors.AllowAll().Handler(appInstance.Router),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
@@ -92,7 +92,7 @@ func main() {
 
 	metricsServer := &http.Server{
 		Addr:         ":9090",
-		Handler:      cors.New(cors.Options{AllowedHeaders: []string{"Content-Type", "Accept", "Accept-Language", "Content-Language"}, MaxAge: 3600}).Handler(metricsRouter),
+		Handler:      cors.AllowAll().Handler(metricsRouter),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
