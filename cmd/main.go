@@ -3,12 +3,17 @@ package main
 import (
 	"context"
 	"errors"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
+
+	"github.com/joho/godotenv"
 
 	"github.com/rs/cors"
 
@@ -25,6 +30,13 @@ import (
 )
 
 func init() {
+
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
 	switch os.Getenv("ENVIRONMENT") {
 	case "local":
 		logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
@@ -32,6 +44,27 @@ func init() {
 	default:
 		logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
 		slog.SetDefault(slog.New(logHandler))
+	}
+}
+
+type corsConfig struct {
+	allowedHeaders []string
+	allowedOrigins []string
+	maxAge         int
+}
+
+func parseCorsConfig() corsConfig {
+
+	maxAge, err := strconv.Atoi(os.Getenv("CORS_MAX_AGE"))
+
+	if err != nil {
+		log.Fatalf("CORS_MAX_AGE must be an integer")
+	}
+
+	return corsConfig{
+		allowedHeaders: strings.Split(os.Getenv("CORS_ALLOWED_HEADERS"), ","),
+		allowedOrigins: strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ","),
+		maxAge:         maxAge,
 	}
 }
 
@@ -79,9 +112,11 @@ func main() {
 
 	appInstance.Initialize()
 
+	corsConfig := parseCorsConfig()
+
 	appServer := &http.Server{
 		Addr:         ":8080",
-		Handler:      cors.New(cors.Options{AllowedHeaders: []string{"Authorization", "Content-Type", "Accept", "Accept-Language", "Content-Language"}, MaxAge: 3600}).Handler(appInstance.Router),
+		Handler:      cors.New(cors.Options{AllowedHeaders: corsConfig.allowedHeaders, AllowedOrigins: corsConfig.allowedOrigins, MaxAge: corsConfig.maxAge}).Handler(appInstance.Router),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
