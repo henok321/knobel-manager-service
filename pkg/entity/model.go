@@ -78,7 +78,7 @@ type Round struct {
 	RoundNumber int          `gorm:"not null;uniqueIndex:idx_game_round" json:"roundNumber"`
 	GameID      int          `gorm:"not null;uniqueIndex:idx_game_round" json:"gameID"`
 	Status      string       `gorm:"size:50;not null" json:"status"`
-	Tables      []*GameTable `gorm:"foreignKey:RoundID" json:"table,omitempty"`
+	Tables      []*GameTable `gorm:"foreignKey:RoundID" json:"tables,omitempty"`
 }
 
 type GameTable struct {

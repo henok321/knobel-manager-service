@@ -236,7 +236,7 @@
         "roundNumber": 1,
         "gameID": 1,
         "status": "in_progress",
-        "table": [
+        "tables": [
           {
             "id": 1,
             "tableNumber": 1,
