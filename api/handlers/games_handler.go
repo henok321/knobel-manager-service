@@ -63,13 +63,15 @@ func (h *gamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 	activeGame, err := h.gamesService.GetActiveGame(sub)
 
 	if err != nil {
-		if !errors.Is(err, entity.ErrorGameNotFound) {
+		if errors.Is(err, entity.ErrorGameNotFound) {
+			slog.Warn("Could not find active game", "error", err)
+			response = gamesResponse{
+				Games: games}
+
+		} else {
+			slog.Error("Unknown error error while querying active game", "error", err)
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
 			return
-		} else {
-			response = gamesResponse{
-				Games: games,
-			}
 		}
 	} else {
 		response = gamesResponse{
