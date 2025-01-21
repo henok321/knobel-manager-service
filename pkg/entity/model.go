@@ -58,35 +58,47 @@ type ActiveGame struct {
 }
 
 type Team struct {
-	ID      int       `gorm:"primaryKey" json:"id"`
-	Name    string    `gorm:"size:255;not null" json:"name"`
-	GameID  int       `gorm:"not null" json:"gameID"`
-	Game    *Game     `gorm:"foreignKey:GameID" json:"game,omitempty"`
-	Players []*Player `gorm:"foreignKey:TeamID" json:"players,omitempty"`
+	ID        int            `gorm:"primaryKey" json:"id"`
+	Name      string         `gorm:"size:255;not null" json:"name"`
+	GameID    int            `gorm:"not null" json:"gameID"`
+	Game      *Game          `gorm:"foreignKey:GameID" json:"game,omitempty"`
+	Players   []*Player      `gorm:"foreignKey:TeamID" json:"players,omitempty"`
+	CreatedAt time.Time      `json:"-"`
+	UpdatedAt time.Time      `json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type Player struct {
-	ID     int      `gorm:"primaryKey" json:"id"`
-	Name   string   `gorm:"size:255;not null" json:"name"`
-	TeamID int      `gorm:"not null" json:"teamID"`
-	Team   *Team    `gorm:"foreignKey:TeamID" json:"team,omitempty"`
-	Scores []*Score `gorm:"foreignKey:PlayerID" json:"scores,omitempty"`
+	ID        int            `gorm:"primaryKey" json:"id"`
+	Name      string         `gorm:"size:255;not null" json:"name"`
+	TeamID    int            `gorm:"not null" json:"teamID"`
+	Team      *Team          `gorm:"foreignKey:TeamID" json:"team,omitempty"`
+	Scores    []*Score       `gorm:"foreignKey:PlayerID" json:"scores,omitempty"`
+	CreatedAt time.Time      `json:"-"`
+	UpdatedAt time.Time      `json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type Round struct {
-	ID          int          `gorm:"primaryKey" json:"id"`
-	RoundNumber int          `gorm:"not null;uniqueIndex:idx_game_round" json:"roundNumber"`
-	GameID      int          `gorm:"not null;uniqueIndex:idx_game_round" json:"gameID"`
-	Status      string       `gorm:"size:50;not null" json:"status"`
-	Tables      []*GameTable `gorm:"foreignKey:RoundID" json:"tables,omitempty"`
+	ID          int            `gorm:"primaryKey" json:"id"`
+	RoundNumber int            `gorm:"not null;uniqueIndex:idx_game_round" json:"roundNumber"`
+	GameID      int            `gorm:"not null;uniqueIndex:idx_game_round" json:"gameID"`
+	Status      string         `gorm:"size:50;not null" json:"status"`
+	Tables      []*GameTable   `gorm:"foreignKey:RoundID" json:"tables,omitempty"`
+	CreatedAt   time.Time      `json:"-"`
+	UpdatedAt   time.Time      `json:"-"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type GameTable struct {
-	ID          int       `gorm:"primaryKey" json:"id"`
-	TableNumber int       `gorm:"not null;uniqueIndex:idx_round_table" json:"tableNumber"`
-	RoundID     int       `gorm:"not null;uniqueIndex:idx_round_table" json:"roundID"`
-	Players     []*Player `gorm:"many2many:table_players" json:"players,omitempty"`
-	Scores      []*Score  `gorm:"foreignKey:TableID" json:"scores,omitempty"`
+	ID          int            `gorm:"primaryKey" json:"id"`
+	TableNumber int            `gorm:"not null;uniqueIndex:idx_round_table" json:"tableNumber"`
+	RoundID     int            `gorm:"not null;uniqueIndex:idx_round_table" json:"roundID"`
+	Players     []*Player      `gorm:"many2many:table_players" json:"players,omitempty"`
+	Scores      []*Score       `gorm:"foreignKey:TableID" json:"scores,omitempty"`
+	CreatedAt   time.Time      `json:"-"`
+	UpdatedAt   time.Time      `json:"-"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 // **Add TableName() method only for GameTable, since the struct name doesn't pluralize to 'game_tables'**
@@ -95,12 +107,15 @@ func (GameTable) TableName() string {
 }
 
 type Score struct {
-	ID        int        `gorm:"primaryKey" json:"id"`
-	PlayerID  int        `gorm:"not null;uniqueIndex:idx_player_table" json:"playerID"`
-	TableID   int        `gorm:"not null;uniqueIndex:idx_player_table" json:"tableID"`
-	Score     int        `gorm:"not null" json:"score"`
-	Players   []*Player  `gorm:"many2many:table_players" json:"players,omitempty"`
-	GameTable *GameTable `gorm:"foreignKey:TableID" json:"gameTable,omitempty"`
+	ID        int            `gorm:"primaryKey" json:"id"`
+	PlayerID  int            `gorm:"not null;uniqueIndex:idx_player_table" json:"playerID"`
+	TableID   int            `gorm:"not null;uniqueIndex:idx_player_table" json:"tableID"`
+	Score     int            `gorm:"not null" json:"score"`
+	Players   []*Player      `gorm:"many2many:table_players" json:"players,omitempty"`
+	GameTable *GameTable     `gorm:"foreignKey:TableID" json:"gameTable,omitempty"`
+	CreatedAt time.Time      `json:"-"`
+	UpdatedAt time.Time      `json:"-"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type TablePlayer struct {
