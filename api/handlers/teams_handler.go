@@ -63,10 +63,13 @@ func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 
 	if err != nil {
 		switch {
-		case err == entity.ErrorGameNotFound:
+		case errors.Is(err, entity.ErrorGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case err == entity.ErrorNotOwner:
+		case errors.Is(err, entity.ErrorNotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
+		case errors.Is(err, entity.ErrorTeamSizeNotAllowed):
+			JSONError(writer, "Invalid team size", http.StatusBadRequest)
+
 		default:
 			JSONError(writer, err.Error(), http.StatusInternalServerError)
 		}

@@ -21,6 +21,27 @@ func TestTeams(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
 		},
+		"Create team with players": {
+			method:             "POST",
+			endpoint:           "/games/1/teams",
+			requestBody:        `{"name":"Team 1","players": [{"name":"Player 1"},{"name":"Player 2"},{"name":"Player 3"},{"name":"Player 4"}]}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusCreated,
+			expectedBody:       `{"team":{"id":1,"name":"Team 1","gameID":1,"players":[{"id":1,"name":"Player 1","teamID":1},{"id":2,"name":"Player 2","teamID":1},{"id":3,"name":"Player 3","teamID":1},{"id":4,"name":"Player 4","teamID":1}]}}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
+			},
+		},
+		"Create team with players invalid player count": {
+			method:             "POST",
+			endpoint:           "/games/1/teams",
+			requestBody:        `{"name":"Team 1","players": [{"name":"Player 1"},{"name":"Player 2"},{"name":"Player 3"},{"name":"Player 4"},{"name":"Player 5"}]}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusBadRequest,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
+			},
+		},
 		"Create team not owner": {
 			method:             "POST",
 			endpoint:           "/games/1/teams",

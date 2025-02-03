@@ -14,6 +14,7 @@ var ErrorNotOwner = errors.New("user is not the owner of the requested resource"
 var ErrorTableAssignment = errors.New("cannot not assign players to tables")
 var ErrorInvalidScore = errors.New("invalid score")
 var ErrorRoundOrTableNotFound = errors.New("round or table not found")
+var ErrorTeamSizeNotAllowed = errors.New("team size not allowed")
 
 type GameStatus string
 

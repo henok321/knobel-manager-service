@@ -40,9 +40,20 @@ func (s *teamsService) CreateTeam(gameID int, sub string, request TeamsRequest) 
 		return entity.Team{}, entity.ErrorNotOwner
 	}
 
+	if len(request.Players) > gameById.TeamSize {
+		return entity.Team{}, entity.ErrorTeamSizeNotAllowed
+	}
+
+	players := make([]*entity.Player, len(request.Players))
+
+	for i, player := range request.Players {
+		players[i] = &entity.Player{Name: player.Name}
+	}
+
 	team := entity.Team{
-		Name:   request.Name,
-		GameID: gameID,
+		Name:    request.Name,
+		GameID:  gameID,
+		Players: players,
 	}
 
 	return s.teamRepo.CreateOrUpdateTeam(&team)
