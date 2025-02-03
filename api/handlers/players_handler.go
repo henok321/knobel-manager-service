@@ -35,7 +35,7 @@ func NewPlayersHandler(service player.PlayersService) PlayersHandler {
 func (h playersHandler) CreatePlayer(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -105,7 +105,7 @@ func (h playersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 func (h playersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -165,7 +165,7 @@ func (h playersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.R
 func (h playersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 

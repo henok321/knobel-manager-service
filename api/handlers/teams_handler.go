@@ -35,7 +35,7 @@ func NewTeamsHandler(service team.TeamsService) TeamsHandler {
 func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -93,7 +93,7 @@ func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 func (t teamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -154,7 +154,7 @@ func (t teamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 func (t teamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 

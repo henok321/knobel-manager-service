@@ -33,7 +33,7 @@ func NewTablesHandler(gamesService game.GamesService) TablesHandler {
 func (t tablesHandler) GetTables(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -86,7 +86,7 @@ func (t tablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 func (t tablesHandler) GetTable(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -148,7 +148,7 @@ func (t tablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 func (t tablesHandler) UpdateTableScore(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 

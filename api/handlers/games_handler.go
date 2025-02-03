@@ -48,7 +48,7 @@ func NewGamesHandler(gamesService game.GamesService) GamesHandler {
 func (h *gamesHandler) GetGames(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -136,7 +136,7 @@ func (h *gamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -182,7 +182,7 @@ func (h *gamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -235,7 +235,7 @@ func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 func (h *gamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -266,7 +266,7 @@ func (h *gamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 func (h *gamesHandler) GameSetup(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -307,7 +307,7 @@ func (h *gamesHandler) GameSetup(writer http.ResponseWriter, request *http.Reque
 func (h *gamesHandler) SetActiveGame(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
