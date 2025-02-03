@@ -25,6 +25,10 @@ The service uses JWT for authentication that is provided by Firebase Authenticat
 
 ### Prerequisites
 
+#### Makefile
+
+Use `make help` to show all Makefile options. A lot of the documented commands are also available as Makefile
+
 #### Linting
 
 Install [golangci-lint](https://golangci-lint.run/welcome/install/#local-installation) and start linting:
@@ -41,11 +45,12 @@ golangci-lint config verify --verbose --config .golangci.yml
 
 #### Commit hooks
 
-To ensure a consistent code style, apply the linting rules to new code and run tests, we use [pre-commit](https://pre-commit.com/). Cod
+To ensure a consistent code style, apply the linting rules to new code and run tests, we
+use [pre-commit](https://pre-commit.com/). Cod
 To install the commit hooks, run:
 
 ```shell
-pre-commit install --hook-type pre-commit --hook-type pre-push
+	pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
 ### Local
@@ -85,11 +90,13 @@ goose up
 #### Start the application
 
 ##### Go run
+
 ```shell
 go run cmd/main.go
 ```
 
 ##### Air Verse
+
 Install [Air Verse](https://github.com/air-verse/air) and start application with live reload.
 
 ```shell
