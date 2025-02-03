@@ -3,6 +3,8 @@ package team
 import (
 	"errors"
 
+	"github.com/henok321/knobel-manager-service/pkg/customError"
+
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/game"
 	"gorm.io/gorm"
@@ -37,11 +39,11 @@ func (s *teamsService) CreateTeam(gameID int, sub string, request TeamsRequest) 
 	}
 
 	if !entity.IsOwner(gameById, sub) {
-		return entity.Team{}, entity.ErrorNotOwner
+		return entity.Team{}, customError.NotOwner
 	}
 
 	if len(request.Players) > gameById.TeamSize {
-		return entity.Team{}, entity.ErrorTeamSizeNotAllowed
+		return entity.Team{}, customError.TeamSizeNotAllowed
 	}
 
 	players := make([]*entity.Player, len(request.Players))
@@ -68,7 +70,7 @@ func (s *teamsService) UpdateTeam(gameID int, sub string, teamID int, request Te
 		return entity.Team{}, err
 	}
 	if !entity.IsOwner(gameById, sub) {
-		return entity.Team{}, entity.ErrorNotOwner
+		return entity.Team{}, customError.NotOwner
 	}
 
 	for _, team := range gameById.Teams {
@@ -77,7 +79,7 @@ func (s *teamsService) UpdateTeam(gameID int, sub string, teamID int, request Te
 			return s.teamRepo.CreateOrUpdateTeam(team)
 		}
 	}
-	return entity.Team{}, entity.ErrorTeamNotFound
+	return entity.Team{}, customError.TeamNotFound
 }
 
 func (s *teamsService) DeleteTeam(gameID int, sub string, teamID int) error {
@@ -89,7 +91,7 @@ func (s *teamsService) DeleteTeam(gameID int, sub string, teamID int) error {
 		return err
 	}
 	if !entity.IsOwner(gameById, sub) {
-		return entity.ErrorNotOwner
+		return customError.NotOwner
 	}
 
 	for _, team := range gameById.Teams {
@@ -98,5 +100,5 @@ func (s *teamsService) DeleteTeam(gameID int, sub string, teamID int) error {
 		}
 	}
 
-	return entity.ErrorTeamNotFound
+	return customError.TeamNotFound
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/henok321/knobel-manager-service/pkg/customError"
+
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/setup"
 	"gorm.io/gorm"
@@ -45,7 +47,7 @@ func (s *gamesService) FindByID(id int, sub string) (entity.Game, error) {
 	}
 
 	if !entity.IsOwner(gameById, sub) {
-		return entity.Game{}, entity.ErrorNotOwner
+		return entity.Game{}, customError.NotOwner
 	}
 
 	return gameById, nil
@@ -101,7 +103,7 @@ func (s *gamesService) UpdateGame(id int, sub string, game GameRequest) (entity.
 	}
 
 	if !entity.IsOwner(gameByID, sub) {
-		return entity.Game{}, entity.ErrorNotOwner
+		return entity.Game{}, customError.NotOwner
 	}
 
 	gameByID.Name = game.Name
@@ -122,7 +124,7 @@ func (s *gamesService) DeleteGame(id int, sub string) error {
 		return err
 	}
 	if !entity.IsOwner(gameByID, sub) {
-		return entity.ErrorNotOwner
+		return customError.NotOwner
 	}
 	return s.repo.DeleteGame(id)
 }
@@ -140,7 +142,7 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 		tables, err := setup.AssignTables(setup.TeamSetup{Teams: teams, TeamSize: int(game.TeamSize), TableSize: int(game.TableSize)}, time.Now().Unix())
 
 		if err != nil {
-			return entity.ErrorTableAssignment
+			return customError.TableAssignment
 		}
 
 		round := entity.Round{
@@ -181,7 +183,7 @@ func (s *gamesService) UpdateScore(gameID int, roundNumber int, tableNumber int,
 	}
 
 	if int(len(scoresRequest.Scores)) != gameById.TableSize {
-		return entity.Game{}, entity.ErrorInvalidScore
+		return entity.Game{}, customError.InvalidScore
 	}
 
 	for _, round := range gameById.Rounds {
@@ -203,5 +205,5 @@ func (s *gamesService) UpdateScore(gameID int, roundNumber int, tableNumber int,
 			}
 		}
 	}
-	return entity.Game{}, entity.ErrorRoundOrTableNotFound
+	return entity.Game{}, customError.RoundOrTableNotFound
 }

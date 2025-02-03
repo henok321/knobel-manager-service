@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/henok321/knobel-manager-service/pkg/customError"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
@@ -65,9 +67,9 @@ func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 		switch {
 		case errors.Is(err, entity.ErrorGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, entity.ErrorNotOwner):
+		case errors.Is(err, customError.NotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorTeamSizeNotAllowed):
+		case errors.Is(err, customError.TeamSizeNotAllowed):
 			JSONError(writer, "Invalid team size", http.StatusBadRequest)
 
 		default:
@@ -129,11 +131,11 @@ func (t teamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 
 	if err != nil {
 		switch {
-		case err == entity.ErrorNotOwner:
+		case err == customError.NotOwner:
 			JSONError(writer, "Forbidden", http.StatusForbidden)
 		case err == entity.ErrorGameNotFound:
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case err == entity.ErrorTeamNotFound:
+		case err == customError.TeamNotFound:
 			JSONError(writer, "Team not found", http.StatusNotFound)
 		}
 		return
@@ -176,7 +178,7 @@ func (t teamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Reque
 
 	if err != nil {
 		switch {
-		case errors.Is(err, entity.ErrorNotOwner):
+		case errors.Is(err, customError.NotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)

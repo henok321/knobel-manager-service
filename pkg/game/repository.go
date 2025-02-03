@@ -3,6 +3,8 @@ package game
 import (
 	"errors"
 
+	"github.com/henok321/knobel-manager-service/pkg/customError"
+
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"gorm.io/gorm"
 )
@@ -124,7 +126,7 @@ func (r *gamesRepository) UpdateActiveGame(activeGame entity.ActiveGame) error {
 		}
 
 		if !entity.IsOwner(game, activeGame.OwnerSub) {
-			return entity.ErrorNotOwner
+			return customError.NotOwner
 		}
 
 		if err := tx.Save(activeGame).Error; err != nil {

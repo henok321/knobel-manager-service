@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/henok321/knobel-manager-service/pkg/customError"
+
 	"github.com/go-playground/validator/v10"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
@@ -108,7 +110,7 @@ func (h *gamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 
 	if err != nil {
 		switch {
-		case errors.Is(err, entity.ErrorNotOwner):
+		case errors.Is(err, customError.NotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
@@ -213,7 +215,7 @@ func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 
 	if err != nil {
 		switch {
-		case errors.Is(err, entity.ErrorNotOwner):
+		case errors.Is(err, customError.NotOwner):
 			JSONError(writer, "Not owner", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
@@ -247,7 +249,7 @@ func (h *gamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 
 	if err := h.gamesService.DeleteGame(int(gameID), sub); err != nil {
 		switch {
-		case errors.Is(err, entity.ErrorNotOwner):
+		case errors.Is(err, customError.NotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
@@ -281,7 +283,7 @@ func (h *gamesHandler) GameSetup(writer http.ResponseWriter, request *http.Reque
 
 	if err != nil {
 		switch {
-		case errors.Is(err, entity.ErrorNotOwner):
+		case errors.Is(err, customError.NotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
@@ -324,7 +326,7 @@ func (h *gamesHandler) SetActiveGame(writer http.ResponseWriter, request *http.R
 		switch {
 		case errors.Is(err, entity.ErrorGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, entity.ErrorNotOwner):
+		case errors.Is(err, customError.NotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)

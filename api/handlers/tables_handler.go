@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/henok321/knobel-manager-service/pkg/customError"
+
 	"github.com/go-playground/validator/v10"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
@@ -55,7 +57,7 @@ func (t tablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 
 	if err != nil {
 		switch {
-		case errors.Is(err, entity.ErrorNotOwner):
+		case errors.Is(err, customError.NotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
 			return
 		case errors.Is(err, entity.ErrorGameNotFound):
@@ -115,7 +117,7 @@ func (t tablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 
 	if err != nil {
 		switch {
-		case errors.Is(err, entity.ErrorNotOwner):
+		case errors.Is(err, customError.NotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
 			return
 		case errors.Is(err, entity.ErrorGameNotFound):
@@ -191,13 +193,13 @@ func (t tablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 
 	if err != nil {
 		switch {
-		case errors.Is(err, entity.ErrorNotOwner):
+		case errors.Is(err, customError.NotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
 		case errors.Is(err, entity.ErrorGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, entity.ErrorInvalidScore):
+		case errors.Is(err, customError.InvalidScore):
 			JSONError(writer, "Invalid score", http.StatusBadRequest)
-		case errors.Is(err, entity.ErrorRoundOrTableNotFound):
+		case errors.Is(err, customError.RoundOrTableNotFound):
 			JSONError(writer, "Round or table not found", http.StatusNotFound)
 		default:
 			JSONError(writer, err.Error(), http.StatusInternalServerError)
