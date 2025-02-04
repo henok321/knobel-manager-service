@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+echo "Install git hooks..."
+
+pre-commit install --hook-type pre-commit --hook-type pre-push
+
+
 echo "Setup database..."
 docker-compose up -d
 
@@ -11,3 +16,9 @@ export GOOSE_DBSTRING="postgres://postgres:secret@localhost:5432/postgres?sslmod
 
 goose validate
 goose up
+
+echo "Init .env..."
+
+echo "ENVIRONMENT=local" > .env
+echo "FIREBASE_SECRET='$(jq -c . ./firebaseServiceAccount.json)'" >> .env
+echo "DATABASE_URL=$DATABASE_URL" >> .env

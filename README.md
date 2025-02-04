@@ -6,12 +6,12 @@
 
 ## Synopsis
 
-The main goal of this project is to learn the programming language Go and to get familiar with the Go ecosystem.
+The main goal of this project is to learn the Go programming language and become familiar with its ecosystem.
 
-This service is a small tournament manager for the dice game "Knobeln" or "Schocken". The service provides a REST API
-to manage players, games and rounds. The service is backed by a Postgres database.
+This service is a small tournament manager for the dice game "Knobeln" or "Schocken." It provides a REST API to manage
+players, games, and rounds, backed by a PostgreSQL database.
 
-This project is WIP and not yet finished.
+This project is a work in progress and not yet finished.
 
 ## Frontend
 
@@ -19,114 +19,86 @@ The frontend is implemented in React and can be found [here](https://github.com/
 
 ## Authentication
 
-The service uses JWT for authentication that is provided by Firebase Authentication.
-
-## Build and run
-
-### Prerequisites
-
-#### Makefile
-
-Use `make help` to show all Makefile options. A lot of the documented commands are also available as Makefile
-
-#### Linting
-
-Install [golangci-lint](https://golangci-lint.run/welcome/install/#local-installation) and start linting:
-
-```shell
-golangci-lint run --fix --verbose 
-```
-
-To verify the schema of the `.golangci.yml` config file run:
-
-```shell
-golangci-lint config verify --verbose --config .golangci.yml
-```
-
-#### Commit hooks
-
-To ensure a consistent code style, apply the linting rules to new code and run tests, we
-use [pre-commit](https://pre-commit.com/). Cod
-To install the commit hooks, run:
-
-```shell
-	pre-commit install --hook-type pre-commit --hook-type pre-push
-```
-
-### Local
-
-#### Firebase config
-
-Generate and download a service account config file in
-the [Firebase Cloud Console](https://console.firebase.google.com/u/1/project/knobel-manager-webapp/settings/serviceaccounts/adminsdk).
-
-```shell
-export FIREBASE_SECRET=$(jq -c . ./firebaseServiceAccount.json)
-```
-
-Or use 1password-CLI
-
-```shell
-export FIREBASE_SECRET=$(op item get 'Firebase Service Account' --account VGGLJDATCVFRDHX2YEOL2PBEMM --vault private --fields label='json' --reveal)
-```
-
-#### Start database
-
-```shell
-docker-compose up -d
-export DATABASE_URL="postgres://postgres:secret@localhost:5432/postgres?sslmode=disable"
-```
-
-Migrate database schema:
-
-```shell
-export GOOSE_DRIVER=postgres    
-export GOOSE_MIGRATION_DIR="./db_migration"
-export GOOSE_DBSTRING="postgres://postgres:secret@localhost:5432/postgres?sslmode=disable"   
-goose validate
-goose up
-```
-
-#### Start the application
-
-##### Go run
-
-```shell
-go run cmd/main.go
-```
-
-##### Air Verse
-
-Install [Air Verse](https://github.com/air-verse/air) and start application with live reload.
-
-```shell
-air run
-```
-
-### Health check
-
-```shell
-curl http://localhost:8080/health
-```
+The service uses JWT for authentication, provided by Firebase Authentication.
 
 ## CI/CD
 
-The project uses GitHub Actions for CI/CD. The CI workflow runs on push for main branch and for pull request and can be
-found [here](.github/workflows/CI.yml). The CD workflow runs on push to the main branch and can be
+The project uses GitHub Actions for CI/CD. The CI workflow runs on push for the main branch and for pull requests and
+can be found [here](.github/workflows/CI.yml). The CD workflow runs on push to the main branch and can be
 found [here](.github/workflows/deploy.yml).
 
-## Database migration
+## Database Migration
 
 The project uses `goose` for database migrations. The migrations can be found [here](db/migrations). Use
 the [GitHub Action](.github/workflows/db_migration.yml) to run the migrations.
 
-## Persistence
+## Prerequisites
 
-The service uses a Postgres database and `goose` for database migrations. There is
-a [GitHub Action](.github/workflows/db_migration.yml) that runs the database migrations on every push to the `main`
-branch. The migrations can be found [here](.github/workflows/db_migration.yml).
+Ensure the following dependencies are installed:
+
+- [Go](https://go.dev/doc/install)
+- [Docker](https://docs.docker.com/get-docker/)
+- [pre-commit](https://pre-commit.com/) (`pip install pre-commit`)
+- [Goose](https://github.com/pressly/goose) (`go install github.com/pressly/goose/v3/cmd/goose@latest`)
+
+## Setup and Development
+
+### Obtain Firebase Service Account Credentials:
+
+Generate and download a service account config file in
+the [Firebase Cloud Console](https://console.firebase.google.com/u/1/project/knobel-manager-webapp/settings/serviceaccounts/adminsdk).
+
+The file should be named `firebase-credentials.json` and placed in the root directory of the project.
+
+### Run Setup
+
+Execute the following command to set up the project:
+
+```sh
+make setup
+```
+
+This command will:
+
+* Install commit hooks.
+* Start the local database.
+* Run database migrations.
+* Create a `.env` file with necessary environment variables.
+
+Reset database:
+
+```shell
+make reset
+```
+
+### Start the Application
+
+To run the application locally:
+
+```sh
+set -o allexport
+source .env
+set +o allexport
+go run cmd/main.go
+
+```
+
+### Health Check
+
+Verify the service is running:
+
+```sh
+curl http://localhost:8080/health
+```
+
+### Makefile targets
+
+For more information on available Makefile targets, run:
+
+```shell
+make help
+```
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
