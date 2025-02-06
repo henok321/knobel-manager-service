@@ -75,12 +75,28 @@ make reset
 
 To run the application locally:
 
-```sh
+```shell
 set -o allexport
 source .env
 set +o allexport
 go run cmd/main.go
+```
 
+### Build and run binary
+
+#### Build
+
+```shell
+make build
+```
+
+#### Run
+
+```shell
+set -o allexport
+source .env
+set +o allexport
+./knobel-manager-service
 ```
 
 ### Health Check
