@@ -1,6 +1,6 @@
 module github.com/henok321/knobel-manager-service
 
-go 1.23.5
+go 1.23.6
 
 require (
 	firebase.google.com/go/v4 v4.15.1
@@ -27,7 +27,7 @@ require (
 	cloud.google.com/go/firestore v1.18.0 // indirect
 	cloud.google.com/go/iam v1.3.1 // indirect
 	cloud.google.com/go/longrunning v0.6.4 // indirect
-	cloud.google.com/go/monitoring v1.23.0 // indirect
+	cloud.google.com/go/monitoring v1.24.0 // indirect
 	cloud.google.com/go/storage v1.50.0 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
@@ -114,12 +114,12 @@ require (
 	golang.org/x/oauth2 v0.26.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/text v0.21.0 // indirect
+	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
 	google.golang.org/appengine/v2 v2.0.6 // indirect
-	google.golang.org/genproto v0.0.0-20250127172529-29210b9bc287 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250127172529-29210b9bc287 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250127172529-29210b9bc287 // indirect
+	google.golang.org/genproto v0.0.0-20250204164813-702378808489 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250204164813-702378808489 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250204164813-702378808489 // indirect
 	google.golang.org/grpc v1.70.0 // indirect
 	google.golang.org/protobuf v1.36.4 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
