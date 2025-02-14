@@ -9,9 +9,9 @@ import (
 	"firebase.google.com/go/v4/auth"
 )
 
-type ContextKey string
+type userContextKey string
 
-const UserContextKey ContextKey = "user"
+const UserContextKey userContextKey = "user"
 
 type FirebaseAuth interface {
 	VerifyIDToken(ctx context.Context, idToken string) (*auth.Token, error)
