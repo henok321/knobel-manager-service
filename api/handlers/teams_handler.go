@@ -35,7 +35,7 @@ func NewTeamsHandler(service team.TeamsService) TeamsHandler {
 func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
+		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 	teamResponse := teamResponse{Team: createdTeam}
 
 	if err := json.NewEncoder(writer).Encode(teamResponse); err != nil {
-		slog.Info("Could not write body", "error", err)
+		slog.InfoContext(request.Context(), "Could not write body", "error", err)
 	}
 
 }
@@ -93,7 +93,7 @@ func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 func (t teamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
+		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -147,14 +147,14 @@ func (t teamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 	response := teamResponse{Team: updatedGame}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.Info("Could not write body", "error", err)
+		slog.InfoContext(request.Context(), "Could not write body", "error", err)
 	}
 }
 
 func (t teamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
+		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
 	}
 

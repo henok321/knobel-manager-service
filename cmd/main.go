@@ -10,6 +10,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/henok321/knobel-manager-service/api/logging"
+
 	"github.com/rs/cors"
 
 	firebase "firebase.google.com/go/v4"
@@ -31,7 +33,9 @@ func init() {
 			AddSource: false,
 			Level:     slog.LevelDebug,
 		})
-		slog.SetDefault(slog.New(logHandler))
+		slog.SetDefault(slog.New(&logging.ContextHandler{
+			Handler: logHandler,
+		}))
 		slog.Info("Logging initialized", "logLevel", "debug")
 	default:
 		logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: true, Level: slog.LevelInfo})

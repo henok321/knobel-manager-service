@@ -35,7 +35,7 @@ func NewPlayersHandler(service player.PlayersService) PlayersHandler {
 func (h playersHandler) CreatePlayer(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
+		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -97,7 +97,7 @@ func (h playersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 	}}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.Error("Could not write body", "error", err)
+		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
 	}
 
 }
@@ -105,7 +105,7 @@ func (h playersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 func (h playersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
+		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -158,14 +158,14 @@ func (h playersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.R
 	}}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.Error("Could not write body", "error", err)
+		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
 	}
 }
 
 func (h playersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
+		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
 	}
 

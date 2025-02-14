@@ -33,7 +33,7 @@ func NewTablesHandler(gamesService game.GamesService) TablesHandler {
 func (t tablesHandler) GetTables(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
+		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -74,7 +74,7 @@ func (t tablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 			tables := round.Tables
 			writer.WriteHeader(http.StatusOK)
 			if err := json.NewEncoder(writer).Encode(tables); err != nil {
-				slog.Info("Could not write body", "error", err)
+				slog.InfoContext(request.Context(), "Could not write body", "error", err)
 			}
 			return
 		}
@@ -86,7 +86,7 @@ func (t tablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 func (t tablesHandler) GetTable(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
+		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -135,7 +135,7 @@ func (t tablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 				if table.TableNumber == int(tablesNumber) {
 					writer.WriteHeader(http.StatusOK)
 					if err := json.NewEncoder(writer).Encode(table); err != nil {
-						slog.Info("Could not write body", "error", err)
+						slog.InfoContext(request.Context(), "Could not write body", "error", err)
 					}
 					return
 				}
@@ -148,7 +148,7 @@ func (t tablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 func (t tablesHandler) UpdateTableScore(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
+		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -208,6 +208,6 @@ func (t tablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 	}
 
 	if err := json.NewEncoder(writer).Encode(gameResponse{Game: updatedGame}); err != nil {
-		slog.Error("Could not write body", "error", err)
+		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
 	}
 }
