@@ -37,7 +37,7 @@ type TeamSetup struct {
 func AssignTables(teamSetup TeamSetup, seed int64) (map[int][]player, error) {
 	for {
 		if !validInput(teamSetup.Teams, teamSetup.TeamSize, teamSetup.TableSize) {
-			return nil, fmt.Errorf("Invalid input")
+			return nil, fmt.Errorf("invalid input")
 		}
 
 		numberOfTeams := len(teamSetup.Teams)

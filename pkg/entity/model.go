@@ -95,7 +95,6 @@ type GameTable struct {
 	DeletedAt   gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
-// **Add TableName() method only for GameTable, since the struct name doesn't pluralize to 'game_tables'**
 func (GameTable) TableName() string {
 	return "game_tables"
 }
@@ -117,7 +116,6 @@ type TablePlayer struct {
 	PlayerID int `gorm:"primaryKey;column:player_id" json:"playerID"`
 }
 
-// **Add TableName() method for TablePlayer, since the default pluralization might not setup 'table_players'**
 func (TablePlayer) TableName() string {
 	return "table_players"
 }

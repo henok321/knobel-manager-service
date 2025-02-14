@@ -17,8 +17,8 @@ type GamesService interface {
 	FindByID(id int, sub string) (entity.Game, error)
 	GetActiveGame(sub string) (entity.Game, error)
 	SetActiveGame(id int, sub string) error
-	CreateGame(sub string, game *GameRequest) (entity.Game, error)
-	UpdateGame(id int, sub string, game GameRequest) (entity.Game, error)
+	CreateGame(sub string, game *CreateOrUpdateRequest) (entity.Game, error)
+	UpdateGame(id int, sub string, game CreateOrUpdateRequest) (entity.Game, error)
 	DeleteGame(id int, sub string) error
 	AssignTables(game entity.Game) error
 	UpdateScore(gameID int, roundNumber int, tableNumber int, sub string, scoresRequest ScoresRequest) (entity.Game, error)
@@ -80,7 +80,7 @@ func (s *gamesService) SetActiveGame(id int, sub string) error {
 	return nil
 }
 
-func (s *gamesService) CreateGame(sub string, game *GameRequest) (entity.Game, error) {
+func (s *gamesService) CreateGame(sub string, game *CreateOrUpdateRequest) (entity.Game, error) {
 	gameModel := entity.Game{
 		Name:           game.Name,
 		TeamSize:       game.TeamSize,
@@ -92,7 +92,7 @@ func (s *gamesService) CreateGame(sub string, game *GameRequest) (entity.Game, e
 	return s.repo.CreateOrUpdateGame(&gameModel)
 }
 
-func (s *gamesService) UpdateGame(id int, sub string, game GameRequest) (entity.Game, error) {
+func (s *gamesService) UpdateGame(id int, sub string, game CreateOrUpdateRequest) (entity.Game, error) {
 	gameByID, err := s.repo.FindByID(id)
 
 	if err != nil {
@@ -134,19 +134,19 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 
 	for _, team := range game.Teams {
 		for _, player := range team.Players {
-			teams[int(team.ID)] = append(teams[int(team.ID)], int(player.ID))
+			teams[team.ID] = append(teams[team.ID], player.ID)
 		}
 	}
 
-	for i := 0; i < int(game.NumberOfRounds); i++ {
-		tables, err := setup.AssignTables(setup.TeamSetup{Teams: teams, TeamSize: int(game.TeamSize), TableSize: int(game.TableSize)}, time.Now().Unix())
+	for i := 0; i < game.NumberOfRounds; i++ {
+		tables, err := setup.AssignTables(setup.TeamSetup{Teams: teams, TeamSize: game.TeamSize, TableSize: game.TableSize}, time.Now().Unix())
 
 		if err != nil {
 			return customError.TableAssignment
 		}
 
 		round := entity.Round{
-			RoundNumber: int(i + 1),
+			RoundNumber: i + 1,
 			GameID:      game.ID,
 		}
 
@@ -159,9 +159,9 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 		gameTables := make([]entity.GameTable, 0, len(tables))
 
 		for tableNumber, players := range tables {
-			gameTable := entity.GameTable{TableNumber: int(tableNumber), RoundID: round.ID}
+			gameTable := entity.GameTable{TableNumber: tableNumber, RoundID: round.ID}
 			for _, playerID := range players {
-				gameTable.Players = append(gameTable.Players, &entity.Player{ID: int(playerID.ID)})
+				gameTable.Players = append(gameTable.Players, &entity.Player{ID: playerID.ID})
 			}
 			gameTables = append(gameTables, gameTable)
 		}
@@ -182,20 +182,20 @@ func (s *gamesService) UpdateScore(gameID int, roundNumber int, tableNumber int,
 		return entity.Game{}, err
 	}
 
-	if int(len(scoresRequest.Scores)) != gameById.TableSize {
+	if len(scoresRequest.Scores) != gameById.TableSize {
 		return entity.Game{}, customError.InvalidScore
 	}
 
 	for _, round := range gameById.Rounds {
-		if round.RoundNumber == int(roundNumber) {
+		if round.RoundNumber == roundNumber {
 			for _, table := range round.Tables {
-				if table.TableNumber == int(tableNumber) {
+				if table.TableNumber == tableNumber {
 					scores := make([]*entity.Score, 0, gameById.TableSize)
 					for _, s := range scoresRequest.Scores {
 						scores = append(scores, &entity.Score{
 							PlayerID: s.PlayerID,
 							TableID:  table.ID,
-							Score:    int(s.Score),
+							Score:    s.Score,
 						})
 					}
 

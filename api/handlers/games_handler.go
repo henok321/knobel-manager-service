@@ -143,7 +143,7 @@ func (h *gamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	gameCreateRequest := game.GameRequest{}
+	gameCreateRequest := game.CreateOrUpdateRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameCreateRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -168,7 +168,7 @@ func (h *gamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
-	writer.Header().Set("Location", "/games/"+strconv.Itoa(int(createdGame.ID)))
+	writer.Header().Set("Location", "/games/"+strconv.Itoa(createdGame.ID))
 	writer.WriteHeader(http.StatusCreated)
 
 	gameResponse := gameResponse{
@@ -196,7 +196,7 @@ func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	gameUpdateRequest := game.GameRequest{}
+	gameUpdateRequest := game.CreateOrUpdateRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameUpdateRequest); err != nil {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)

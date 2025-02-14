@@ -131,11 +131,11 @@ func (t teamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 
 	if err != nil {
 		switch {
-		case err == customError.NotOwner:
+		case errors.Is(err, customError.NotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
-		case err == entity.ErrorGameNotFound:
+		case errors.Is(err, entity.ErrorGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case err == customError.TeamNotFound:
+		case errors.Is(err, customError.TeamNotFound):
 			JSONError(writer, "Team not found", http.StatusNotFound)
 		}
 		return
