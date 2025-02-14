@@ -32,18 +32,21 @@ func Authentication(authClient FirebaseAuth, next http.Handler) http.Handler {
 		}
 
 		tokenParts := strings.Split(authorizationHeader, " ")
+
+		requestContext := request.Context()
+
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			slog.Info("Malformed token")
+			slog.InfoContext(requestContext, "Malformed token")
 			http.Error(writer, `{"error": "unauthorized"}`, http.StatusUnauthorized)
 			return
 		}
 
 		idToken := tokenParts[1]
 
-		token, err := authClient.VerifyIDToken(request.Context(), idToken)
+		token, err := authClient.VerifyIDToken(requestContext, idToken)
 
 		if err != nil {
-			slog.Info("Invalid token", "error", err)
+			slog.InfoContext(requestContext, "Invalid token", "error", err)
 			http.Error(writer, `{"error": "unauthorized"}`, http.StatusUnauthorized)
 			return
 		}
@@ -53,7 +56,7 @@ func Authentication(authClient FirebaseAuth, next http.Handler) http.Handler {
 			Email: token.Claims["email"].(string),
 		}
 
-		ctx := context.WithValue(request.Context(), UserContextKey, userContext)
+		ctx := context.WithValue(requestContext, UserContextKey, userContext)
 		next.ServeHTTP(writer, request.WithContext(ctx))
 
 	})
