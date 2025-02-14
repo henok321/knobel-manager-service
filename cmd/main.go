@@ -29,17 +29,12 @@ import (
 func init() {
 	switch os.Getenv("ENVIRONMENT") {
 	case "local":
-		logHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-			AddSource: false,
-			Level:     slog.LevelDebug,
-		})
-		slog.SetDefault(slog.New(&logging.ContextHandler{
-			Handler: logHandler,
-		}))
+		logHandler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{AddSource: false, Level: slog.LevelDebug})
+		slog.SetDefault(slog.New(&logging.ContextHandler{Handler: logHandler}))
 		slog.Info("Logging initialized", "logLevel", "debug")
 	default:
-		logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: true, Level: slog.LevelInfo})
-		slog.SetDefault(slog.New(logHandler))
+		logHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{AddSource: false, Level: slog.LevelInfo})
+		slog.SetDefault(slog.New(&logging.ContextHandler{Handler: logHandler}))
 		slog.Info("Logging initialized", "logLevel", "info")
 	}
 }
