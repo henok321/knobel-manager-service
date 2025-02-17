@@ -5,15 +5,21 @@ import (
 	"gorm.io/gorm"
 )
 
-type PlayersRepository struct {
+type PlayersRepository interface {
+	FindPlayerById(id int) (entity.Player, error)
+	CreateOrUpdatePlayer(player *entity.Player) (entity.Player, error)
+	DeletePlayer(id int) error
+}
+
+type playersRepository struct {
 	db *gorm.DB
 }
 
-func NewPlayersRepository(db *gorm.DB) *PlayersRepository {
-	return &PlayersRepository{db}
+func NewPlayersRepository(db *gorm.DB) PlayersRepository {
+	return &playersRepository{db}
 }
 
-func (r *PlayersRepository) FindPlayerById(id int) (entity.Player, error) {
+func (r *playersRepository) FindPlayerById(id int) (entity.Player, error) {
 	player := entity.Player{}
 	err := r.db.Where("id = ?", id).Preload("Team").Preload("Team.Game").Preload("Team.Game.Owners").First(&player).Error
 	if err != nil {
@@ -23,7 +29,7 @@ func (r *PlayersRepository) FindPlayerById(id int) (entity.Player, error) {
 	return player, nil
 }
 
-func (r *PlayersRepository) CreateOrUpdatePlayer(player *entity.Player) (entity.Player, error) {
+func (r *playersRepository) CreateOrUpdatePlayer(player *entity.Player) (entity.Player, error) {
 	err := r.db.Save(player).Error
 	if err != nil {
 		return entity.Player{}, err
@@ -31,7 +37,7 @@ func (r *PlayersRepository) CreateOrUpdatePlayer(player *entity.Player) (entity.
 	return *player, nil
 }
 
-func (r *PlayersRepository) DeletePlayer(id int) error {
+func (r *playersRepository) DeletePlayer(id int) error {
 	err := r.db.Delete(&entity.Player{}, id).Error
 	if err != nil {
 		return err

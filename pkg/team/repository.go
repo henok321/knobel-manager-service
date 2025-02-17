@@ -5,15 +5,21 @@ import (
 	"gorm.io/gorm"
 )
 
-type TeamsRepository struct {
+type TeamsRepository interface {
+	FindById(id int) (entity.Team, error)
+	CreateOrUpdateTeam(team *entity.Team) (entity.Team, error)
+	DeleteTeam(id int) error
+}
+
+type teamsRepository struct {
 	db *gorm.DB
 }
 
-func NewTeamsRepository(db *gorm.DB) *TeamsRepository {
-	return &TeamsRepository{db}
+func NewTeamsRepository(db *gorm.DB) TeamsRepository {
+	return &teamsRepository{db}
 }
 
-func (r *TeamsRepository) FindById(id int) (entity.Team, error) {
+func (r *teamsRepository) FindById(id int) (entity.Team, error) {
 	team := entity.Team{}
 	err := r.db.Where("id = ?", id).Preload("Game").Preload("Game.Owners").First(&team).Error
 	if err != nil {
@@ -22,7 +28,7 @@ func (r *TeamsRepository) FindById(id int) (entity.Team, error) {
 	return team, nil
 }
 
-func (r *TeamsRepository) CreateOrUpdateTeam(team *entity.Team) (entity.Team, error) {
+func (r *teamsRepository) CreateOrUpdateTeam(team *entity.Team) (entity.Team, error) {
 	err := r.db.Save(team).Error
 	if err != nil {
 		return entity.Team{}, err
@@ -30,7 +36,7 @@ func (r *TeamsRepository) CreateOrUpdateTeam(team *entity.Team) (entity.Team, er
 	return *team, nil
 }
 
-func (r *TeamsRepository) DeleteTeam(id int) error {
+func (r *teamsRepository) DeleteTeam(id int) error {
 	err := r.db.Delete(&entity.Team{}, id).Error
 	if err != nil {
 		return err

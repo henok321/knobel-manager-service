@@ -16,17 +16,23 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/player"
 )
 
-type PlayersHandler struct {
-	playersService *player.PlayersService
+type PlayersHandler interface {
+	CreatePlayer(writer http.ResponseWriter, request *http.Request)
+	UpdatePlayer(writer http.ResponseWriter, request *http.Request)
+	DeletePlayer(writer http.ResponseWriter, request *http.Request)
 }
 
-func NewPlayersHandler(service *player.PlayersService) PlayersHandler {
-	return PlayersHandler{
+type playersHandler struct {
+	playersService player.PlayersService
+}
+
+func NewPlayersHandler(service player.PlayersService) PlayersHandler {
+	return playersHandler{
 		playersService: service,
 	}
 }
 
-func (h PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.Request) {
+func (h playersHandler) CreatePlayer(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -96,7 +102,7 @@ func (h PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 
 }
 
-func (h PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request) {
+func (h playersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -156,7 +162,7 @@ func (h PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.R
 	}
 }
 
-func (h PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request) {
+func (h playersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)

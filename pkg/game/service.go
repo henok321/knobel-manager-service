@@ -12,19 +12,31 @@ import (
 	"gorm.io/gorm"
 )
 
-type GamesService struct {
-	repo *GamesRepository
+type GamesService interface {
+	FindAllByOwner(sub string) ([]entity.Game, error)
+	FindByID(id int, sub string) (entity.Game, error)
+	GetActiveGame(sub string) (entity.Game, error)
+	SetActiveGame(id int, sub string) error
+	CreateGame(sub string, game *CreateOrUpdateRequest) (entity.Game, error)
+	UpdateGame(id int, sub string, game CreateOrUpdateRequest) (entity.Game, error)
+	DeleteGame(id int, sub string) error
+	AssignTables(game entity.Game) error
+	UpdateScore(gameID int, roundNumber int, tableNumber int, sub string, scoresRequest ScoresRequest) (entity.Game, error)
 }
 
-func NewGamesService(repo *GamesRepository) *GamesService {
-	return &GamesService{repo}
+type gamesService struct {
+	repo GamesRepository
 }
 
-func (s *GamesService) FindAllByOwner(sub string) ([]entity.Game, error) {
+func NewGamesService(repo GamesRepository) GamesService {
+	return &gamesService{repo}
+}
+
+func (s *gamesService) FindAllByOwner(sub string) ([]entity.Game, error) {
 	return s.repo.FindAllByOwner(sub)
 }
 
-func (s *GamesService) FindByID(id int, sub string) (entity.Game, error) {
+func (s *gamesService) FindByID(id int, sub string) (entity.Game, error) {
 	gameById, err := s.repo.FindByID(id)
 
 	if err != nil {
@@ -41,7 +53,7 @@ func (s *GamesService) FindByID(id int, sub string) (entity.Game, error) {
 	return gameById, nil
 }
 
-func (s *GamesService) GetActiveGame(sub string) (entity.Game, error) {
+func (s *gamesService) GetActiveGame(sub string) (entity.Game, error) {
 	activeGame, err := s.repo.FindActiveGame(sub)
 
 	if err != nil {
@@ -54,7 +66,7 @@ func (s *GamesService) GetActiveGame(sub string) (entity.Game, error) {
 	return activeGame, nil
 }
 
-func (s *GamesService) SetActiveGame(id int, sub string) error {
+func (s *gamesService) SetActiveGame(id int, sub string) error {
 
 	err := s.repo.UpdateActiveGame(entity.ActiveGame{
 		GameID:   id,
@@ -68,7 +80,7 @@ func (s *GamesService) SetActiveGame(id int, sub string) error {
 	return nil
 }
 
-func (s *GamesService) CreateGame(sub string, game *CreateOrUpdateRequest) (entity.Game, error) {
+func (s *gamesService) CreateGame(sub string, game *CreateOrUpdateRequest) (entity.Game, error) {
 	gameModel := entity.Game{
 		Name:           game.Name,
 		TeamSize:       game.TeamSize,
@@ -80,7 +92,7 @@ func (s *GamesService) CreateGame(sub string, game *CreateOrUpdateRequest) (enti
 	return s.repo.CreateOrUpdateGame(&gameModel)
 }
 
-func (s *GamesService) UpdateGame(id int, sub string, game CreateOrUpdateRequest) (entity.Game, error) {
+func (s *gamesService) UpdateGame(id int, sub string, game CreateOrUpdateRequest) (entity.Game, error) {
 	gameByID, err := s.repo.FindByID(id)
 
 	if err != nil {
@@ -102,7 +114,7 @@ func (s *GamesService) UpdateGame(id int, sub string, game CreateOrUpdateRequest
 	return s.repo.CreateOrUpdateGame(&gameByID)
 }
 
-func (s *GamesService) DeleteGame(id int, sub string) error {
+func (s *gamesService) DeleteGame(id int, sub string) error {
 	gameByID, err := s.repo.FindByID(id)
 
 	if err != nil {
@@ -117,7 +129,7 @@ func (s *GamesService) DeleteGame(id int, sub string) error {
 	return s.repo.DeleteGame(id)
 }
 
-func (s *GamesService) AssignTables(game entity.Game) error {
+func (s *gamesService) AssignTables(game entity.Game) error {
 	teams := map[int][]int{}
 
 	for _, team := range game.Teams {
@@ -163,7 +175,7 @@ func (s *GamesService) AssignTables(game entity.Game) error {
 	return nil
 }
 
-func (s *GamesService) UpdateScore(gameID int, roundNumber int, tableNumber int, sub string, scoresRequest ScoresRequest) (entity.Game, error) {
+func (s *gamesService) UpdateScore(gameID int, roundNumber int, tableNumber int, sub string, scoresRequest ScoresRequest) (entity.Game, error) {
 	gameById, err := s.FindByID(gameID, sub)
 
 	if err != nil {

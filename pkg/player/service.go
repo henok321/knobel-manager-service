@@ -10,16 +10,22 @@ import (
 	"gorm.io/gorm"
 )
 
-type PlayersService struct {
-	playersRepo *PlayersRepository
-	teamsRepo   *team.TeamsRepository
+type PlayersService interface {
+	CreatePlayer(request PlayersRequest, teamId int, sub string) (entity.Player, error)
+	UpdatePlayer(id int, request PlayersRequest, sub string) (entity.Player, error)
+	DeletePlayer(id int, sub string) error
 }
 
-func NewPlayersService(playersRepo *PlayersRepository, teamsRepo *team.TeamsRepository) *PlayersService {
-	return &PlayersService{playersRepo: playersRepo, teamsRepo: teamsRepo}
+type playersService struct {
+	playersRepo PlayersRepository
+	teamsRepo   team.TeamsRepository
 }
 
-func (s PlayersService) CreatePlayer(request PlayersRequest, teamID int, sub string) (entity.Player, error) {
+func NewPlayersService(playersRepo PlayersRepository, teamsRepo team.TeamsRepository) PlayersService {
+	return &playersService{playersRepo: playersRepo, teamsRepo: teamsRepo}
+}
+
+func (s playersService) CreatePlayer(request PlayersRequest, teamID int, sub string) (entity.Player, error) {
 	teamById, err := s.teamsRepo.FindById(teamID)
 
 	if err != nil {
@@ -45,7 +51,7 @@ func (s PlayersService) CreatePlayer(request PlayersRequest, teamID int, sub str
 	return createdPlayer, nil
 }
 
-func (s PlayersService) UpdatePlayer(id int, request PlayersRequest, sub string) (entity.Player, error) {
+func (s playersService) UpdatePlayer(id int, request PlayersRequest, sub string) (entity.Player, error) {
 
 	player, err := s.playersRepo.FindPlayerById(id)
 
@@ -72,7 +78,7 @@ func (s PlayersService) UpdatePlayer(id int, request PlayersRequest, sub string)
 	return updatePlayer, nil
 }
 
-func (s PlayersService) DeletePlayer(id int, sub string) error {
+func (s playersService) DeletePlayer(id int, sub string) error {
 	player, err := s.playersRepo.FindPlayerById(id)
 
 	if err != nil {

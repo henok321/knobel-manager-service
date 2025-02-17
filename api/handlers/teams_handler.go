@@ -19,15 +19,20 @@ type teamResponse struct {
 	Team entity.Team `json:"team"`
 }
 
-type TeamsHandler struct {
-	service *team.TeamsService
+type TeamsHandler interface {
+	CreateTeam(writer http.ResponseWriter, request *http.Request)
+	UpdateTeam(writer http.ResponseWriter, request *http.Request)
+	DeleteTeam(writer http.ResponseWriter, request *http.Request)
+}
+type teamsHandler struct {
+	service team.TeamsService
 }
 
-func NewTeamsHandler(service *team.TeamsService) *TeamsHandler {
-	return &TeamsHandler{service}
+func NewTeamsHandler(service team.TeamsService) TeamsHandler {
+	return &teamsHandler{service}
 }
 
-func (t TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Request) {
+func (t teamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -85,7 +90,7 @@ func (t TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 
 }
 
-func (t TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Request) {
+func (t teamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -146,7 +151,7 @@ func (t TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 	}
 }
 
-func (t TeamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Request) {
+func (t teamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
