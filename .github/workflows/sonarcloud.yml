@@ -37,11 +37,11 @@ jobs:
       - name: Run tests, generate coverage and report files
         run: go test ./... -coverprofile=coverage.out --json > test-report.json
 
-      - name: Install golangci-lint
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.62.2
-
-      - name: Run golangci-lint and generate report
-        run: golangci-lint run --timeout 5m --out-format checkstyle > golangci-lint-report.xml
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64.5
+          args: "--timeout 5m --out-format checkstyle > golangci-lint-report.xml"
 
       - name: Analyze project and upload coverage
         uses: sonarsource/sonarcloud-github-action@v4
