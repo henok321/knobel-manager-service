@@ -16,21 +16,15 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/game"
 )
 
-type TablesHandler interface {
-	GetTables(writer http.ResponseWriter, request *http.Request)
-	GetTable(writer http.ResponseWriter, request *http.Request)
-	UpdateTableScore(writer http.ResponseWriter, request *http.Request)
-}
-
-type tablesHandler struct {
+type TablesHandler struct {
 	gamesService game.GamesService
 }
 
-func NewTablesHandler(gamesService game.GamesService) TablesHandler {
-	return tablesHandler{gamesService: gamesService}
+func NewTablesHandler(gamesService game.GamesService) *TablesHandler {
+	return &TablesHandler{gamesService: gamesService}
 }
 
-func (t tablesHandler) GetTables(writer http.ResponseWriter, request *http.Request) {
+func (t TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -83,7 +77,7 @@ func (t tablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 	JSONError(writer, "Round not found", http.StatusNotFound)
 }
 
-func (t tablesHandler) GetTable(writer http.ResponseWriter, request *http.Request) {
+func (t TablesHandler) GetTable(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -145,7 +139,7 @@ func (t tablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 	JSONError(writer, "Round or table not found", http.StatusNotFound)
 }
 
-func (t tablesHandler) UpdateTableScore(writer http.ResponseWriter, request *http.Request) {
+func (t TablesHandler) UpdateTableScore(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)

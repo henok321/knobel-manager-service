@@ -27,25 +27,15 @@ type gamesResponse struct {
 	Games        []entity.Game `json:"games"`
 }
 
-type GamesHandler interface {
-	GetGames(writer http.ResponseWriter, request *http.Request)
-	GetGameByID(writer http.ResponseWriter, request *http.Request)
-	CreateGame(writer http.ResponseWriter, request *http.Request)
-	UpdateGame(writer http.ResponseWriter, request *http.Request)
-	DeleteGame(writer http.ResponseWriter, request *http.Request)
-	GameSetup(writer http.ResponseWriter, request *http.Request)
-	SetActiveGame(writer http.ResponseWriter, request *http.Request)
-}
-
-type gamesHandler struct {
+type GamesHandler struct {
 	gamesService game.GamesService
 }
 
-func NewGamesHandler(gamesService game.GamesService) GamesHandler {
-	return &gamesHandler{gamesService}
+func NewGamesHandler(gamesService game.GamesService) *GamesHandler {
+	return &GamesHandler{gamesService}
 }
 
-func (h *gamesHandler) GetGames(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -91,7 +81,7 @@ func (h *gamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 	}
 }
 
-func (h *gamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		http.Error(writer, `{'error': 'User logging not found'}`, http.StatusUnauthorized)
@@ -133,7 +123,7 @@ func (h *gamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 	}
 }
 
-func (h *gamesHandler) CreateGame(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Request) {
 
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
@@ -180,7 +170,7 @@ func (h *gamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	}
 }
 
-func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -233,7 +223,7 @@ func (h *gamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 	}
 }
 
-func (h *gamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -264,7 +254,7 @@ func (h *gamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 	writer.WriteHeader(http.StatusNoContent)
 }
 
-func (h *gamesHandler) GameSetup(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) GameSetup(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -305,7 +295,7 @@ func (h *gamesHandler) GameSetup(writer http.ResponseWriter, request *http.Reque
 	writer.WriteHeader(http.StatusCreated)
 }
 
-func (h *gamesHandler) SetActiveGame(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) SetActiveGame(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
