@@ -10,25 +10,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type TeamsService interface {
-	CreateTeam(gameID int, sub string, request TeamsRequest) (entity.Team, error)
-	UpdateTeam(gameID int, sub string, teamID int, request TeamsRequest) (entity.Team, error)
-	DeleteTeam(gameID int, sub string, teamID int) error
+type TeamsService struct {
+	teamRepo  *TeamsRepository
+	gamesRepo *game.GamesRepository
 }
 
-type teamsService struct {
-	teamRepo  TeamsRepository
-	gamesRepo game.GamesRepository
-}
-
-func NewTeamsService(teamRepo TeamsRepository, gameRepo game.GamesRepository) TeamsService {
-	return &teamsService{
+func NewTeamsService(teamRepo *TeamsRepository, gameRepo *game.GamesRepository) *TeamsService {
+	return &TeamsService{
 		teamRepo:  teamRepo,
 		gamesRepo: gameRepo,
 	}
 }
 
-func (s *teamsService) CreateTeam(gameID int, sub string, request TeamsRequest) (entity.Team, error) {
+func (s *TeamsService) CreateTeam(gameID int, sub string, request TeamsRequest) (entity.Team, error) {
 	gameById, err := s.gamesRepo.FindByID(gameID)
 
 	if err != nil {
@@ -61,7 +55,7 @@ func (s *teamsService) CreateTeam(gameID int, sub string, request TeamsRequest) 
 	return s.teamRepo.CreateOrUpdateTeam(&team)
 }
 
-func (s *teamsService) UpdateTeam(gameID int, sub string, teamID int, request TeamsRequest) (entity.Team, error) {
+func (s *TeamsService) UpdateTeam(gameID int, sub string, teamID int, request TeamsRequest) (entity.Team, error) {
 	gameById, err := s.gamesRepo.FindByID(gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -82,7 +76,7 @@ func (s *teamsService) UpdateTeam(gameID int, sub string, teamID int, request Te
 	return entity.Team{}, customError.TeamNotFound
 }
 
-func (s *teamsService) DeleteTeam(gameID int, sub string, teamID int) error {
+func (s *TeamsService) DeleteTeam(gameID int, sub string, teamID int) error {
 	gameById, err := s.gamesRepo.FindByID(gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

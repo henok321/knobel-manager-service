@@ -5,6 +5,6 @@ import (
 	"gorm.io/gorm"
 )
 
-func InitializeTeamsModule(db *gorm.DB) TeamsService {
+func InitializeTeamsModule(db *gorm.DB) *TeamsService {
 	return NewTeamsService(NewTeamsRepository(db), game.NewGamesRepository(db))
 }
