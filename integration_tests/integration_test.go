@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/henok321/knobel-manager-service/internal/app"
+	"github.com/henok321/knobel-manager-service/internal/routes"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -110,14 +110,9 @@ func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 		log.Fatalln("Starting application failed, cannot start connect to database", err)
 	}
 
-	testInstance := &app.App{
-		AuthClient: mock.FirebaseAuthMock{},
-		Router:     http.NewServeMux(),
-		Database:   database,
-	}
+	router := routes.SetupRouter(database, mock.FirebaseAuthMock{})
 
-	testInstance.Initialize()
-	server := httptest.NewServer(testInstance.Router)
+	server := httptest.NewServer(router)
 	teardown := func(*httptest.Server) {
 		server.Close()
 	}

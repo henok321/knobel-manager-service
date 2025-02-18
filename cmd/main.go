@@ -20,7 +20,7 @@ import (
 
 	"google.golang.org/api/option"
 
-	"github.com/henok321/knobel-manager-service/internal/app"
+	"github.com/henok321/knobel-manager-service/internal/routes"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -75,17 +75,11 @@ func main() {
 		return
 	}
 
-	appInstance := app.App{
-		Database:   database,
-		Router:     http.NewServeMux(),
-		AuthClient: authClient,
-	}
+	router := routes.SetupRouter(database, authClient)
 
-	appInstance.Initialize()
-
-	appServer := &http.Server{
+	mainServer := &http.Server{
 		Addr:         ":8080",
-		Handler:      cors.AllowAll().Handler(appInstance.Router),
+		Handler:      cors.AllowAll().Handler(router),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
@@ -106,9 +100,9 @@ func main() {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		slog.Info("Starting app server", "port", 8080)
-		if err := appServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			slog.Error("App server error", "error", err)
+		slog.Info("Starting main server", "port", 8080)
+		if err := mainServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("Main server error", "error", err)
 			os.Exit(1)
 		}
 	}()
@@ -127,7 +121,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	if err := appServer.Shutdown(ctx); err != nil {
+	if err := mainServer.Shutdown(ctx); err != nil {
 		slog.Error("Main server shutdown failed", "error", err)
 	}
 	if err := metricsServer.Shutdown(ctx); err != nil {
