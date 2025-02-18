@@ -35,7 +35,7 @@ jobs:
         run: go mod tidy
 
       - name: Run tests, generate coverage and report files
-        run: go test -coverprofile=coverage.out ./...
+        run: go test ./... -coverpkg=./... -coverprofile=coverage.out
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
