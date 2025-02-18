@@ -35,7 +35,7 @@ jobs:
         run: go mod tidy
 
       - name: Run tests, generate coverage and report files
-        run: go test ./... -coverprofile=coverage.out --json > test-report.json
+        run: go test -coverprofile=coverage.out ./...
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
@@ -44,16 +44,6 @@ jobs:
           args: "--timeout 5m --out-format checkstyle > golangci-lint-report.xml"
 
       - name: Analyze project and upload coverage
-        uses: sonarsource/sonarcloud-github-action@v4
-        with:
-          args: >
-            -Dsonar.projectKey=henok321_knobel-manager-service
-            -Dsonar.organization=henok321
-            -Dsonar.go.coverage.reportPaths=coverage.out
-            -Dsonar.go.golangci-lint.reportPaths=golangci-lint-report.xml
-            -Dsonar.go.tests.reportPaths=test-report.json
-            -Dsonar.coverage.exclusions=**/integration_tests/**,**/cmd/**,**/*_test.go
-            -Dsonar.cpd.exclusions=**/integration_tests/**,**/cmd/**,**/*_test.go
-
+        uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
