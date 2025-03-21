@@ -18,10 +18,10 @@ func TestAssignTables(t *testing.T) {
 		seed      int64
 	}
 	tests := []struct {
-		name string
-		args args
-		want string
-		err  bool
+		name     string
+		args     args
+		expected string
+		err      bool
 	}{
 
 		{
@@ -41,8 +41,8 @@ func TestAssignTables(t *testing.T) {
 				teamSize:  4,
 				seed:      1,
 			},
-			want: "expected_1.json",
-			err:  false,
+			expected: "expected_1.json",
+			err:      false,
 		},
 		{
 			name: "assign tables with seed 2",
@@ -61,8 +61,8 @@ func TestAssignTables(t *testing.T) {
 				teamSize:  4,
 				seed:      2,
 			},
-			want: "expected_2.json",
-			err:  false,
+			expected: "expected_2.json",
+			err:      false,
 		},
 		{
 			name: "assign tables invalid table size",
@@ -135,7 +135,7 @@ func TestAssignTables(t *testing.T) {
 
 				require.NoError(t, err, "Could not parse result to json")
 
-				expectedJson, err := os.ReadFile(tt.want)
+				expectedJson, err := os.ReadFile(tt.expected)
 				require.NoError(t, err, "Could not read expected json")
 
 				assert.JSONEq(t, string(expectedJson), string(gotJson))
