@@ -21,6 +21,7 @@ go.work.sum
 # VSCode
 .vscode
 knobel-manager-service
+**/__debug_**
 
 # Firebase secret
 firebaseServiceAccount.json

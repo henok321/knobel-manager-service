@@ -20,5 +20,5 @@ goose up
 echo "Init .env..."
 
 echo "ENVIRONMENT=local" > .env
-echo "FIREBASE_SECRET=$(jq -c . ./firebaseServiceAccount.json)" >> .env
+echo "FIREBASE_SECRET=$(jq -c . ./firebaseServiceAccount.json | base64)" >> .env
 echo "DATABASE_URL=$DATABASE_URL" >> .env
