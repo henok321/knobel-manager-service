@@ -7,11 +7,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/henok321/knobel-manager-service/pkg/customError"
-
 	"github.com/go-playground/validator/v10"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
+	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/game"
 )
@@ -34,27 +33,24 @@ func (t TablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 	sub := userContext.Sub
 
 	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
 	roundNumber, err := strconv.ParseInt(request.PathValue("roundNumber"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid roundNumber", http.StatusBadRequest)
 		return
 	}
 
-	gameById, err := t.gamesService.FindByID(int(gameID), sub)
-
+	gameByID, err := t.gamesService.FindByID(int(gameID), sub)
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
 			return
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
 			return
 		default:
@@ -63,13 +59,16 @@ func (t TablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 		}
 	}
 
-	for _, round := range gameById.Rounds {
+	for _, round := range gameByID.Rounds {
 		if round.RoundNumber == int(roundNumber) {
 			tables := round.Tables
+
 			writer.WriteHeader(http.StatusOK)
+
 			if err := json.NewEncoder(writer).Encode(tables); err != nil {
 				slog.InfoContext(request.Context(), "Could not write body", "error", err)
 			}
+
 			return
 		}
 	}
@@ -87,34 +86,30 @@ func (t TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 	sub := userContext.Sub
 
 	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
 	roundNumber, err := strconv.ParseInt(request.PathValue("roundNumber"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid roundNumber", http.StatusBadRequest)
 		return
 	}
 
 	tablesNumber, err := strconv.ParseInt(request.PathValue("tableNumber"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid tableNumber", http.StatusBadRequest)
 		return
 	}
 
-	gameById, err := t.gamesService.FindByID(int(gameID), sub)
-
+	gameByID, err := t.gamesService.FindByID(int(gameID), sub)
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
 			return
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
 			return
 		default:
@@ -123,19 +118,22 @@ func (t TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 		}
 	}
 
-	for _, round := range gameById.Rounds {
+	for _, round := range gameByID.Rounds {
 		if round.RoundNumber == int(roundNumber) {
 			for _, table := range round.Tables {
 				if table.TableNumber == int(tablesNumber) {
 					writer.WriteHeader(http.StatusOK)
+
 					if err := json.NewEncoder(writer).Encode(table); err != nil {
 						slog.InfoContext(request.Context(), "Could not write body", "error", err)
 					}
+
 					return
 				}
 			}
 		}
 	}
+
 	JSONError(writer, "Round or table not found", http.StatusNotFound)
 }
 
@@ -149,21 +147,18 @@ func (t TablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 	sub := userContext.Sub
 
 	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
 	roundNumber, err := strconv.ParseInt(request.PathValue("roundNumber"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid roundNumber", http.StatusBadRequest)
 		return
 	}
 
 	tableNumber, err := strconv.ParseInt(request.PathValue("tableNumber"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid tableNumber", http.StatusBadRequest)
 		return
@@ -184,20 +179,20 @@ func (t TablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 	}
 
 	updatedGame, err := t.gamesService.UpdateScore(int(gameID), int(roundNumber), int(tableNumber), sub, scoresRequest)
-
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, customError.InvalidScore):
+		case errors.Is(err, apperror.ErrInvalidScore):
 			JSONError(writer, "Invalid score", http.StatusBadRequest)
-		case errors.Is(err, customError.RoundOrTableNotFound):
+		case errors.Is(err, apperror.ErrRoundOrTableNotFound):
 			JSONError(writer, "Round or table not found", http.StatusNotFound)
 		default:
 			JSONError(writer, err.Error(), http.StatusInternalServerError)
 		}
+
 		return
 	}
 

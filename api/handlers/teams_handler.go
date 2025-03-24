@@ -7,10 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/henok321/knobel-manager-service/pkg/customError"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/henok321/knobel-manager-service/api/middleware"
+	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/team"
 )
@@ -37,7 +36,6 @@ func (t TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 	sub := userContext.Sub
 
 	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
@@ -57,19 +55,19 @@ func (t TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 	}
 
 	createdTeam, err := t.service.CreateTeam(int(gameID), sub, teamsRequest)
-
 	if err != nil {
 		switch {
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
-		case errors.Is(err, customError.TeamSizeNotAllowed):
+		case errors.Is(err, apperror.ErrTeamSizeNotAllowed):
 			JSONError(writer, "Invalid team size", http.StatusBadRequest)
 
 		default:
 			JSONError(writer, err.Error(), http.StatusInternalServerError)
 		}
+
 		return
 	}
 
@@ -82,7 +80,6 @@ func (t TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 	if err := json.NewEncoder(writer).Encode(teamResponse); err != nil {
 		slog.InfoContext(request.Context(), "Could not write body", "error", err)
 	}
-
 }
 
 func (t TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Request) {
@@ -95,14 +92,12 @@ func (t TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 	sub := userContext.Sub
 
 	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
 	teamID, err := strconv.ParseInt(request.PathValue("teamID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid teamID", http.StatusBadRequest)
 		return
@@ -123,16 +118,16 @@ func (t TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 	}
 
 	updatedGame, err := t.service.UpdateTeam(int(gameID), sub, int(teamID), teamsRequest)
-
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, customError.TeamNotFound):
+		case errors.Is(err, apperror.ErrTeamNotFound):
 			JSONError(writer, "Team not found", http.StatusNotFound)
 		}
+
 		return
 	}
 
@@ -156,33 +151,30 @@ func (t TeamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Reque
 	sub := userContext.Sub
 
 	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
 	teamID, err := strconv.ParseInt(request.PathValue("teamID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid teamID", http.StatusBadRequest)
 		return
 	}
 
 	err = t.service.DeleteTeam(int(gameID), sub, int(teamID))
-
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
 		default:
 			JSONError(writer, err.Error(), http.StatusInternalServerError)
 		}
+
 		return
 	}
 
 	writer.WriteHeader(http.StatusNoContent)
-
 }

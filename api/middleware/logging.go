@@ -20,7 +20,6 @@ type Request struct {
 
 func RequestLogging(logLevel slog.Level, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-
 		requestLoggingContext := Request{
 			Method: request.Method,
 			Path:   request.RequestURI,

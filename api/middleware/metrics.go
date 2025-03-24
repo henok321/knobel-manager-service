@@ -9,12 +9,12 @@ import (
 )
 
 var (
-	HttpRequestsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+	HTTPRequestsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Name: "http_requests_total",
 		Help: "Total number of HTTP requests",
 	}, []string{"handler", "method", "code"})
 
-	HttpRequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
+	HTTPRequestDuration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "http_request_duration_seconds",
 		Help:    "Duration of HTTP requests in seconds",
 		Buckets: prometheus.DefBuckets,
@@ -22,8 +22,8 @@ var (
 )
 
 func init() {
-	prometheus.MustRegister(HttpRequestsTotal)
-	prometheus.MustRegister(HttpRequestDuration)
+	prometheus.MustRegister(HTTPRequestsTotal)
+	prometheus.MustRegister(HTTPRequestDuration)
 }
 
 func Metrics(next http.Handler) http.Handler {
@@ -33,8 +33,8 @@ func Metrics(next http.Handler) http.Handler {
 			handlerName = "/"
 		}
 
-		duration := HttpRequestDuration.MustCurryWith(prometheus.Labels{"handler": handlerName})
-		counter := HttpRequestsTotal.MustCurryWith(prometheus.Labels{"handler": handlerName})
+		duration := HTTPRequestDuration.MustCurryWith(prometheus.Labels{"handler": handlerName})
+		counter := HTTPRequestsTotal.MustCurryWith(prometheus.Labels{"handler": handlerName})
 
 		instrumentedHandler := promhttp.InstrumentHandlerDuration(duration, promhttp.InstrumentHandlerCounter(counter, next))
 

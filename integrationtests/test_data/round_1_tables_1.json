@@ -1,0 +1,27 @@
+{
+  "id": 1,
+  "tableNumber": 1,
+  "roundID": 1,
+  "players": [
+    {
+      "id": 1,
+      "name": "Player 1",
+      "teamID": 1
+    },
+    {
+      "id": 5,
+      "name": "Player 5",
+      "teamID": 2
+    },
+    {
+      "id": 9,
+      "name": "Player 9",
+      "teamID": 3
+    },
+    {
+      "id": 13,
+      "name": "Player 13",
+      "teamID": 4
+    }
+  ]
+}

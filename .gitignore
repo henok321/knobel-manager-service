@@ -20,6 +20,8 @@ go.work.sum
 
 # VSCode
 .vscode
+!.vscode/launch.json
+!.vscode/extensions.json
 knobel-manager-service
 **/__debug_**
 

@@ -7,12 +7,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/henok321/knobel-manager-service/pkg/customError"
-
 	"github.com/go-playground/validator/v10"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 
+	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 
 	"github.com/henok321/knobel-manager-service/pkg/game"
@@ -45,25 +44,26 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 	sub := userContext.Sub
 
 	games, err := h.gamesService.FindAllByOwner(sub)
-
 	if err != nil {
 		http.Error(writer, "{'error': '"+err.Error()+"'}", http.StatusInternalServerError)
 		return
 	}
+
 	var response gamesResponse
 
 	activeGame, err := h.gamesService.GetActiveGame(sub)
 
 	if err != nil {
-		if errors.Is(err, entity.ErrorGameNotFound) {
+		if errors.Is(err, entity.ErrGameNotFound) {
 			slog.WarnContext(request.Context(), "Could not find active game", "error", err)
 
 			response = gamesResponse{
-				Games: games}
-
+				Games: games,
+			}
 		} else {
 			slog.ErrorContext(request.Context(), "Unknown error error while querying active game", "error", err)
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
+
 			return
 		}
 	} else {
@@ -91,23 +91,22 @@ func (h *GamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 	sub := userContext.Sub
 
 	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
-	gameById, err := h.gamesService.FindByID(int(gameID), sub)
-
+	gameByID, err := h.gamesService.FindByID(int(gameID), sub)
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		}
+
 		return
 	}
 
@@ -115,7 +114,7 @@ func (h *GamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 	writer.WriteHeader(http.StatusOK)
 
 	gameResponse := gameResponse{
-		Game: gameById,
+		Game: gameByID,
 	}
 
 	if err := json.NewEncoder(writer).Encode(gameResponse); err != nil {
@@ -124,7 +123,6 @@ func (h *GamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 }
 
 func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Request) {
-
 	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -143,15 +141,12 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	validate := validator.New()
 
 	err := validate.Struct(gameCreateRequest)
-
 	if err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
 		return
-
 	}
 
 	createdGame, err := h.gamesService.CreateGame(sub, &gameCreateRequest)
-
 	if err != nil {
 		http.Error(writer, "{'error': '"+err.Error()+"'}", http.StatusInternalServerError)
 		return
@@ -180,7 +175,6 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 	sub := userContext.Sub
 
 	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
@@ -196,23 +190,22 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 	validate := validator.New()
 
 	err = validate.Struct(gameUpdateRequest)
-
 	if err != nil {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	updatedGame, err := h.gamesService.UpdateGame(int(gameID), sub, gameUpdateRequest)
-
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Not owner", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		}
+
 		return
 	}
 
@@ -240,14 +233,14 @@ func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 
 	if err := h.gamesService.DeleteGame(int(gameID), sub); err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
 		default:
-
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		}
+
 		return
 	}
 
@@ -264,28 +257,26 @@ func (h *GamesHandler) GameSetup(writer http.ResponseWriter, request *http.Reque
 	sub := userContext.Sub
 
 	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
 	gameToAssign, err := h.gamesService.FindByID(int(gameID), sub)
-
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		}
+
 		return
 	}
 
 	err = h.gamesService.AssignTables(gameToAssign)
-
 	if err != nil {
 		JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		return
@@ -305,23 +296,22 @@ func (h *GamesHandler) SetActiveGame(writer http.ResponseWriter, request *http.R
 	sub := userContext.Sub
 
 	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
 	err = h.gamesService.SetActiveGame(int(gameID), sub)
-
 	if err != nil {
 		switch {
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		}
+
 		return
 	}
 

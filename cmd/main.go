@@ -50,34 +50,36 @@ func main() {
 	slog.Info("Initialize application")
 
 	firebaseSecret, err := base64.RawStdEncoding.DecodeString(os.Getenv("FIREBASE_SECRET"))
-
 	if err != nil {
 		slog.Error("Starting application failed, cannot decode FIREBASE_SECRET")
 	}
 
 	firebaseOption := option.WithCredentialsJSON(firebaseSecret)
 	firebaseApp, err := firebase.NewApp(context.Background(), nil, firebaseOption)
-
 	if err != nil {
 		slog.Error("Starting application failed, cannot initialize firebase client. Check if the environment FIREBASE_SECRET is set correctly", "error", err)
+
 		exitCode = 1
+
 		return
 	}
 
 	authClient, err := firebaseApp.Auth(context.Background())
-
 	if err != nil {
 		slog.Error("Starting application failed, cannot initialize auth client", "error", err)
+
 		exitCode = 1
+
 		return
 	}
 
-	databaseUrl := os.Getenv("DATABASE_URL")
-	database, err := gorm.Open(postgres.Open(databaseUrl), &gorm.Config{})
-
+	databaseURL := os.Getenv("DATABASE_URL")
+	database, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
-		slog.Error("Starting application failed, cannot connect to database", "databaseUrl", databaseUrl, "error", err)
+		slog.Error("Starting application failed, cannot connect to database", "databaseUrl", databaseURL, "error", err)
+
 		exitCode = 1
+
 		return
 	}
 
@@ -107,6 +109,7 @@ func main() {
 
 	go func() {
 		slog.Info("Starting main server", "port", 8080)
+
 		if err := mainServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("Main server error", "error", err)
 			os.Exit(1)
@@ -115,6 +118,7 @@ func main() {
 
 	go func() {
 		slog.Info("Starting metrics server", "port", 9090)
+
 		if err := metricsServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("Metrics server error", "error", err)
 			os.Exit(1)
@@ -130,6 +134,7 @@ func main() {
 	if err := mainServer.Shutdown(ctx); err != nil {
 		slog.Error("Main server shutdown failed", "error", err)
 	}
+
 	if err := metricsServer.Shutdown(ctx); err != nil {
 		slog.Error("Metrics server shutdown failed", "error", err)
 	}

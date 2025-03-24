@@ -8,11 +8,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/henok321/knobel-manager-service/pkg/customError"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/henok321/knobel-manager-service/api/middleware"
 
+	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 )
 
@@ -36,14 +35,12 @@ func (h PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 	sub := userContext.Sub
 
 	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
 		return
 	}
 
 	teamID, err := strconv.ParseInt(request.PathValue("teamID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid teamID", http.StatusBadRequest)
 		return
@@ -59,25 +56,23 @@ func (h PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 	validate := validator.New()
 
 	err = validate.Struct(playersRequest)
-
 	if err != nil {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	createPlayer, err := h.playersService.CreatePlayer(playersRequest, int(teamID), sub)
-
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.TeamNotFound):
+		case errors.Is(err, apperror.ErrTeamNotFound):
 			JSONError(writer, "Team not found", http.StatusNotFound)
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		}
-		return
 
+		return
 	}
 
 	writer.Header().Set("Location", fmt.Sprintf("/games/%d/teams/%d/players/%d", gameID, teamID, createPlayer.ID))
@@ -93,7 +88,6 @@ func (h PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
 	}
-
 }
 
 func (h PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request) {
@@ -106,7 +100,6 @@ func (h PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.R
 	sub := userContext.Sub
 
 	playerID, err := strconv.ParseInt(request.PathValue("playerID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid playerID", http.StatusBadRequest)
 		return
@@ -122,23 +115,22 @@ func (h PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.R
 	validate := validator.New()
 
 	err = validate.Struct(playersRequest)
-
 	if err != nil {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	updatePlayer, err := h.playersService.UpdatePlayer(int(playerID), playersRequest, sub)
-
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.TeamNotFound), errors.Is(err, customError.PlayerNotFound):
+		case errors.Is(err, apperror.ErrTeamNotFound), errors.Is(err, apperror.ErrPlayerNotFound):
 			JSONError(writer, err.Error(), http.StatusNotFound)
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		}
+
 		return
 	}
 
@@ -166,26 +158,24 @@ func (h PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.R
 	sub := userContext.Sub
 
 	playerID, err := strconv.ParseInt(request.PathValue("playerID"), 10, 64)
-
 	if err != nil {
 		JSONError(writer, "Invalid playerID", http.StatusBadRequest)
 		return
 	}
 
 	err = h.playersService.DeletePlayer(int(playerID), sub)
-
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.PlayerNotFound):
+		case errors.Is(err, apperror.ErrPlayerNotFound):
 			JSONError(writer, err.Error(), http.StatusNotFound)
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		}
+
 		return
 	}
 
 	writer.WriteHeader(http.StatusNoContent)
-
 }

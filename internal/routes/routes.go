@@ -27,7 +27,7 @@ func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth) *http.Se
 		authClient: authClient,
 		router:     http.NewServeMux(),
 	}
-	instance.Initialize()
+	instance.setup()
 
 	return instance.router
 }
@@ -40,8 +40,7 @@ func (app *RouteSetup) authenticatedEndpoint(handler http.Handler) http.Handler 
 	return middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, handler)))
 }
 
-func (app *RouteSetup) Initialize() {
-
+func (app *RouteSetup) setup() {
 	gamesHandler := handlers.NewGamesHandler(game.InitializeGameModule(app.database))
 	playersHandler := handlers.NewPlayersHandler(player.InitializePlayerModule(app.database))
 	tablesHandler := handlers.NewTablesHandler(game.InitializeGameModule(app.database))

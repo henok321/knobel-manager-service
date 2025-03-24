@@ -3,8 +3,7 @@ package game
 import (
 	"errors"
 
-	"github.com/henok321/knobel-manager-service/pkg/customError"
-
+	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"gorm.io/gorm"
 )
@@ -90,15 +89,16 @@ func (r *gamesRepository) CreateRound(round *entity.Round) (entity.Round, error)
 	if err != nil {
 		return entity.Round{}, err
 	}
+
 	return *round, nil
 }
 
 func (r *gamesRepository) CreateGameTables(gameTables []entity.GameTable) error {
 	err := r.db.Save(gameTables).Error
-
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -106,7 +106,6 @@ func (r *gamesRepository) FindActiveGame(sub string) (entity.Game, error) {
 	var game entity.Game
 
 	err := r.db.Joins("JOIN active_games on active_games.game_id = games.id").Where("active_games.owner_sub = ?", sub).First(&game).Error
-
 	if err != nil {
 		return entity.Game{}, err
 	}
@@ -120,13 +119,14 @@ func (r *gamesRepository) UpdateActiveGame(activeGame entity.ActiveGame) error {
 
 		if err := tx.Where("id = ?", activeGame.GameID).Preload("Owners").First(&game).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return entity.ErrorGameNotFound
+				return entity.ErrGameNotFound
 			}
+
 			return err
 		}
 
 		if !entity.IsOwner(game, activeGame.OwnerSub) {
-			return customError.NotOwner
+			return apperror.ErrNotOwner
 		}
 
 		if err := tx.Save(activeGame).Error; err != nil {

@@ -1,44 +1,73 @@
-linters-settings:
-  gocyclo:
-    min-complexity: 15
-  gofmt:
-    simplify: true
-  revive:
-    ignore-generated-header: true
-  godox:
-    keywords:
-      - TODO
-  gocritic:
-    disable-all: false
-  govet:
-    disable-all: false
+version: "2"
+run:
+  tests: true
 
 linters:
+  default: "none"
   enable:
-    - goimports
-    - govet
-    - unused
-    - ineffassign
-    - gosimple
-    - staticcheck
+    # current defaults
     - errcheck
-    - revive
-    - gocyclo
-    - dupl
-    - testifylint
-    - gosimple
-    - gofmt
-    - godox
-    - revive
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    # custom
+    - asciicheck
+    - errorlint
+    - bodyclose
+    - canonicalheader
     - gocritic
     - gosec
-
-run:
-  timeout: 5m
-  tests: true
+    - loggercheck
+    - nilerr
+    - protogetter
+    - reassign
+    - sloglint
+    - testifylint
+    - unconvert
+    - godox
+    - iface
+    - revive
+    
+  settings:
+    gocritic:
+      disable-all: false
+    gocyclo:
+      min-complexity: 15
+    godox:
+      keywords:
+        - TODO
+    govet:
+      disable-all: false
+  exclusions:
+    generated: strict
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
 
-
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - gofumpt
+  settings:
+    gofmt:
+      simplify: true
+    gofumpt:
+      extra-rules: true
+  exclusions:
+    generated: strict
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
