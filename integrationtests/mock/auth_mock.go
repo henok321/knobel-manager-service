@@ -13,6 +13,6 @@ func (m FirebaseAuthMock) VerifyIDToken(_ context.Context, idToken string) (*aut
 
 	return &auth.Token{
 		UID:    idToken,
-		Claims: map[string]interface{}{"email": "test@example.org"},
+		Claims: map[string]any{"email": "test@example.org"},
 	}, nil
 }

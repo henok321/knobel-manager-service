@@ -2,6 +2,7 @@ version: "2"
 run:
   tests: true
 linters:
+  default: standard
   enable:
     - dupl
     - gocritic
@@ -20,6 +21,8 @@ linters:
     - sloglint
     - gosec
     - unconvert
+    - nilerr
+    - errcheck
   settings:
     gocritic:
       disable-all: false
@@ -50,7 +53,12 @@ formatters:
     - goimports
   settings:
     gofmt:
-      simplify: true
+      rewrite-rules:
+        - pattern: 'interface{}'
+          replacement: 'any'
+    goimports:
+      local-prefixes:
+        - github.com/golangci/golangci-lint/v2
   exclusions:
     generated: strict
     paths:
