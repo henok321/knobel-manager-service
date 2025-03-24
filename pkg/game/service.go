@@ -5,8 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/henok321/knobel-manager-service/pkg/customError"
-
+	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/setup"
 	"gorm.io/gorm"
@@ -37,20 +36,20 @@ func (s *gamesService) FindAllByOwner(sub string) ([]entity.Game, error) {
 }
 
 func (s *gamesService) FindByID(id int, sub string) (entity.Game, error) {
-	gameById, err := s.repo.FindByID(id)
+	gameByID, err := s.repo.FindByID(id)
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Game{}, entity.ErrorGameNotFound
+			return entity.Game{}, entity.ErrGameNotFound
 		}
 		return entity.Game{}, err
 	}
 
-	if !entity.IsOwner(gameById, sub) {
-		return entity.Game{}, customError.NotOwner
+	if !entity.IsOwner(gameByID, sub) {
+		return entity.Game{}, apperror.ErrNotOwner
 	}
 
-	return gameById, nil
+	return gameByID, nil
 }
 
 func (s *gamesService) GetActiveGame(sub string) (entity.Game, error) {
@@ -58,7 +57,7 @@ func (s *gamesService) GetActiveGame(sub string) (entity.Game, error) {
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Game{}, entity.ErrorGameNotFound
+			return entity.Game{}, entity.ErrGameNotFound
 		}
 		return entity.Game{}, err
 	}
@@ -97,13 +96,13 @@ func (s *gamesService) UpdateGame(id int, sub string, game CreateOrUpdateRequest
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Game{}, entity.ErrorGameNotFound
+			return entity.Game{}, entity.ErrGameNotFound
 		}
 		return entity.Game{}, err
 	}
 
 	if !entity.IsOwner(gameByID, sub) {
-		return entity.Game{}, customError.NotOwner
+		return entity.Game{}, apperror.ErrNotOwner
 	}
 
 	gameByID.Name = game.Name
@@ -119,12 +118,12 @@ func (s *gamesService) DeleteGame(id int, sub string) error {
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.ErrorGameNotFound
+			return entity.ErrGameNotFound
 		}
 		return err
 	}
 	if !entity.IsOwner(gameByID, sub) {
-		return customError.NotOwner
+		return apperror.ErrNotOwner
 	}
 	return s.repo.DeleteGame(id)
 }
@@ -142,7 +141,7 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 		tables, err := setup.AssignTables(setup.TeamSetup{Teams: teams, TeamSize: game.TeamSize, TableSize: game.TableSize}, time.Now().Unix())
 
 		if err != nil {
-			return customError.TableAssignment
+			return apperror.ErrTableAssignment
 		}
 
 		round := entity.Round{
@@ -176,21 +175,21 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 }
 
 func (s *gamesService) UpdateScore(gameID int, roundNumber int, tableNumber int, sub string, scoresRequest ScoresRequest) (entity.Game, error) {
-	gameById, err := s.FindByID(gameID, sub)
+	gameByID, err := s.FindByID(gameID, sub)
 
 	if err != nil {
 		return entity.Game{}, err
 	}
 
-	if len(scoresRequest.Scores) != gameById.TableSize {
-		return entity.Game{}, customError.InvalidScore
+	if len(scoresRequest.Scores) != gameByID.TableSize {
+		return entity.Game{}, apperror.ErrInvalidScore
 	}
 
-	for _, round := range gameById.Rounds {
+	for _, round := range gameByID.Rounds {
 		if round.RoundNumber == roundNumber {
 			for _, table := range round.Tables {
 				if table.TableNumber == tableNumber {
-					scores := make([]*entity.Score, 0, gameById.TableSize)
+					scores := make([]*entity.Score, 0, gameByID.TableSize)
 					for _, s := range scoresRequest.Scores {
 						scores = append(scores, &entity.Score{
 							PlayerID: s.PlayerID,
@@ -200,10 +199,10 @@ func (s *gamesService) UpdateScore(gameID int, roundNumber int, tableNumber int,
 					}
 
 					table.Scores = scores
-					return s.repo.CreateOrUpdateGame(&gameById)
+					return s.repo.CreateOrUpdateGame(&gameByID)
 				}
 			}
 		}
 	}
-	return entity.Game{}, customError.RoundOrTableNotFound
+	return entity.Game{}, apperror.ErrRoundOrTableNotFound
 }

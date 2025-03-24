@@ -131,14 +131,14 @@ func TestAssignTables(t *testing.T) {
 			} else {
 
 				require.NoError(t, err, "Assignment should not throw error")
-				gotJson, err := json.Marshal(got)
+				gotJSON, err := json.Marshal(got)
 
 				require.NoError(t, err, "Could not parse result to json")
 
-				expectedJson, err := os.ReadFile(tt.expected)
+				expectedJSON, err := os.ReadFile(tt.expected)
 				require.NoError(t, err, "Could not read expected json")
 
-				assert.JSONEq(t, string(expectedJson), string(gotJson))
+				assert.JSONEq(t, string(expectedJSON), string(gotJSON))
 			}
 
 		})

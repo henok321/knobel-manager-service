@@ -7,7 +7,7 @@ import (
 	"sort"
 )
 
-type player struct {
+type Player struct {
 	ID     int
 	TeamID int
 }
@@ -28,13 +28,15 @@ func validInput(teams map[int][]int, teamSize int, tableSize int) bool {
 	return true
 }
 
+type TeamsPlayersMapping map[int][]Player
+
 type TeamSetup struct {
 	Teams     map[int][]int
 	TeamSize  int
 	TableSize int
 }
 
-func AssignTables(teamSetup TeamSetup, seed int64) (map[int][]player, error) {
+func AssignTables(teamSetup TeamSetup, seed int64) (TeamsPlayersMapping, error) {
 	for {
 		if !validInput(teamSetup.Teams, teamSetup.TeamSize, teamSetup.TableSize) {
 			return nil, fmt.Errorf("invalid input")
@@ -43,7 +45,7 @@ func AssignTables(teamSetup TeamSetup, seed int64) (map[int][]player, error) {
 		numberOfTeams := len(teamSetup.Teams)
 		numberOfPlayers := teamSetup.TeamSize * numberOfTeams
 
-		playersToAssign := make([]player, 0, numberOfPlayers)
+		playersToAssign := make([]Player, 0, numberOfPlayers)
 
 		teamIDs := make([]int, 0, numberOfTeams)
 
@@ -55,9 +57,9 @@ func AssignTables(teamSetup TeamSetup, seed int64) (map[int][]player, error) {
 
 		for _, teamID := range teamIDs {
 			memberIDs := teamSetup.Teams[teamID]
-			teamMembers := make([]player, 0, len(memberIDs))
+			teamMembers := make([]Player, 0, len(memberIDs))
 			for _, id := range memberIDs {
-				teamMembers = append(teamMembers, player{
+				teamMembers = append(teamMembers, Player{
 					TeamID: teamID,
 					ID:     id,
 				})
@@ -73,9 +75,9 @@ func AssignTables(teamSetup TeamSetup, seed int64) (map[int][]player, error) {
 
 		numberOfTables := numberOfPlayers / teamSetup.TableSize
 
-		tables := make(map[int][]player, numberOfTables)
+		tables := make(map[int][]Player, numberOfTables)
 		for i := 0; i < numberOfTables; i++ {
-			tables[i] = make([]player, 0, teamSetup.TableSize)
+			tables[i] = make([]Player, 0, teamSetup.TableSize)
 		}
 
 		tableIDs := make([]int, 0, numberOfTables)
@@ -90,7 +92,7 @@ func AssignTables(teamSetup TeamSetup, seed int64) (map[int][]player, error) {
 			for tableID := range tableIDs {
 				assignedToTable := tables[tableID]
 				for i, playerToAssign := range playersToAssign {
-					containsSameTeamID := slices.ContainsFunc(assignedToTable, func(p player) bool {
+					containsSameTeamID := slices.ContainsFunc(assignedToTable, func(p Player) bool {
 						return p.TeamID == playerToAssign.TeamID
 					})
 					if !containsSameTeamID {
@@ -104,8 +106,7 @@ func AssignTables(teamSetup TeamSetup, seed int64) (map[int][]player, error) {
 
 		if len(playersToAssign) == 0 {
 			return tables, nil
-		} else {
-			seed++
 		}
+		seed++
 	}
 }

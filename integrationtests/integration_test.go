@@ -1,11 +1,11 @@
-package integration_tests
+package integrationtests
 
 import (
 	"bytes"
 	"context"
 	"database/sql"
 
-	"github.com/henok321/knobel-manager-service/integration_tests/mock"
+	"github.com/henok321/knobel-manager-service/integrationtests/mock"
 	pg "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 

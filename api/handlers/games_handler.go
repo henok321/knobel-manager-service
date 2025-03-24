@@ -7,12 +7,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/henok321/knobel-manager-service/pkg/customError"
-
 	"github.com/go-playground/validator/v10"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 
+	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 
 	"github.com/henok321/knobel-manager-service/pkg/game"
@@ -55,7 +54,7 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 	activeGame, err := h.gamesService.GetActiveGame(sub)
 
 	if err != nil {
-		if errors.Is(err, entity.ErrorGameNotFound) {
+		if errors.Is(err, entity.ErrGameNotFound) {
 			slog.WarnContext(request.Context(), "Could not find active game", "error", err)
 
 			response = gamesResponse{
@@ -97,13 +96,13 @@ func (h *GamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 		return
 	}
 
-	gameById, err := h.gamesService.FindByID(int(gameID), sub)
+	gameByID, err := h.gamesService.FindByID(int(gameID), sub)
 
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
@@ -115,7 +114,7 @@ func (h *GamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 	writer.WriteHeader(http.StatusOK)
 
 	gameResponse := gameResponse{
-		Game: gameById,
+		Game: gameByID,
 	}
 
 	if err := json.NewEncoder(writer).Encode(gameResponse); err != nil {
@@ -206,9 +205,9 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Not owner", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
@@ -240,9 +239,9 @@ func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 
 	if err := h.gamesService.DeleteGame(int(gameID), sub); err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
 		default:
 
@@ -274,9 +273,9 @@ func (h *GamesHandler) GameSetup(writer http.ResponseWriter, request *http.Reque
 
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
@@ -315,9 +314,9 @@ func (h *GamesHandler) SetActiveGame(writer http.ResponseWriter, request *http.R
 
 	if err != nil {
 		switch {
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)

@@ -38,9 +38,9 @@ jobs:
         run: go test ./... -coverpkg=./... -coverprofile=coverage.out --json > test-report.out
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: v1.64.6
+          version: v2.0
           args: "--timeout 5m --out-format checkstyle > golangci-lint-report.xml"
 
       - name: Analyze project and upload coverage

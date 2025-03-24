@@ -3,15 +3,14 @@ package player
 import (
 	"errors"
 
-	"github.com/henok321/knobel-manager-service/pkg/customError"
-
+	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/team"
 	"gorm.io/gorm"
 )
 
 type PlayersService interface {
-	CreatePlayer(request PlayersRequest, teamId int, sub string) (entity.Player, error)
+	CreatePlayer(request PlayersRequest, teamID int, sub string) (entity.Player, error)
 	UpdatePlayer(id int, request PlayersRequest, sub string) (entity.Player, error)
 	DeletePlayer(id int, sub string) error
 }
@@ -26,18 +25,18 @@ func NewPlayersService(playersRepo PlayersRepository, teamsRepo team.TeamsReposi
 }
 
 func (s playersService) CreatePlayer(request PlayersRequest, teamID int, sub string) (entity.Player, error) {
-	teamById, err := s.teamsRepo.FindById(teamID)
+	teamByID, err := s.teamsRepo.FindByID(teamID)
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Player{}, customError.TeamNotFound
+			return entity.Player{}, apperror.ErrTeamNotFound
 		}
 	}
 
-	game := teamById.Game
+	game := teamByID.Game
 
 	if !entity.IsOwner(*game, sub) {
-		return entity.Player{}, customError.NotOwner
+		return entity.Player{}, apperror.ErrNotOwner
 	}
 
 	player := entity.Player{Name: request.Name, TeamID: teamID}
@@ -53,11 +52,11 @@ func (s playersService) CreatePlayer(request PlayersRequest, teamID int, sub str
 
 func (s playersService) UpdatePlayer(id int, request PlayersRequest, sub string) (entity.Player, error) {
 
-	player, err := s.playersRepo.FindPlayerById(id)
+	player, err := s.playersRepo.FindPlayerByID(id)
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Player{}, customError.PlayerNotFound
+			return entity.Player{}, apperror.ErrPlayerNotFound
 		}
 		return entity.Player{}, err
 	}
@@ -65,7 +64,7 @@ func (s playersService) UpdatePlayer(id int, request PlayersRequest, sub string)
 	game := player.Team.Game
 
 	if !entity.IsOwner(*game, sub) {
-		return entity.Player{}, customError.NotOwner
+		return entity.Player{}, apperror.ErrNotOwner
 	}
 
 	player.Name = request.Name
@@ -79,11 +78,11 @@ func (s playersService) UpdatePlayer(id int, request PlayersRequest, sub string)
 }
 
 func (s playersService) DeletePlayer(id int, sub string) error {
-	player, err := s.playersRepo.FindPlayerById(id)
+	player, err := s.playersRepo.FindPlayerByID(id)
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return customError.PlayerNotFound
+			return apperror.ErrPlayerNotFound
 		}
 		return err
 	}
@@ -91,7 +90,7 @@ func (s playersService) DeletePlayer(id int, sub string) error {
 	game := player.Team.Game
 
 	if !entity.IsOwner(*game, sub) {
-		return customError.NotOwner
+		return apperror.ErrNotOwner
 	}
 
 	err = s.playersRepo.DeletePlayer(id)

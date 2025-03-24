@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-var ErrorGameNotFound = errors.New("game not found")
+var ErrGameNotFound = errors.New("game not found")
 
 type GameStatus string
 

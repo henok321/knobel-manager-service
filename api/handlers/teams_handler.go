@@ -7,10 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/henok321/knobel-manager-service/pkg/customError"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/henok321/knobel-manager-service/api/middleware"
+	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/team"
 )
@@ -60,11 +59,11 @@ func (t TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 
 	if err != nil {
 		switch {
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
-		case errors.Is(err, customError.TeamSizeNotAllowed):
+		case errors.Is(err, apperror.ErrTeamSizeNotAllowed):
 			JSONError(writer, "Invalid team size", http.StatusBadRequest)
 
 		default:
@@ -126,11 +125,11 @@ func (t TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, customError.TeamNotFound):
+		case errors.Is(err, apperror.ErrTeamNotFound):
 			JSONError(writer, "Team not found", http.StatusNotFound)
 		}
 		return
@@ -173,9 +172,9 @@ func (t TeamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Reque
 
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "Forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrorGameNotFound):
+		case errors.Is(err, entity.ErrGameNotFound):
 			JSONError(writer, "Game not found", http.StatusNotFound)
 		default:
 			JSONError(writer, err.Error(), http.StatusInternalServerError)

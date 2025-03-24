@@ -8,11 +8,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/henok321/knobel-manager-service/pkg/customError"
-
 	"github.com/go-playground/validator/v10"
 	"github.com/henok321/knobel-manager-service/api/middleware"
 
+	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 )
 
@@ -69,9 +68,9 @@ func (h PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.TeamNotFound):
+		case errors.Is(err, apperror.ErrTeamNotFound):
 			JSONError(writer, "Team not found", http.StatusNotFound)
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
@@ -132,9 +131,9 @@ func (h PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.R
 
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.TeamNotFound), errors.Is(err, customError.PlayerNotFound):
+		case errors.Is(err, apperror.ErrTeamNotFound), errors.Is(err, apperror.ErrPlayerNotFound):
 			JSONError(writer, err.Error(), http.StatusNotFound)
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
@@ -176,9 +175,9 @@ func (h PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.R
 
 	if err != nil {
 		switch {
-		case errors.Is(err, customError.PlayerNotFound):
+		case errors.Is(err, apperror.ErrPlayerNotFound):
 			JSONError(writer, err.Error(), http.StatusNotFound)
-		case errors.Is(err, customError.NotOwner):
+		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
