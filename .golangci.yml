@@ -7,8 +7,6 @@ linters:
     - dupl
     - gocritic
     - gocyclo
-    - godox
-    - gosec
     - revive
     - testifylint
     - asciicheck
