@@ -1,12 +1,14 @@
 version: "2"
 run:
   tests: true
+
 linters:
-  default: standard
   enable:
     - dupl
     - gocritic
     - gocyclo
+    - godox
+    - gosec
     - revive
     - testifylint
     - asciicheck
@@ -14,13 +16,9 @@ linters:
     - errname
     - exhaustive
     - godot
-    - godox
     - iface
     - sloglint
-    - gosec
     - unconvert
-    - nilerr
-    - errcheck
   settings:
     gocritic:
       disable-all: false
@@ -42,21 +40,20 @@ linters:
       - third_party$
       - builtin$
       - examples$
+
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
+
 formatters:
   enable:
     - gofmt
     - goimports
   settings:
     gofmt:
-      rewrite-rules:
-        - pattern: 'interface{}'
-          replacement: 'any'
-    goimports:
-      local-prefixes:
-        - github.com/golangci/golangci-lint/v2
+      simplify: true
+    gofumpt:
+      extra-rules: true
   exclusions:
     generated: strict
     paths:
