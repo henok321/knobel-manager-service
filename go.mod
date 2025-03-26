@@ -13,7 +13,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/testcontainers/testcontainers-go v0.35.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.35.0
-	google.golang.org/api v0.227.0
+	google.golang.org/api v0.228.0
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12
 
