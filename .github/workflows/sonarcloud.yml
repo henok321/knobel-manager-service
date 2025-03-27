@@ -41,7 +41,7 @@ jobs:
         uses: golangci/golangci-lint-action@v7
         with:
           version: v2.0
-          args: "--timeout 5m --out-format checkstyle > golangci-lint-report.xml"
+          args: "--timeout 5m --output.checkstyle.path golangci-lint-report.xml" 
 
       - name: Analyze project and upload coverage
         uses: sonarsource/sonarqube-scan-action@master
