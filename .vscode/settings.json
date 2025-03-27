@@ -1,0 +1,29 @@
+{
+    "[go]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "golang.go",
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "always",
+            "source.fixAll": "always"
+        }
+    },
+    "go.alternateTools": {
+        "customFormatter": "golangci-lint"
+    },
+    "go.formatTool": "custom",
+    "go.formatFlags": [
+        "fmt",
+        "--stdin"
+    ],
+    "go.lintTool": "golangci-lint",
+    "go.lintOnSave": "workspace",
+    "go.lintFlags": [
+        "--fast-only"
+    ],
+    "go.useLanguageServer": true,
+    "gopls": {
+        "ui.semanticTokens": true,
+        "ui.completion.usePlaceholders": true
+    },
+    "makefile.configureOnOpen": true,
+}

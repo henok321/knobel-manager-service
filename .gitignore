@@ -19,9 +19,6 @@ go.work.sum
 *.iml
 
 # VSCode
-.vscode
-!.vscode/launch.json
-!.vscode/extensions.json
 knobel-manager-service
 **/__debug_**
 
