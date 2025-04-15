@@ -1,8 +1,26 @@
+# Knobel Manager Service
+
 [![CI](https://github.com/henok321/knobel-manager-service/actions/workflows/CI.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/CI.yml)
 [![Deploy](https://github.com/henok321/knobel-manager-service/actions/workflows/deploy.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/deploy.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=henok321_knobel-manager-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=henok321_knobel-manager-service)
 
-# Knobel Manager Service
+- [Knobel Manager Service](#knobel-manager-service)
+  - [Synopsis](#synopsis)
+  - [Frontend](#frontend)
+  - [Authentication](#authentication)
+  - [CI/CD](#cicd)
+  - [Database Migration](#database-migration)
+  - [Prerequisites](#prerequisites)
+  - [Setup and Development](#setup-and-development)
+    - [Obtain Firebase Service Account Credentials](#obtain-firebase-service-account-credentials)
+    - [Run Setup](#run-setup)
+    - [Start the Application](#start-the-application)
+    - [Build and run binary](#build-and-run-binary)
+      - [Build](#build)
+      - [Run](#run)
+    - [Health Check](#health-check)
+    - [Makefile targets](#makefile-targets)
+  - [License](#license)
 
 ## Synopsis
 
@@ -43,7 +61,7 @@ Ensure the following dependencies are installed:
 
 ## Setup and Development
 
-### Obtain Firebase Service Account Credentials:
+### Obtain Firebase Service Account Credentials
 
 Generate and download a service account config file in
 the [Firebase Cloud Console](https://console.firebase.google.com/u/1/project/knobel-manager-webapp/settings/serviceaccounts/adminsdk).
@@ -60,10 +78,10 @@ make setup
 
 This command will:
 
-* Install commit hooks.
-* Start the local database.
-* Run database migrations.
-* Create a `.env` file with necessary environment variables.
+- Install commit hooks.
+- Start the local database.
+- Run database migrations.
+- Create a `.env` file with necessary environment variables.
 
 Reset database:
 
