@@ -6,14 +6,14 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'README.md'
-      - 'LICENSE'
-      - '.pre-commit-config.yaml'
+      - "README.md"
+      - "LICENSE"
+      - ".pre-commit-config.yaml"
   pull_request:
     paths-ignore:
-      - 'README.md'
-      - 'LICENSE'
-      - '.pre-commit-config.yaml'
+      - "README.md"
+      - "LICENSE"
+      - ".pre-commit-config.yaml"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -40,7 +40,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v2.0
+          version: v2.1
           args: "--timeout 5m --output.checkstyle.path golangci-lint-report.xml"
 
       - name: Analyze project and upload coverage
