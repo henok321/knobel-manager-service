@@ -28,7 +28,7 @@ linters:
     - godox
     - iface
     - revive
-    
+
   settings:
     gocritic:
       disable-all: false

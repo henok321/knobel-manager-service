@@ -37,8 +37,7 @@ reset:
 
 lint:
 	@echo "Running linter..."
-	golangci-lint config verify --verbose --config .golangci.yml
-	golangci-lint run --fix --verbose
+	pre-commit run --all-files
 
 update:
 	@echo "Updating Go modules..."
