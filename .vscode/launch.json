@@ -10,6 +10,6 @@
             "postDebugTask": "docker-compose down",
             "program": "${workspaceFolder}/cmd/main.go",
             "envFile": "${workspaceFolder}/.env"
-        },
+        }
     ]
 }

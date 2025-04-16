@@ -4,12 +4,15 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
-    - id: end-of-file-fixer
-    - id: trailing-whitespace
-    - id: check-merge-conflict
-    - id: check-yaml
-    - id: detect-private-key
-    - id: check-added-large-files
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-xml
+      - id: check-toml
+      - id: detect-private-key
+      - id: check-added-large-files
   - repo: https://github.com/golangci/golangci-lint
     rev: v2.1.2
     hooks:
