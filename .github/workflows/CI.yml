@@ -29,11 +29,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install go
-        uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-
       - name: Install python
         uses: actions/setup-python@v3
 
