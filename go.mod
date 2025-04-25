@@ -15,7 +15,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.36.0
 	google.golang.org/api v0.229.0
 	gorm.io/driver/postgres v1.5.11
-	gorm.io/gorm v1.25.12
+	gorm.io/gorm v1.26.0
 
 )
 
