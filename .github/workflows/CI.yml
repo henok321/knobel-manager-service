@@ -34,6 +34,11 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
         with:
