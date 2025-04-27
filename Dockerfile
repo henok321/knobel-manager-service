@@ -20,7 +20,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates curl && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*&&  \
+    apt-get clean && rm -rf /var/lib/apt/lists/* &&  \
     groupadd --gid 1001 appgroup && \
     useradd --uid 1001 --gid appgroup --create-home appuser
 

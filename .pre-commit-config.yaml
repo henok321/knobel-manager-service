@@ -13,9 +13,20 @@ repos:
       - id: check-json
       - id: check-xml
       - id: check-toml
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
       - id: detect-private-key
       - id: forbid-submodules
       - id: check-added-large-files
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+  - repo: https://github.com/pryorda/dockerfilelint-precommit-hooks
+    rev: v0.1.0
+    hooks:
+    - id: dockerfilelint
+      stages: [pre-commit]
   - repo: https://github.com/golangci/golangci-lint
     rev: v2.1.2
     hooks:
