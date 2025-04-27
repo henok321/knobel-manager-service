@@ -40,7 +40,9 @@ lint:
 	pre-commit run --all-files
 
 update:
-	@echo "Updating Go modules..."
+	@echo "Updating Linter and Go modules..."
+	pre-commit autoupdate
+	pre-commit migrate-config
 	go get -u ./...
 	go mod tidy
 
