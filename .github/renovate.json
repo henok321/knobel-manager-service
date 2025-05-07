@@ -1,27 +1,45 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "automerge": true,
-  "extends": ["config:recommended"],
+  "extends": [
+    "config:recommended"
+  ],
   "enabledManagers": [
     "gomod",
     "dockerfile",
     "docker-compose",
-    "github-actions"
+    "github-actions",
+    "pre-commit"
   ],
+  "pre-commit": {
+    "enabled": true
+  },
   "prCreation": "immediate",
-  "labels": ["dependencies"],
-  "schedule": ["at any time"],
+  "labels": [
+    "dependencies"
+  ],
+  "schedule": [
+    "at any time"
+  ],
   "packageRules": [
     {
-      "matchManagers": ["gomod"],
-      "postUpdateOptions": ["gomodTidy"]
+      "matchManagers": [
+        "gomod"
+      ],
+      "postUpdateOptions": [
+        "gomodTidy"
+      ]
     },
     {
-      "matchDatasources": ["golang-version"],
+      "matchDatasources": [
+        "golang-version"
+      ],
       "enabled": true
     },
     {
-      "matchDepTypes": ["indirect"],
+      "matchDepTypes": [
+        "indirect"
+      ],
       "enabled": false
     }
   ]
