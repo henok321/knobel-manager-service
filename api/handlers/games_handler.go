@@ -17,7 +17,7 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/game"
 )
 
-type gameResponse struct {
+	type gameResponse struct {
 	Game entity.Game `json:"game"`
 }
 
