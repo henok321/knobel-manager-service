@@ -41,13 +41,12 @@ The service uses JWT for authentication, provided by Firebase Authentication.
 
 ## CI/CD
 
-The project uses GitHub Actions for CI/CD. The CI workflow runs on push for the main branch and for pull requests: [CI](.github/workflows/CI.yml).
-The CD workflow runs on push to the main branch: [CD](.github/workflows/deploy.yml).
+The project uses GitHub Actions for CI/CD. The [CI Workflow](.github/workflows/CI.yml) workflow runs on push for the main branch and for pull requests.
+The [CD workflow](.github/workflows/deploy.yml) runs on push to the main branch.
 
 ## Database Migration
 
-The project uses `goose` for database migrations: [DB Migration](db/migrations). Use
-the [GitHub Action](.github/workflows/db_migration.yml) to run the migrations.
+The project uses `goose` for database migrations. Migrations are located in the `db_migration` directory. The migration will run automatically during the local setup process. For production, the migrations will run as part of the [deploy workflow](.github/workflows/deploy.yml).
 
 ## Prerequisites
 
