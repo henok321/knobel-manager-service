@@ -41,7 +41,7 @@ The service uses JWT for authentication, provided by Firebase Authentication.
 
 ## CI/CD
 
-The project uses GitHub Actions for CI/CD. The [CI Workflow](.github/workflows/CI.yml) workflow runs on push for the main branch and for pull requests.
+The project uses GitHub Actions for CI/CD. The [CI Workflow](.github/workflows/CI.yml) runs on push for the main branch and for pull requests.
 The [CD workflow](.github/workflows/deploy.yml) runs on push to the main branch.
 
 ## Database Migration
