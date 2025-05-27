@@ -33,7 +33,7 @@ This project is a work in progress and not yet finished.
 
 ## Frontend
 
-The frontend is implemented in React and can be found [here](https://github.com/henok321/knobel-manager-app).
+The frontend is implemented in React: [knobel-manager-app](https://github.com/henok321/knobel-manager-app).
 
 ## Authentication
 
@@ -41,13 +41,12 @@ The service uses JWT for authentication, provided by Firebase Authentication.
 
 ## CI/CD
 
-The project uses GitHub Actions for CI/CD. The CI workflow runs on push for the main branch and for pull requests and
-can be found [here](.github/workflows/CI.yml). The CD workflow runs on push to the main branch and can be
-found [here](.github/workflows/deploy.yml).
+The project uses GitHub Actions for CI/CD. The CI workflow runs on push for the main branch and for pull requests: [CI](.github/workflows/CI.yml).
+The CD workflow runs on push to the main branch: [CD](.github/workflows/deploy.yml).
 
 ## Database Migration
 
-The project uses `goose` for database migrations. The migrations can be found [here](db/migrations). Use
+The project uses `goose` for database migrations: [DB Migration](db/migrations). Use
 the [GitHub Action](.github/workflows/db_migration.yml) to run the migrations.
 
 ## Prerequisites

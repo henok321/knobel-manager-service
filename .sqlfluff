@@ -1,2 +1,4 @@
 [sqlfluff]
 dialect = postgres
+quoted_identifiers_policy = all
+unquoted_identifiers_policy = all

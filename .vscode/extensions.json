@@ -6,6 +6,7 @@
     "davidanson.vscode-markdownlint",
     "ms-vscode.makefile-tools",
     "foxundermoon.shell-format",
-    "ms-azuretools.vscode-containers"
+    "ms-azuretools.vscode-containers",
+    "ms-ossdata.vscode-pgsql"
   ]
 }
