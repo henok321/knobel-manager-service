@@ -18,11 +18,11 @@ repos:
       - id: detect-private-key
       - id: forbid-submodules
       - id: check-added-large-files
-  - repo: https://github.com/mrtazz/checkmake.git
-    rev: 0.2.2
+  - repo: https://github.com/EbodShojaei/bake
+    rev: v1.2.4
     hooks:
-      - id: checkmake
-        args: ["--config=checkmake.ini"]
+      - id: mbake-format
+      - id: mbake-validate
   - repo: https://github.com/sqlfluff/sqlfluff
     rev: 3.4.1
     hooks:

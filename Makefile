@@ -1,14 +1,14 @@
 .DEFAULT_GOAL := all
 
-GOARCH 			:= $(shell uname -m)
-GOOS 			:= $(shell uname -s | tr '[:upper:]' '[:lower:]')
-OUTPUT       	:= knobel-manager-service
-BUILD_FLAGS  	:= -a -ldflags="-s -w -extldflags '-static'"
-CMD_DIR      	:= ./cmd
+GOARCH := $(shell uname -m)
+GOOS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
+OUTPUT := knobel-manager-service
+BUILD_FLAGS := -a -ldflags="-s -w -extldflags '-static'"
+CMD_DIR := ./cmd
 
 .PHONY: all help setup reset lint update test build clean
 
-all:help
+all: help
 
 help:
 	@echo "Usage: make [target]"
