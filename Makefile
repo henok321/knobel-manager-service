@@ -1,4 +1,4 @@
-.DEFAULT_GOAL := help
+.DEFAULT_GOAL := all
 
 GOARCH 			:= $(shell uname -m)
 GOOS 			:= $(shell uname -s | tr '[:upper:]' '[:lower:]')
@@ -6,19 +6,13 @@ OUTPUT       	:= knobel-manager-service
 BUILD_FLAGS  	:= -a -ldflags="-s -w -extldflags '-static'"
 CMD_DIR      	:= ./cmd
 
-.PHONY: help setup reset lint update test build clean check-deps
+.PHONY: all help setup reset lint update test build clean
+
+all:help
 
 help:
 	@echo "Usage: make [target]"
-	@echo "Available targets:"
-	@echo "  help      - Show this help message"
-	@echo "  setup     - Install dependencies and setup project"
-	@echo "  reset     - Reset local database"
-	@echo "  lint      - Run linter"
-	@echo "  update    - Update Go modules"
-	@echo "  test      - Run tests"
-	@echo "  build     - Build the service"
-	@echo "  clean     - Remove build artifacts"
+	@echo "Targets: help, setup, reset, lint, update, test, build, clean"
 
 check-deps:
 	@echo "Checking dependencies..."
@@ -32,7 +26,11 @@ setup: check-deps
 	./scripts/setup.sh
 
 reset:
-	@echo "Resetting local database..."
+	@echo "Uninstall pre-commit hooks..."
+	pre-commit uninstall
+	@echo "Cleanup pre-commit cache..."
+	pre-commit clean
+	@echo "Cleanup local docker database..."
 	docker compose down --volumes --remove-orphans
 
 lint:
