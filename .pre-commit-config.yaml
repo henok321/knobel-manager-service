@@ -19,7 +19,7 @@ repos:
       - id: forbid-submodules
       - id: check-added-large-files
   - repo: https://github.com/EbodShojaei/bake
-    rev: v1.2.4
+    rev: v1.2.4.post2
     hooks:
       - id: mbake-format
       - id: mbake-validate
