@@ -6,7 +6,7 @@ OUTPUT := knobel-manager-service
 BUILD_FLAGS := -a -ldflags="-s -w -extldflags '-static'"
 CMD_DIR := ./cmd
 
-.PHONY: all help setup reset lint update test build clean
+.PHONY: all check-deps clean lint reset setup test update
 
 all: help
 

@@ -22,7 +22,9 @@ repos:
     rev: v1.2.4.post2
     hooks:
       - id: mbake-format
+        args: ["--config", ".bake.toml"]
       - id: mbake-validate
+        args: ["--config", ".bake.toml"]
   - repo: https://github.com/sqlfluff/sqlfluff
     rev: 3.4.1
     hooks:
