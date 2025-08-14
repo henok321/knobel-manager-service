@@ -49,7 +49,7 @@ repos:
         files: \.(md|markdown|mdown)$
         args: ["--disable=MD013", "--disable=MD033"]
   - repo: https://github.com/golangci/golangci-lint
-    rev: v2.3.1
+    rev: v2.4.0
     hooks:
       - id: golangci-lint-config-verify
       - id: golangci-lint-full

@@ -1,6 +1,6 @@
 module github.com/henok321/knobel-manager-service
 
-go 1.24.4
+go 1.25
 
 require (
 	firebase.google.com/go/v4 v4.18.0
@@ -16,7 +16,6 @@ require (
 	google.golang.org/api v0.247.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.1
-
 )
 
 require (
