@@ -24,7 +24,7 @@ func TestScores(t *testing.T) {
 		"Update score not game owner": {
 			method:             "PUT",
 			endpoint:           "/games/1/rounds/1/tables/1/scores",
-			expectedStatusCode: http.StatusForbidden,
+			expectedStatusCode: http.StatusNotFound,
 			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			setup: func(db *sql.DB) {
@@ -111,7 +111,12 @@ func TestScores(t *testing.T) {
 		t.Fatalf("Failed to open database connection: %v", err)
 	}
 
-	defer db.Close()
+	defer func(db *sql.DB) {
+		err := db.Close()
+		if err != nil {
+			t.Fatalf("Failed to close database connection: %v", err)
+		}
+	}(db)
 
 	runGooseUp(t, db)
 

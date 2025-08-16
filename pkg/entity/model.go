@@ -56,7 +56,7 @@ type Team struct {
 	ID        int            `gorm:"primaryKey" json:"id"`
 	Name      string         `gorm:"size:255;not null" json:"name"`
 	GameID    int            `gorm:"not null" json:"gameID"`
-	Game      *Game          `gorm:"foreignKey:GameID" json:"game,omitempty"`
+	Game      *Game          `gorm:"foreignKey:GameID" json:"-"`
 	Players   []*Player      `gorm:"foreignKey:TeamID" json:"players,omitempty"`
 	CreatedAt time.Time      `json:"-"`
 	UpdatedAt time.Time      `json:"-"`
@@ -67,8 +67,8 @@ type Player struct {
 	ID        int            `gorm:"primaryKey" json:"id"`
 	Name      string         `gorm:"size:255;not null" json:"name"`
 	TeamID    int            `gorm:"not null" json:"teamID"`
-	Team      *Team          `gorm:"foreignKey:TeamID" json:"team,omitempty"`
-	Scores    []*Score       `gorm:"foreignKey:PlayerID" json:"scores,omitempty"`
+	Team      *Team          `gorm:"foreignKey:TeamID" json:"-"`
+	Scores    []*Score       `gorm:"foreignKey:PlayerID" json:"-"`
 	CreatedAt time.Time      `json:"-"`
 	UpdatedAt time.Time      `json:"-"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
@@ -105,8 +105,8 @@ type Score struct {
 	PlayerID  int            `gorm:"not null;uniqueIndex:idx_player_table" json:"playerID"`
 	TableID   int            `gorm:"not null;uniqueIndex:idx_player_table" json:"tableID"`
 	Score     int            `gorm:"not null" json:"score"`
-	Players   []*Player      `gorm:"many2many:table_players" json:"players,omitempty"`
-	GameTable *GameTable     `gorm:"foreignKey:TableID" json:"gameTable,omitempty"`
+	Players   []*Player      `gorm:"many2many:table_players" json:"-"`
+	GameTable *GameTable     `gorm:"foreignKey:TableID" json:"-"`
 	CreatedAt time.Time      `json:"-"`
 	UpdatedAt time.Time      `json:"-"`
 	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`

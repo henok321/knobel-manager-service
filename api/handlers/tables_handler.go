@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/henok321/knobel-manager-service/pkg/table"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
@@ -16,11 +17,12 @@ import (
 )
 
 type TablesHandler struct {
-	gamesService game.GamesService
+	gamesService  game.GamesService
+	tablesService table.TablesService
 }
 
-func NewTablesHandler(gamesService game.GamesService) *TablesHandler {
-	return &TablesHandler{gamesService: gamesService}
+func NewTablesHandler(gamesService game.GamesService, tablesService table.TablesService) *TablesHandler {
+	return &TablesHandler{gamesService: gamesService, tablesService: tablesService}
 }
 
 func (t TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request) {
@@ -120,11 +122,11 @@ func (t TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 
 	for _, round := range gameByID.Rounds {
 		if round.RoundNumber == int(roundNumber) {
-			for _, table := range round.Tables {
-				if table.TableNumber == int(tablesNumber) {
+			for _, currentTable := range round.Tables {
+				if currentTable.TableNumber == int(tablesNumber) {
 					writer.WriteHeader(http.StatusOK)
 
-					if err := json.NewEncoder(writer).Encode(table); err != nil {
+					if err := json.NewEncoder(writer).Encode(currentTable); err != nil {
 						slog.InfoContext(request.Context(), "Could not write body", "error", err)
 					}
 
@@ -164,7 +166,7 @@ func (t TablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 		return
 	}
 
-	scoresRequest := game.ScoresRequest{}
+	scoresRequest := table.ScoresRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&scoresRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -178,13 +180,9 @@ func (t TablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 		return
 	}
 
-	updatedGame, err := t.gamesService.UpdateScore(int(gameID), int(roundNumber), int(tableNumber), sub, scoresRequest)
+	_, err = t.tablesService.UpdateScore(int(gameID), int(roundNumber), int(tableNumber), sub, scoresRequest)
 	if err != nil {
 		switch {
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "Forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game not found", http.StatusNotFound)
 		case errors.Is(err, apperror.ErrInvalidScore):
 			JSONError(writer, "Invalid score", http.StatusBadRequest)
 		case errors.Is(err, apperror.ErrRoundOrTableNotFound):
@@ -194,6 +192,18 @@ func (t TablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 		}
 
 		return
+	}
+
+	updatedGame, err := t.gamesService.FindByID(int(gameID), sub)
+	if err != nil {
+		switch {
+		case errors.Is(err, apperror.ErrNotOwner):
+			JSONError(writer, "Forbidden", http.StatusForbidden)
+		case errors.Is(err, entity.ErrGameNotFound):
+			JSONError(writer, "Game not found", http.StatusNotFound)
+		default:
+			JSONError(writer, err.Error(), http.StatusInternalServerError)
+		}
 	}
 
 	if err := json.NewEncoder(writer).Encode(gameResponse{Game: updatedGame}); err != nil {

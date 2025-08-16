@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/henok321/knobel-manager-service/pkg/table"
 	"github.com/henok321/knobel-manager-service/pkg/team"
 
 	"github.com/henok321/knobel-manager-service/pkg/player"
@@ -43,7 +44,7 @@ func (app *RouteSetup) authenticatedEndpoint(handler http.Handler) http.Handler 
 func (app *RouteSetup) setup() {
 	gamesHandler := handlers.NewGamesHandler(game.InitializeGameModule(app.database))
 	playersHandler := handlers.NewPlayersHandler(player.InitializePlayerModule(app.database))
-	tablesHandler := handlers.NewTablesHandler(game.InitializeGameModule(app.database))
+	tablesHandler := handlers.NewTablesHandler(game.InitializeGameModule(app.database), table.InitializeTablesModule(app.database))
 	teamsHandler := handlers.NewTeamsHandler(team.InitializeTeamsModule(app.database))
 
 	// health
