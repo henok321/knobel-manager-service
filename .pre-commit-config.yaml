@@ -1,5 +1,6 @@
-default_stages: [pre-commit, pre-push]
+default_stages: [ pre-commit, pre-push ]
 fail_fast: false
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -9,6 +10,8 @@ repos:
       - id: trailing-whitespace
       - id: check-case-conflict
       - id: check-merge-conflict
+      - id: check-symlinks
+      - id: mixed-line-ending
       - id: check-yaml
       - id: check-json
       - id: check-xml
@@ -18,13 +21,17 @@ repos:
       - id: detect-private-key
       - id: forbid-submodules
       - id: check-added-large-files
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.28.0
+    hooks:
+      - id: gitleaks
   - repo: https://github.com/EbodShojaei/bake
     rev: v1.3.1
     hooks:
       - id: mbake-format
-        args: ["--config", ".bake.toml"]
+        args: [ "--config", ".bake.toml" ]
       - id: mbake-validate
-        args: ["--config", ".bake.toml"]
+        args: [ "--config", ".bake.toml" ]
   - repo: https://github.com/sqlfluff/sqlfluff
     rev: 3.4.2
     hooks:
@@ -41,13 +48,13 @@ repos:
     rev: v0.1.0
     hooks:
       - id: dockerfilelint
-        stages: [pre-commit]
+        stages: [ pre-commit ]
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.45.0
     hooks:
       - id: markdownlint
         files: \.(md|markdown|mdown)$
-        args: ["--disable=MD013", "--disable=MD033"]
+        args: [ "--disable=MD013", "--disable=MD033" ]
   - repo: https://github.com/golangci/golangci-lint
     rev: v2.4.0
     hooks:
@@ -57,10 +64,10 @@ repos:
     hooks:
       - id: go-test
         name: go-test
-        stages: [pre-push]
+        stages: [ pre-push ]
         description: Run all tests
         entry: go test -v ./...
-        types: [go]
+        types: [ go ]
         language: golang
         require_serial: true
         pass_filenames: false
