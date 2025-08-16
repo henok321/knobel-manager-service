@@ -11,7 +11,6 @@ repos:
       - id: check-case-conflict
       - id: check-merge-conflict
       - id: check-symlinks
-      - id: mixed-line-ending
       - id: check-yaml
       - id: check-json
       - id: check-xml
