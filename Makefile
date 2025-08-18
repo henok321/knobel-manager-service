@@ -1,3 +1,5 @@
+.PHONY: all build check-deps clean help lint reset setup test update
+
 .DEFAULT_GOAL := all
 
 GOARCH := $(shell uname -m)
@@ -5,8 +7,6 @@ GOOS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 OUTPUT := knobel-manager-service
 BUILD_FLAGS := -a -ldflags="-s -w -extldflags '-static'"
 CMD_DIR := ./cmd
-
-.PHONY: all check-deps clean lint reset setup test update
 
 all: help
 
