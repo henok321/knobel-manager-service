@@ -58,6 +58,9 @@ func Authentication(authClient FirebaseAuth, next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(requestContext, UserContextKey, userContext)
+
+		slog.InfoContext(ctx, "Request authenticated")
+
 		next.ServeHTTP(writer, request.WithContext(ctx))
 	})
 }

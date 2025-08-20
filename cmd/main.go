@@ -54,22 +54,24 @@ func main() {
 		slog.Error("Starting application failed, cannot decode FIREBASE_SECRET")
 	}
 
+	if len(firebaseSecret) == 0 {
+		slog.Error("Starting application failed, FIREBASE_SECRET is undefined or empty")
+		exitCode = 1
+		return
+	}
+
 	firebaseOption := option.WithCredentialsJSON(firebaseSecret)
 	firebaseApp, err := firebase.NewApp(context.Background(), nil, firebaseOption)
 	if err != nil {
 		slog.Error("Starting application failed, cannot initialize firebase client. Check if the environment FIREBASE_SECRET is set correctly", "error", err)
-
 		exitCode = 1
-
 		return
 	}
 
 	authClient, err := firebaseApp.Auth(context.Background())
 	if err != nil {
 		slog.Error("Starting application failed, cannot initialize auth client", "error", err)
-
 		exitCode = 1
-
 		return
 	}
 
@@ -77,9 +79,7 @@ func main() {
 	database, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
 		slog.Error("Starting application failed, cannot connect to database", "databaseUrl", databaseURL, "error", err)
-
 		exitCode = 1
-
 		return
 	}
 
