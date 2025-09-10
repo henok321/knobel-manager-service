@@ -26,7 +26,7 @@ func NewTablesHandler(gamesService game.GamesService, tablesService table.Tables
 }
 
 func (t TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
@@ -79,7 +79,7 @@ func (t TablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 }
 
 func (t TablesHandler) GetTable(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
@@ -140,7 +140,7 @@ func (t TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 }
 
 func (t TablesHandler) UpdateTableScore(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return

@@ -35,7 +35,7 @@ func NewGamesHandler(gamesService game.GamesService) *GamesHandler {
 }
 
 func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
@@ -82,7 +82,7 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 }
 
 func (h *GamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		http.Error(writer, `{'error': 'User logging not found'}`, http.StatusUnauthorized)
 		return
@@ -123,7 +123,7 @@ func (h *GamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 }
 
 func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
@@ -166,7 +166,7 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 }
 
 func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
@@ -217,7 +217,7 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 }
 
 func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
@@ -248,7 +248,7 @@ func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 }
 
 func (h *GamesHandler) GameSetup(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
@@ -287,7 +287,7 @@ func (h *GamesHandler) GameSetup(writer http.ResponseWriter, request *http.Reque
 }
 
 func (h *GamesHandler) SetActiveGame(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return

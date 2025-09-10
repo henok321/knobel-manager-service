@@ -17,8 +17,8 @@ func (h *ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 		r.AddAttrs(requestGroup)
 	}
 
-	if userContext := ctx.Value(middleware.UserContextKey); userContext != nil {
-		userGroup := slog.Group("user", "sub", userContext.(*middleware.User).Sub)
+	if userContext, ok := middleware.UserFromContext(ctx); !ok {
+		userGroup := slog.Group("user", "sub", userContext.Sub)
 		r.AddAttrs(userGroup)
 	}
 

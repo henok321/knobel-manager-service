@@ -27,7 +27,7 @@ func NewTeamsHandler(service team.TeamsService) *TeamsHandler {
 }
 
 func (t TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
@@ -83,7 +83,7 @@ func (t TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 }
 
 func (t TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
@@ -142,7 +142,7 @@ func (t TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 }
 
 func (t TeamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return

@@ -26,7 +26,7 @@ func NewPlayersHandler(service player.PlayersService) *PlayersHandler {
 }
 
 func (h PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
@@ -91,7 +91,7 @@ func (h PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 }
 
 func (h PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return
@@ -149,7 +149,7 @@ func (h PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.R
 }
 
 func (h PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := request.Context().Value(middleware.UserContextKey).(*middleware.User)
+	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
 		return

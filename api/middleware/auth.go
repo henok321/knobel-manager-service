@@ -11,7 +11,7 @@ import (
 
 type userContextKey string
 
-const UserContextKey userContextKey = "user"
+const key userContextKey = "user"
 
 type FirebaseAuth interface {
 	VerifyIDToken(ctx context.Context, idToken string) (*auth.Token, error)
@@ -20,6 +20,14 @@ type FirebaseAuth interface {
 type User struct {
 	Sub   string
 	Email string
+}
+
+func UserFromContext(ctx context.Context) (*User, bool) {
+	user, ok := ctx.Value(key).(*User)
+	if !ok {
+		return nil, false
+	}
+	return user, true
 }
 
 func Authentication(authClient FirebaseAuth, next http.Handler) http.Handler {
@@ -57,7 +65,7 @@ func Authentication(authClient FirebaseAuth, next http.Handler) http.Handler {
 			Email: token.Claims["email"].(string),
 		}
 
-		ctx := context.WithValue(requestContext, UserContextKey, userContext)
+		ctx := context.WithValue(requestContext, key, userContext)
 
 		slog.InfoContext(ctx, "Request authenticated")
 
