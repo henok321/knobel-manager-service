@@ -24,10 +24,7 @@ type User struct {
 
 func UserFromContext(ctx context.Context) (*User, bool) {
 	user, ok := ctx.Value(key).(*User)
-	if !ok {
-		return nil, false
-	}
-	return user, true
+	return user, ok
 }
 
 func Authentication(authClient FirebaseAuth, next http.Handler) http.Handler {
