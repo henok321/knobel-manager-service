@@ -104,8 +104,8 @@ func main() {
 		IdleTimeout:  15 * time.Second,
 	}
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	shutdownCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	go func() {
 		slog.Info("Starting main server", "port", 8080)
@@ -125,7 +125,7 @@ func main() {
 		}
 	}()
 
-	<-sigChan
+	<-shutdownCtx.Done()
 	slog.Info("Shutdown signal received, shutting down gracefully...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
