@@ -104,7 +104,7 @@ func main() {
 		IdleTimeout:  15 * time.Second,
 	}
 
-	shutdownCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	go func() {
@@ -125,17 +125,17 @@ func main() {
 		}
 	}()
 
-	<-shutdownCtx.Done()
+	<-signalCtx.Done()
 	slog.Info("Shutdown signal received, shutting down gracefully...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	if err := mainServer.Shutdown(ctx); err != nil {
+	if err := mainServer.Shutdown(shutdownCtx); err != nil {
 		slog.Error("Main server shutdown failed", "error", err)
 	}
 
-	if err := metricsServer.Shutdown(ctx); err != nil {
+	if err := metricsServer.Shutdown(shutdownCtx); err != nil {
 		slog.Error("Metrics server shutdown failed", "error", err)
 	}
 
