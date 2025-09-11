@@ -10,12 +10,17 @@ import (
 
 type requestLoggingContextKey string
 
-const RequestLoggingContext requestLoggingContextKey = "requestLogging"
+const requestKey requestLoggingContextKey = "requestLogging"
 
 type Request struct {
 	Method string
 	Path   string
 	ID     uuid.UUID
+}
+
+func RequestFromContext(ctx context.Context) (*Request, bool) {
+	requestLogging, ok := ctx.Value(requestKey).(*Request)
+	return requestLogging, ok
 }
 
 func RequestLogging(logLevel slog.Level, next http.Handler) http.Handler {
@@ -26,7 +31,7 @@ func RequestLogging(logLevel slog.Level, next http.Handler) http.Handler {
 			ID:     uuid.New(),
 		}
 
-		ctx := context.WithValue(request.Context(), RequestLoggingContext, requestLoggingContext)
+		ctx := context.WithValue(request.Context(), requestKey, requestLoggingContext)
 
 		slog.Log(ctx, logLevel, "Incoming request")
 

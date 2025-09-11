@@ -12,7 +12,7 @@ type ContextHandler struct {
 }
 
 func (h *ContextHandler) Handle(ctx context.Context, r slog.Record) error {
-	if requestContext, ok := ctx.Value(middleware.RequestLoggingContext).(middleware.Request); ok {
+	if requestContext, ok := middleware.RequestFromContext(ctx); ok {
 		requestGroup := slog.Group("request", "id", requestContext.ID, "method", requestContext.Method, "path", requestContext.Path)
 		r.AddAttrs(requestGroup)
 	}
