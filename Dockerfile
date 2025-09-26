@@ -1,4 +1,4 @@
-FROM golang:1.25.1-bookworm AS builder
+FROM golang:1.25.1-trixie AS builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
     go build -o knobel-manager-service \
     -a -ldflags="-s -w -extldflags '-static'" ./cmd/
 
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
