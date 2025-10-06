@@ -4,7 +4,7 @@ go 1.25
 
 require (
 	firebase.google.com/go/v4 v4.18.0
-	github.com/go-playground/validator/v10 v10.27.0
+	github.com/go-playground/validator/v10 v10.28.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
 	github.com/pressly/goose/v3 v3.26.0
