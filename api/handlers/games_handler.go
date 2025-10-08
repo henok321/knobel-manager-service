@@ -39,7 +39,6 @@ func NewGamesHandler(gamesService game.GamesService) *GamesHandler {
 // Verify that GamesHandler implements the generated OpenAPI interface
 var _ games.ServerInterface = (*GamesHandler)(nil)
 
-// HandleValidationError handles OpenAPI parameter validation errors for games
 func (h *GamesHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
 	if strings.Contains(err.Error(), "Invalid format for parameter gameID") {
 		JSONError(w, "Invalid gameID", http.StatusBadRequest)

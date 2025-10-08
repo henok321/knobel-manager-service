@@ -31,7 +31,6 @@ func NewTeamsHandler(service team.TeamsService) *TeamsHandler {
 // Verify that TeamsHandler implements the generated OpenAPI interface
 var _ teams.ServerInterface = (*TeamsHandler)(nil)
 
-// HandleValidationError handles OpenAPI parameter validation errors for teams
 func (t *TeamsHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
 	errorMsg := err.Error()
 	switch {

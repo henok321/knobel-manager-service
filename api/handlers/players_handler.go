@@ -29,7 +29,6 @@ func NewPlayersHandler(service player.PlayersService) *PlayersHandler {
 // Verify that PlayersHandler implements the generated OpenAPI interface
 var _ players.ServerInterface = (*PlayersHandler)(nil)
 
-// HandleValidationError handles OpenAPI parameter validation errors for players
 func (h *PlayersHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
 	errorMsg := err.Error()
 	switch {

@@ -48,52 +48,43 @@ func (app *RouteSetup) authenticatedEndpoint(handler http.Handler) http.Handler 
 }
 
 func (app *RouteSetup) setup() {
-	// Initialize services
 	gameService := game.InitializeGameModule(app.database)
 	playerService := player.InitializePlayerModule(app.database)
 	tableService := table.InitializeTablesModule(app.database)
 	teamService := team.InitializeTeamsModule(app.database)
 
-	// Create handlers that implement OpenAPI interfaces
 	healthHandler := handlers.NewHealthHandler()
 	gamesHandler := handlers.NewGamesHandler(gameService)
 	playersHandler := handlers.NewPlayersHandler(playerService)
 	tablesHandler := handlers.NewTablesHandler(gameService, tableService)
 	teamsHandler := handlers.NewTeamsHandler(teamService)
 
-	// Register routes using generated OpenAPI handlers
-	// Health endpoint (public)
 	app.router.Handle("/health", app.publicEndpoint(health.Handler(healthHandler)))
 
-	// Games endpoints (authenticated)
 	gamesRoutes := games.HandlerWithOptions(gamesHandler, games.StdHTTPServerOptions{
 		ErrorHandlerFunc: gamesHandler.HandleValidationError,
 	})
 	app.router.Handle("/games", app.authenticatedEndpoint(gamesRoutes))
 	app.router.Handle("/games/", app.authenticatedEndpoint(gamesRoutes))
 
-	// Teams endpoints (authenticated)
 	teamsRoutes := teams.HandlerWithOptions(teamsHandler, teams.StdHTTPServerOptions{
 		ErrorHandlerFunc: teamsHandler.HandleValidationError,
 	})
 	app.router.Handle("/games/{gameId}/teams", app.authenticatedEndpoint(teamsRoutes))
 	app.router.Handle("/games/{gameId}/teams/", app.authenticatedEndpoint(teamsRoutes))
 
-	// Players endpoints (authenticated)
 	playersRoutes := players.HandlerWithOptions(playersHandler, players.StdHTTPServerOptions{
 		ErrorHandlerFunc: playersHandler.HandleValidationError,
 	})
 	app.router.Handle("/games/{gameId}/teams/{teamId}/players", app.authenticatedEndpoint(playersRoutes))
 	app.router.Handle("/games/{gameId}/teams/{teamId}/players/", app.authenticatedEndpoint(playersRoutes))
 
-	// Tables endpoints (authenticated)
 	tablesRoutes := tables.HandlerWithOptions(tablesHandler, tables.StdHTTPServerOptions{
 		ErrorHandlerFunc: tablesHandler.HandleValidationError,
 	})
 	app.router.Handle("/games/{gameId}/rounds/{roundNumber}/tables", app.authenticatedEndpoint(tablesRoutes))
 	app.router.Handle("/games/{gameId}/rounds/{roundNumber}/tables/", app.authenticatedEndpoint(tablesRoutes))
 
-	// Scores endpoints (authenticated) - uses same tablesHandler which implements scores.ServerInterface
 	scoresRoutes := scores.HandlerWithOptions(tablesHandler, scores.StdHTTPServerOptions{
 		ErrorHandlerFunc: tablesHandler.HandleValidationError,
 	})

@@ -33,7 +33,6 @@ var (
 	_ scores.ServerInterface = (*TablesHandler)(nil)
 )
 
-// HandleValidationError handles OpenAPI parameter validation errors for tables/scores
 func (t *TablesHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
 	errorMsg := err.Error()
 	switch {
