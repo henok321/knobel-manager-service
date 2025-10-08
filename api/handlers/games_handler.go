@@ -6,10 +6,12 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
+	"github.com/henok321/knobel-manager-service/gen/games"
 
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
@@ -32,6 +34,18 @@ type GamesHandler struct {
 
 func NewGamesHandler(gamesService game.GamesService) *GamesHandler {
 	return &GamesHandler{gamesService}
+}
+
+// Verify that GamesHandler implements the generated OpenAPI interface
+var _ games.ServerInterface = (*GamesHandler)(nil)
+
+// HandleValidationError handles OpenAPI parameter validation errors for games
+func (h *GamesHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
+	if strings.Contains(err.Error(), "Invalid format for parameter gameID") {
+		JSONError(w, "Invalid gameID", http.StatusBadRequest)
+		return
+	}
+	JSONError(w, err.Error(), http.StatusBadRequest)
 }
 
 func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Request) {
@@ -81,7 +95,7 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 	}
 }
 
-func (h *GamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) GetGamesGameID(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		http.Error(writer, `{'error': 'User logging not found'}`, http.StatusUnauthorized)
@@ -90,13 +104,7 @@ func (h *GamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
-
-	gameByID, err := h.gamesService.FindByID(int(gameID), sub)
+	gameByID, err := h.gamesService.FindByID(gameID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
@@ -122,7 +130,7 @@ func (h *GamesHandler) GetGameByID(writer http.ResponseWriter, request *http.Req
 	}
 }
 
-func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) PostGames(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -165,7 +173,7 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	}
 }
 
-func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) PutGamesGameID(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -173,12 +181,6 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 	}
 
 	sub := userContext.Sub
-
-	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
 
 	gameUpdateRequest := game.CreateOrUpdateRequest{}
 
@@ -189,13 +191,13 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 
 	validate := validator.New()
 
-	err = validate.Struct(gameUpdateRequest)
+	err := validate.Struct(gameUpdateRequest)
 	if err != nil {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	updatedGame, err := h.gamesService.UpdateGame(int(gameID), sub, gameUpdateRequest)
+	updatedGame, err := h.gamesService.UpdateGame(gameID, sub, gameUpdateRequest)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
@@ -216,7 +218,7 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 	}
 }
 
-func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) DeleteGamesGameID(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -225,13 +227,7 @@ func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
-
-	if err := h.gamesService.DeleteGame(int(gameID), sub); err != nil {
+	if err := h.gamesService.DeleteGame(gameID, sub); err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
@@ -247,7 +243,7 @@ func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 	writer.WriteHeader(http.StatusNoContent)
 }
 
-func (h *GamesHandler) GameSetup(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) PostGamesGameIDSetup(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -256,13 +252,7 @@ func (h *GamesHandler) GameSetup(writer http.ResponseWriter, request *http.Reque
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
-
-	gameToAssign, err := h.gamesService.FindByID(int(gameID), sub)
+	gameToAssign, err := h.gamesService.FindByID(gameID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
@@ -282,11 +272,11 @@ func (h *GamesHandler) GameSetup(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	writer.Header().Set("Location", "/games/"+strconv.Itoa(int(gameID))+"/tables")
+	writer.Header().Set("Location", "/games/"+strconv.Itoa(gameID)+"/tables")
 	writer.WriteHeader(http.StatusCreated)
 }
 
-func (h *GamesHandler) SetActiveGame(writer http.ResponseWriter, request *http.Request) {
+func (h *GamesHandler) PostGamesGameIDActivate(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -295,13 +285,7 @@ func (h *GamesHandler) SetActiveGame(writer http.ResponseWriter, request *http.R
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
-
-	err = h.gamesService.SetActiveGame(int(gameID), sub)
+	err := h.gamesService.SetActiveGame(gameID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, entity.ErrGameNotFound):

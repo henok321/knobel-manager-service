@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"strconv"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/henok321/knobel-manager-service/api/middleware"
+	"github.com/henok321/knobel-manager-service/gen/players"
 
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/player"
@@ -25,7 +26,25 @@ func NewPlayersHandler(service player.PlayersService) *PlayersHandler {
 	}
 }
 
-func (h PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.Request) {
+// Verify that PlayersHandler implements the generated OpenAPI interface
+var _ players.ServerInterface = (*PlayersHandler)(nil)
+
+// HandleValidationError handles OpenAPI parameter validation errors for players
+func (h *PlayersHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
+	errorMsg := err.Error()
+	switch {
+	case strings.Contains(errorMsg, "Invalid format for parameter gameID"):
+		JSONError(w, "Invalid gameID", http.StatusBadRequest)
+	case strings.Contains(errorMsg, "Invalid format for parameter teamID"):
+		JSONError(w, "Invalid teamID", http.StatusBadRequest)
+	case strings.Contains(errorMsg, "Invalid format for parameter playerID"):
+		JSONError(w, "Invalid playerID", http.StatusBadRequest)
+	default:
+		JSONError(w, errorMsg, http.StatusBadRequest)
+	}
+}
+
+func (h PlayersHandler) PostGamesGameIDTeamsTeamIDPlayers(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -34,34 +53,22 @@ func (h PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
-
-	teamID, err := strconv.ParseInt(request.PathValue("teamID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid teamID", http.StatusBadRequest)
-		return
-	}
-
 	playersRequest := player.PlayersRequest{}
 
-	if err = json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
+	if err := json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	validate := validator.New()
 
-	err = validate.Struct(playersRequest)
+	err := validate.Struct(playersRequest)
 	if err != nil {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	createPlayer, err := h.playersService.CreatePlayer(playersRequest, int(teamID), sub)
+	createPlayer, err := h.playersService.CreatePlayer(playersRequest, teamID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrTeamNotFound):
@@ -90,7 +97,7 @@ func (h PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.R
 	}
 }
 
-func (h PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request) {
+func (h PlayersHandler) PutGamesGameIDTeamsTeamIDPlayersPlayerID(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -99,28 +106,22 @@ func (h PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.R
 
 	sub := userContext.Sub
 
-	playerID, err := strconv.ParseInt(request.PathValue("playerID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid playerID", http.StatusBadRequest)
-		return
-	}
-
 	playersRequest := player.PlayersRequest{}
 
-	if err = json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
+	if err := json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	validate := validator.New()
 
-	err = validate.Struct(playersRequest)
+	err := validate.Struct(playersRequest)
 	if err != nil {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	updatePlayer, err := h.playersService.UpdatePlayer(int(playerID), playersRequest, sub)
+	updatePlayer, err := h.playersService.UpdatePlayer(playerID, playersRequest, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrTeamNotFound), errors.Is(err, apperror.ErrPlayerNotFound):
@@ -148,7 +149,7 @@ func (h PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.R
 	}
 }
 
-func (h PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request) {
+func (h PlayersHandler) DeleteGamesGameIDTeamsTeamIDPlayersPlayerID(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -157,13 +158,7 @@ func (h PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.R
 
 	sub := userContext.Sub
 
-	playerID, err := strconv.ParseInt(request.PathValue("playerID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid playerID", http.StatusBadRequest)
-		return
-	}
-
-	err = h.playersService.DeletePlayer(int(playerID), sub)
+	err := h.playersService.DeletePlayer(playerID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrPlayerNotFound):
