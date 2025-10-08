@@ -18,7 +18,6 @@ check-deps:
 	@echo "Checking dependencies..."
 	@command -v go >/dev/null 2>&1 || { echo >&2 "Go is not installed."; exit 1; }
 	@command -v pre-commit >/dev/null 2>&1 || { echo >&2 "pre-commit is not installed."; exit 1; }
-	@command -v goose >/dev/null 2>&1 || { echo >&2 "goose is not installed."; exit 1; }
 	@command -v docker >/dev/null 2>&1 || { echo >&2 "Docker is not installed."; exit 1; }
 
 setup: check-deps
