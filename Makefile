@@ -33,6 +33,8 @@ reset:
 	docker compose down --volumes --remove-orphans
 
 openapi:
+	@echo "Cleanup generated files..."
+	@command rm -rf ./gen
 	@echo "Generate openapi code from spec..."
 	@echo "Generating shared types..."
 	@cd spec/config && go tool oapi-codegen --config=types.yaml ../api.yaml
