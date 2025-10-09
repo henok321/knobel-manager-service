@@ -3,13 +3,18 @@ info:
   title: Knobel Manager API
   version: 1.0.0
   description: API for Knobel Manager Service
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
 servers:
   - url: /
 paths:
   /health:
     get:
+      operationId: healthCheck
       tags: [Health]
       summary: Health check endpoint
+      security: [ ]
       responses:
         '200':
           description: Service is healthy
@@ -22,8 +27,21 @@ paths:
                     type: string
                     example: ok
                 required: [status]
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /games:
     get:
+      operationId: getGames
       tags: [Games]
       summary: List games owned by the caller
       security:
@@ -50,7 +68,20 @@ paths:
                   value: {"games":[]}
                 withActive:
                   value: {"activeGameID":1,"games":[{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"setup","owners":[{"gameID":1,"ownerSub":"sub-1"}]}]}
+        '401':
+          description: Unauthorized - invalid or missing bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
     post:
+      operationId: createGame
       tags: [Games]
       summary: Create a new game
       security:
@@ -88,6 +119,7 @@ paths:
         schema:
           type: integer
     get:
+      operationId: getGame
       tags: [Games]
       summary: Get game by ID
       security:
@@ -124,6 +156,7 @@ paths:
                 notFound:
                   value: {"error":"Game not found"}
     put:
+      operationId: updateGame
       tags: [Games]
       summary: Update an existing game
       security:
@@ -152,6 +185,7 @@ paths:
         '404':
           description: Game not found
     delete:
+      operationId: deleteGame
       tags: [Games]
       summary: Delete an existing game
       security:
@@ -171,6 +205,7 @@ paths:
         schema:
           type: integer
     post:
+      operationId: activateGame
       tags: [Games]
       summary: Set the active game
       security:
@@ -190,6 +225,7 @@ paths:
         schema:
           type: integer
     post:
+      operationId: setupGame
       tags: [Games]
       summary: Setup game and assign tables for all rounds
       security:
@@ -219,6 +255,7 @@ paths:
         schema:
           type: integer
     post:
+      operationId: createTeam
       tags: [Teams]
       summary: Create a team
       security:
@@ -265,6 +302,7 @@ paths:
         schema:
           type: integer
     put:
+      operationId: updateTeam
       tags: [Teams]
       summary: Update a team
       security:
@@ -293,6 +331,7 @@ paths:
         '404':
           description: Team or game not found
     delete:
+      operationId: deleteTeam
       tags: [Teams]
       summary: Delete a team
       security:
@@ -317,6 +356,7 @@ paths:
         schema:
           type: integer
     post:
+      operationId: createPlayer
       tags: [Players]
       summary: Create player in a team
       security:
@@ -358,6 +398,7 @@ paths:
         schema:
           type: integer
     put:
+      operationId: updatePlayer
       tags: [Players]
       summary: Update player
       security:
@@ -380,6 +421,7 @@ paths:
         '404':
           description: Player or team not found
     delete:
+      operationId: deletePlayer
       tags: [Players]
       summary: Delete player
       security:
@@ -404,6 +446,7 @@ paths:
         schema:
           type: integer
     get:
+      operationId: getTables
       tags: [Tables]
       summary: List tables for a round
       security:
@@ -441,6 +484,7 @@ paths:
         schema:
           type: integer
     get:
+      operationId: getTable
       tags: [Tables]
       summary: Get a table by number in round
       security:
@@ -476,6 +520,7 @@ paths:
         schema:
           type: integer
     put:
+      operationId: updateScores
       tags: [Scores]
       summary: Update scores for a table
       security:

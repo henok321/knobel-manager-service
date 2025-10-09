@@ -47,7 +47,7 @@ func (t *TablesHandler) HandleValidationError(w http.ResponseWriter, _ *http.Req
 	}
 }
 
-func (t TablesHandler) GetGamesGameIDRoundsRoundNumberTables(writer http.ResponseWriter, request *http.Request, gameID, roundNumber int) {
+func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request, gameID, roundNumber int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -88,7 +88,7 @@ func (t TablesHandler) GetGamesGameIDRoundsRoundNumberTables(writer http.Respons
 	JSONError(writer, "Round not found", http.StatusNotFound)
 }
 
-func (t TablesHandler) GetGamesGameIDRoundsRoundNumberTablesTableNumber(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
+func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -131,7 +131,7 @@ func (t TablesHandler) GetGamesGameIDRoundsRoundNumberTablesTableNumber(writer h
 	JSONError(writer, "Round or table not found", http.StatusNotFound)
 }
 
-func (t TablesHandler) PutGamesGameIDRoundsRoundNumberTablesTableNumberScores(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
+func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)

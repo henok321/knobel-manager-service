@@ -61,6 +61,13 @@ repos:
       - id: golangci-lint-full
   - repo: local
     hooks:
+      - id: swagger-validate
+        name: validate openapi spec
+        entry: npx swagger-cli validate spec/openapi.yaml
+        language: system
+        files: \.ya?ml$
+  - repo: local
+    hooks:
       - id: go-test
         name: go-test
         stages: [ pre-push ]

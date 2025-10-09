@@ -43,7 +43,7 @@ func (t *TeamsHandler) HandleValidationError(w http.ResponseWriter, _ *http.Requ
 	}
 }
 
-func (t TeamsHandler) PostGamesGameIDTeams(writer http.ResponseWriter, request *http.Request, gameID int) {
+func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -93,7 +93,7 @@ func (t TeamsHandler) PostGamesGameIDTeams(writer http.ResponseWriter, request *
 	}
 }
 
-func (t TeamsHandler) PutGamesGameIDTeamsTeamID(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
+func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -140,7 +140,7 @@ func (t TeamsHandler) PutGamesGameIDTeamsTeamID(writer http.ResponseWriter, requ
 	}
 }
 
-func (t TeamsHandler) DeleteGamesGameIDTeamsTeamID(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
+func (t *TeamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)

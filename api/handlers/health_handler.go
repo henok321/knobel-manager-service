@@ -16,7 +16,7 @@ func NewHealthHandler() *HealthHandler {
 // Verify that HealthHandler implements the generated OpenAPI interface
 var _ health.ServerInterface = (*HealthHandler)(nil)
 
-func (h *HealthHandler) GetHealth(writer http.ResponseWriter, request *http.Request) {
+func (h *HealthHandler) HealthCheck(writer http.ResponseWriter, request *http.Request) {
 	slog.DebugContext(request.Context(), "Handle health request")
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
