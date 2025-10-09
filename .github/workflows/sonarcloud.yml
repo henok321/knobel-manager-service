@@ -33,11 +33,11 @@ jobs:
           cache-dependency-path: "**/go.sum"
           check-latest: true
 
-      - name: Install dependencies
-        run: go mod tidy
-
       - name: Generate openapi spec
         run: make openapi
+
+      - name: Install dependencies
+        run: go mod tidy
 
       - name: Run tests, generate coverage and report files
         run: go test ./... -coverpkg=./... -coverprofile=coverage.out --json > test-report.out
