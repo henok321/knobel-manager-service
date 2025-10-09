@@ -4,24 +4,6 @@
 [![Deploy](https://github.com/henok321/knobel-manager-service/actions/workflows/deploy.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/deploy.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=henok321_knobel-manager-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=henok321_knobel-manager-service)
 
-- [Knobel Manager Service](#knobel-manager-service)
-  - [Synopsis](#synopsis)
-  - [Frontend](#frontend)
-  - [Authentication](#authentication)
-  - [CI/CD](#cicd)
-  - [Database Migration](#database-migration)
-  - [Prerequisites](#prerequisites)
-  - [Setup and Development](#setup-and-development)
-    - [Obtain Firebase Service Account Credentials](#obtain-firebase-service-account-credentials)
-    - [Run Setup](#run-setup)
-    - [Start the Application](#start-the-application)
-    - [Build and run binary](#build-and-run-binary)
-      - [Build](#build)
-      - [Run](#run)
-    - [Health Check](#health-check)
-    - [Makefile targets](#makefile-targets)
-  - [License](#license)
-
 ## Synopsis
 
 The main goal of this project is to learn the Go programming language and become familiar with its ecosystem.
@@ -90,11 +72,21 @@ Reset database:
 make reset
 ```
 
+### Generate OpenAPI models
+
+The REST API is documented using OpenAPI. The interfaces and models are generated using the `openapi-generator` tool and
+implemented by this service.
+
+```shell
+make openapi
+```
+
 ### Start the Application
 
 To run the application locally:
 
 ```shell
+make openapi
 set -o allexport
 source .env
 set +o allexport
