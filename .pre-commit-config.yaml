@@ -35,6 +35,13 @@ repos:
     rev: 3.4.2
     hooks:
       - id: sqlfluff-fix
+  - repo: local
+    hooks:
+      - id: swagger-validate
+        name: validate openapi spec
+        entry: npx swagger-cli validate spec/openapi.yaml
+        language: system
+        files: \.ya?ml$
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1
     hooks:
@@ -59,13 +66,6 @@ repos:
     hooks:
       - id: golangci-lint-config-verify
       - id: golangci-lint-full
-  - repo: local
-    hooks:
-      - id: swagger-validate
-        name: validate openapi spec
-        entry: npx swagger-cli validate spec/openapi.yaml
-        language: system
-        files: \.ya?ml$
   - repo: local
     hooks:
       - id: go-test
