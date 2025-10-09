@@ -41,6 +41,9 @@ jobs:
           check-latest: true
           cache-dependency-path: "**/go.sum"
 
+      - name: Generate openapi spec
+        run: make openapi
+
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
         with:
@@ -59,8 +62,13 @@ jobs:
           go-version-file: go.mod
           check-latest: true
           cache-dependency-path: "**/go.sum"
+
       - name: Start Docker
         run: sudo systemctl start docker
+
+      - name: Generate openapi spec
+        run: make openapi
+
       - name: Run Tests
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
