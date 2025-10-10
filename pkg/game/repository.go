@@ -152,21 +152,21 @@ func (r *gamesRepository) ResetGameTables(gameID int) error {
 			}
 
 			if len(tableIDs) > 0 {
-				if err := tx.Unscoped().Where("table_id IN ?", tableIDs).Delete(&entity.Score{}).Error; err != nil {
+				if err := tx.Where("table_id IN ?", tableIDs).Delete(&entity.Score{}).Error; err != nil {
 					return err
 				}
 
-				if err := tx.Unscoped().Where("game_table_id IN ?", tableIDs).Delete(&entity.TablePlayer{}).Error; err != nil {
+				if err := tx.Where("game_table_id IN ?", tableIDs).Delete(&entity.TablePlayer{}).Error; err != nil {
 					return err
 				}
 			}
 
-			if err := tx.Unscoped().Where("round_id IN ?", roundIDs).Delete(&entity.GameTable{}).Error; err != nil {
+			if err := tx.Where("round_id IN ?", roundIDs).Delete(&entity.GameTable{}).Error; err != nil {
 				return err
 			}
 		}
 
-		if err := tx.Unscoped().Where("game_id = ?", gameID).Delete(&entity.Round{}).Error; err != nil {
+		if err := tx.Where("game_id = ?", gameID).Delete(&entity.Round{}).Error; err != nil {
 			return err
 		}
 
