@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/teams"
+	"github.com/henok321/knobel-manager-service/gen/types"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/team"
@@ -52,16 +52,16 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	teamsRequest := team.TeamsRequest{}
+	teamsRequest := types.TeamsRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&teamsRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	validate := validator.New()
-	if err := validate.Struct(teamsRequest); err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+	// Validate required fields
+	if teamsRequest.Name == "" {
+		JSONError(writer, "Missing required fields", http.StatusBadRequest)
 		return
 	}
 
@@ -102,17 +102,16 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	teamsRequest := team.TeamsRequest{}
+	teamsRequest := types.TeamsRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&teamsRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	validate := validator.New()
-
-	if err := validate.Struct(teamsRequest); err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+	// Validate required fields
+	if teamsRequest.Name == "" {
+		JSONError(writer, "Missing required fields", http.StatusBadRequest)
 		return
 	}
 

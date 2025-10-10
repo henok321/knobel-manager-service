@@ -3,6 +3,7 @@ package team
 import (
 	"errors"
 
+	"github.com/henok321/knobel-manager-service/gen/types"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/game"
@@ -10,8 +11,8 @@ import (
 )
 
 type TeamsService interface {
-	CreateTeam(gameID int, sub string, request TeamsRequest) (entity.Team, error)
-	UpdateTeam(gameID int, sub string, teamID int, request TeamsRequest) (entity.Team, error)
+	CreateTeam(gameID int, sub string, request types.TeamsRequest) (entity.Team, error)
+	UpdateTeam(gameID int, sub string, teamID int, request types.TeamsRequest) (entity.Team, error)
 	DeleteTeam(gameID int, sub string, teamID int) error
 }
 
@@ -27,7 +28,7 @@ func NewTeamsService(teamRepo TeamsRepository, gameRepo game.GamesRepository) Te
 	}
 }
 
-func (s *teamsService) CreateTeam(gameID int, sub string, request TeamsRequest) (entity.Team, error) {
+func (s *teamsService) CreateTeam(gameID int, sub string, request types.TeamsRequest) (entity.Team, error) {
 	gameByID, err := s.gamesRepo.FindByID(gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -41,14 +42,21 @@ func (s *teamsService) CreateTeam(gameID int, sub string, request TeamsRequest) 
 		return entity.Team{}, apperror.ErrNotOwner
 	}
 
-	if len(request.Players) > gameByID.TeamSize {
+	var playerCount int
+	if request.Players != nil {
+		playerCount = len(*request.Players)
+	}
+
+	if playerCount > gameByID.TeamSize {
 		return entity.Team{}, apperror.ErrTeamSizeNotAllowed
 	}
 
-	players := make([]*entity.Player, len(request.Players))
+	players := make([]*entity.Player, playerCount)
 
-	for i, player := range request.Players {
-		players[i] = &entity.Player{Name: player.Name}
+	if request.Players != nil {
+		for i, player := range *request.Players {
+			players[i] = &entity.Player{Name: player.Name}
+		}
 	}
 
 	team := entity.Team{
@@ -60,7 +68,7 @@ func (s *teamsService) CreateTeam(gameID int, sub string, request TeamsRequest) 
 	return s.teamRepo.CreateOrUpdateTeam(&team)
 }
 
-func (s *teamsService) UpdateTeam(gameID int, sub string, teamID int, request TeamsRequest) (entity.Team, error) {
+func (s *teamsService) UpdateTeam(gameID int, sub string, teamID int, request types.TeamsRequest) (entity.Team, error) {
 	gameByID, err := s.gamesRepo.FindByID(gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

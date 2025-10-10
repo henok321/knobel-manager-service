@@ -89,6 +89,17 @@ func TestGames(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
 		},
+		"Update game status to in_progress": {
+			method:             http.MethodPut,
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1","numberOfRounds":2, "teamSize":4, "tableSize":4, "status":"in_progress"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusOK,
+			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"in_progress","owners":[{"gameID":1,"ownerSub":"sub-1"}]}}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
+			},
+		},
 		"Update an existing game invalid request": {
 			method:             http.MethodPut,
 			endpoint:           "/games/1",

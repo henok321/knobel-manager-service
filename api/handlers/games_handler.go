@@ -8,14 +8,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/go-playground/validator/v10"
-
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/games"
-
+	"github.com/henok321/knobel-manager-service/gen/types"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
-
 	"github.com/henok321/knobel-manager-service/pkg/game"
 )
 
@@ -138,18 +135,17 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	gameCreateRequest := game.CreateOrUpdateRequest{}
+	gameCreateRequest := types.GameCreateRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameCreateRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	validate := validator.New()
-
-	err := validate.Struct(gameCreateRequest)
-	if err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+	// Validate required fields
+	if gameCreateRequest.Name == "" || gameCreateRequest.NumberOfRounds == 0 ||
+		gameCreateRequest.TeamSize == 0 || gameCreateRequest.TableSize == 0 {
+		JSONError(writer, "Missing required fields", http.StatusBadRequest)
 		return
 	}
 
@@ -181,17 +177,16 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	gameUpdateRequest := game.CreateOrUpdateRequest{}
+	gameUpdateRequest := types.GameUpdateRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameUpdateRequest); err != nil {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	validate := validator.New()
-
-	err := validate.Struct(gameUpdateRequest)
-	if err != nil {
+	// Validate required fields
+	if gameUpdateRequest.Name == "" || gameUpdateRequest.NumberOfRounds == 0 ||
+		gameUpdateRequest.TeamSize == 0 || gameUpdateRequest.TableSize == 0 {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}

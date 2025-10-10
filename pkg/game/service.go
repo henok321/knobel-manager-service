@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/henok321/knobel-manager-service/gen/types"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/setup"
@@ -16,8 +17,8 @@ type GamesService interface {
 	FindByID(id int, sub string) (entity.Game, error)
 	GetActiveGame(sub string) (entity.Game, error)
 	SetActiveGame(id int, sub string) error
-	CreateGame(sub string, game *CreateOrUpdateRequest) (entity.Game, error)
-	UpdateGame(id int, sub string, game CreateOrUpdateRequest) (entity.Game, error)
+	CreateGame(sub string, game *types.GameCreateRequest) (entity.Game, error)
+	UpdateGame(id int, sub string, game types.GameUpdateRequest) (entity.Game, error)
 	DeleteGame(id int, sub string) error
 	AssignTables(game entity.Game) error
 }
@@ -76,7 +77,7 @@ func (s *gamesService) SetActiveGame(id int, sub string) error {
 	return nil
 }
 
-func (s *gamesService) CreateGame(sub string, game *CreateOrUpdateRequest) (entity.Game, error) {
+func (s *gamesService) CreateGame(sub string, game *types.GameCreateRequest) (entity.Game, error) {
 	gameModel := entity.Game{
 		Name:           game.Name,
 		TeamSize:       game.TeamSize,
@@ -89,7 +90,7 @@ func (s *gamesService) CreateGame(sub string, game *CreateOrUpdateRequest) (enti
 	return s.repo.CreateOrUpdateGame(&gameModel)
 }
 
-func (s *gamesService) UpdateGame(id int, sub string, game CreateOrUpdateRequest) (entity.Game, error) {
+func (s *gamesService) UpdateGame(id int, sub string, game types.GameUpdateRequest) (entity.Game, error) {
 	gameByID, err := s.repo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -107,6 +108,11 @@ func (s *gamesService) UpdateGame(id int, sub string, game CreateOrUpdateRequest
 	gameByID.TeamSize = game.TeamSize
 	gameByID.TableSize = game.TableSize
 	gameByID.NumberOfRounds = game.NumberOfRounds
+
+	// Update status if provided
+	if game.Status != nil {
+		gameByID.Status = entity.GameStatus(*game.Status)
+	}
 
 	return s.repo.CreateOrUpdateGame(&gameByID)
 }

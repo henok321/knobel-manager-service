@@ -720,6 +720,12 @@ components:
     GameUpdateRequest:
       allOf:
         - $ref: '#/components/schemas/GameCreateRequest'
+        - type: object
+          properties:
+            status:
+              type: string
+              enum: [setup, in_progress, completed]
+              example: in_progress
     PlayersRequest:
       type: object
       properties:

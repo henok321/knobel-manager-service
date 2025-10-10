@@ -8,10 +8,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/players"
-
+	"github.com/henok321/knobel-manager-service/gen/types"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 )
@@ -52,17 +51,15 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 
 	sub := userContext.Sub
 
-	playersRequest := player.PlayersRequest{}
+	playersRequest := types.PlayersRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	validate := validator.New()
-
-	err := validate.Struct(playersRequest)
-	if err != nil {
+	// Validate required fields
+	if playersRequest.Name == "" {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -85,8 +82,8 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)
 
-	response := player.PlayersResponse{Player: player.Player{
-		ID:     createPlayer.ID,
+	response := types.PlayersResponse{Player: types.Player{
+		Id:     createPlayer.ID,
 		Name:   createPlayer.Name,
 		TeamID: createPlayer.TeamID,
 	}}
@@ -105,17 +102,15 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 
 	sub := userContext.Sub
 
-	playersRequest := player.PlayersRequest{}
+	playersRequest := types.PlayersRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	validate := validator.New()
-
-	err := validate.Struct(playersRequest)
-	if err != nil {
+	// Validate required fields
+	if playersRequest.Name == "" {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -137,8 +132,8 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	response := player.PlayersResponse{Player: player.Player{
-		ID:     updatePlayer.ID,
+	response := types.PlayersResponse{Player: types.Player{
+		Id:     updatePlayer.ID,
 		Name:   updatePlayer.Name,
 		TeamID: updatePlayer.TeamID,
 	}}
