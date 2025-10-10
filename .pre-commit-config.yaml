@@ -61,6 +61,20 @@ repos:
       - id: markdownlint
         files: \.(md|markdown|mdown)$
         args: [ "--disable=MD013", "--disable=MD033" ]
+
+  - repo: local
+    hooks:
+      - id: govulncheck
+        name: govulncheck
+        stages: [ pre-commit ]
+        description: Check for vulnerabilities in dependencies
+        entry: go
+        args: [ "tool", "govulncheck", "./..." ]
+        language: system
+        types: [ go ]
+        pass_filenames: false
+
+
   - repo: https://github.com/golangci/golangci-lint
     rev: v2.5.0
     hooks:
