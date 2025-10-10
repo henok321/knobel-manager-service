@@ -4,6 +4,12 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/henok321/knobel-manager-service/gen/games"
+	"github.com/henok321/knobel-manager-service/gen/health"
+	"github.com/henok321/knobel-manager-service/gen/players"
+	"github.com/henok321/knobel-manager-service/gen/scores"
+	"github.com/henok321/knobel-manager-service/gen/tables"
+	"github.com/henok321/knobel-manager-service/gen/teams"
 	"github.com/henok321/knobel-manager-service/pkg/table"
 	"github.com/henok321/knobel-manager-service/pkg/team"
 
@@ -42,39 +48,45 @@ func (app *RouteSetup) authenticatedEndpoint(handler http.Handler) http.Handler 
 }
 
 func (app *RouteSetup) setup() {
-	gamesHandler := handlers.NewGamesHandler(game.InitializeGameModule(app.database))
-	playersHandler := handlers.NewPlayersHandler(player.InitializePlayerModule(app.database))
-	tablesHandler := handlers.NewTablesHandler(game.InitializeGameModule(app.database), table.InitializeTablesModule(app.database))
-	teamsHandler := handlers.NewTeamsHandler(team.InitializeTeamsModule(app.database))
+	gameService := game.InitializeGameModule(app.database)
+	playerService := player.InitializePlayerModule(app.database)
+	tableService := table.InitializeTablesModule(app.database)
+	teamService := team.InitializeTeamsModule(app.database)
 
-	// health
-	app.router.Handle("GET /health", app.publicEndpoint(http.HandlerFunc(handlers.HealthCheck)))
+	healthHandler := handlers.NewHealthHandler()
+	gamesHandler := handlers.NewGamesHandler(gameService)
+	playersHandler := handlers.NewPlayersHandler(playerService)
+	tablesHandler := handlers.NewTablesHandler(gameService, tableService)
+	teamsHandler := handlers.NewTeamsHandler(teamService)
 
-	// games
-	app.router.Handle("GET /games", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.GetGames)))
-	app.router.Handle("GET /games/{gameID}", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.GetGameByID)))
-	app.router.Handle("POST /games", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.CreateGame)))
-	app.router.Handle("PUT /games/{gameID}", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.UpdateGame)))
-	app.router.Handle("DELETE /games/{gameID}", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.DeleteGame)))
-	app.router.Handle("POST /games/{gameID}/activate", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.SetActiveGame)))
+	app.router.Handle("/health", app.publicEndpoint(health.Handler(healthHandler)))
 
-	// setup
-	app.router.Handle("POST /games/{gameID}/setup", app.authenticatedEndpoint(http.HandlerFunc(gamesHandler.GameSetup)))
+	gamesRoutes := games.HandlerWithOptions(gamesHandler, games.StdHTTPServerOptions{
+		ErrorHandlerFunc: gamesHandler.HandleValidationError,
+	})
+	app.router.Handle("/games", app.authenticatedEndpoint(gamesRoutes))
+	app.router.Handle("/games/", app.authenticatedEndpoint(gamesRoutes))
 
-	// players
-	app.router.Handle("POST /games/{gameID}/teams/{teamID}/players", app.authenticatedEndpoint(http.HandlerFunc(playersHandler.CreatePlayer)))
-	app.router.Handle("PUT /games/{gameID}/teams/{teamID}/players/{playerID}", app.authenticatedEndpoint(http.HandlerFunc(playersHandler.UpdatePlayer)))
-	app.router.Handle("DELETE /games/{gameID}/teams/{teamID}/players/{playerID}", app.authenticatedEndpoint(http.HandlerFunc(playersHandler.DeletePlayer)))
+	teamsRoutes := teams.HandlerWithOptions(teamsHandler, teams.StdHTTPServerOptions{
+		ErrorHandlerFunc: teamsHandler.HandleValidationError,
+	})
+	app.router.Handle("/games/{gameId}/teams", app.authenticatedEndpoint(teamsRoutes))
+	app.router.Handle("/games/{gameId}/teams/", app.authenticatedEndpoint(teamsRoutes))
 
-	// tables
-	app.router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables", app.authenticatedEndpoint(http.HandlerFunc(tablesHandler.GetTables)))
-	app.router.Handle("GET /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", app.authenticatedEndpoint(http.HandlerFunc(tablesHandler.GetTable)))
+	playersRoutes := players.HandlerWithOptions(playersHandler, players.StdHTTPServerOptions{
+		ErrorHandlerFunc: playersHandler.HandleValidationError,
+	})
+	app.router.Handle("/games/{gameId}/teams/{teamId}/players", app.authenticatedEndpoint(playersRoutes))
+	app.router.Handle("/games/{gameId}/teams/{teamId}/players/", app.authenticatedEndpoint(playersRoutes))
 
-	// scores
-	app.router.Handle("PUT /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores", app.authenticatedEndpoint(http.HandlerFunc(tablesHandler.UpdateTableScore)))
+	tablesRoutes := tables.HandlerWithOptions(tablesHandler, tables.StdHTTPServerOptions{
+		ErrorHandlerFunc: tablesHandler.HandleValidationError,
+	})
+	app.router.Handle("/games/{gameId}/rounds/{roundNumber}/tables", app.authenticatedEndpoint(tablesRoutes))
+	app.router.Handle("/games/{gameId}/rounds/{roundNumber}/tables/", app.authenticatedEndpoint(tablesRoutes))
 
-	// teams
-	app.router.Handle("POST /games/{gameID}/teams", app.authenticatedEndpoint(http.HandlerFunc(teamsHandler.CreateTeam)))
-	app.router.Handle("PUT /games/{gameID}/teams/{teamID}", app.authenticatedEndpoint(http.HandlerFunc(teamsHandler.UpdateTeam)))
-	app.router.Handle("DELETE /games/{gameID}/teams/{teamID}", app.authenticatedEndpoint(http.HandlerFunc(teamsHandler.DeleteTeam)))
+	scoresRoutes := scores.HandlerWithOptions(tablesHandler, scores.StdHTTPServerOptions{
+		ErrorHandlerFunc: tablesHandler.HandleValidationError,
+	})
+	app.router.Handle("/games/{gameId}/rounds/{roundNumber}/tables/{tableNumber}/scores", app.authenticatedEndpoint(scoresRoutes))
 }

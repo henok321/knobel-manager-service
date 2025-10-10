@@ -1,0 +1,757 @@
+openapi: 3.0.0
+info:
+  title: Knobel Manager API
+  version: 1.0.0
+  description: API for Knobel Manager Service
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: /
+paths:
+  /health:
+    get:
+      operationId: healthCheck
+      tags: [Health]
+      summary: Health check endpoint
+      security: [ ]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                required: [status]
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /games:
+    get:
+      operationId: getGames
+      tags: [Games]
+      summary: List games owned by the caller
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Games list (can be empty)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activeGameID:
+                    type: integer
+                    description: ID of the currently active game (omitted if no active game)
+                    example: 1
+                  games:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Game'
+                required: [games]
+              examples:
+                empty:
+                  value: {"games":[]}
+                withActive:
+                  value: {"activeGameID":1,"games":[{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"setup","owners":[{"gameID":1,"ownerSub":"sub-1"}]}]}
+        '401':
+          description: Unauthorized - invalid or missing bearer token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: createGame
+      tags: [Games]
+      summary: Create a new game
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameCreateRequest'
+      responses:
+        '201':
+          description: Game created
+          headers:
+            Location:
+              description: URL of the created game
+              schema:
+                type: string
+                example: /games/1
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  game:
+                    $ref: '#/components/schemas/Game'
+                required: [game]
+        '400':
+          description: Invalid request
+  /games/{gameID}:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getGame
+      tags: [Games]
+      summary: Get game by ID
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Game found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  game:
+                    $ref: '#/components/schemas/Game'
+                required: [game]
+        '400':
+          description: Invalid gameID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidId:
+                  value: {"error":"Invalid gameID"}
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                notFound:
+                  value: {"error":"Game not found"}
+    put:
+      operationId: updateGame
+      tags: [Games]
+      summary: Update an existing game
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameUpdateRequest'
+      responses:
+        '200':
+          description: Game updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  game:
+                    $ref: '#/components/schemas/Game'
+                required: [game]
+        '400':
+          description: Invalid request
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game not found
+    delete:
+      operationId: deleteGame
+      tags: [Games]
+      summary: Delete an existing game
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Game deleted
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game not found
+  /games/{gameID}/activate:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: activateGame
+      tags: [Games]
+      summary: Set the active game
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Active game set
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game not found
+  /games/{gameID}/setup:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: setupGame
+      tags: [Games]
+      summary: Setup game and assign tables for all rounds
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Tables assigned successfully
+          headers:
+            Location:
+              description: URL to view the tables
+              schema:
+                type: string
+                example: /games/1/tables
+        '400':
+          description: Invalid gameID
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game not found
+        '500':
+          description: Internal server error during table assignment
+  /games/{gameID}/teams:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: createTeam
+      tags: [Teams]
+      summary: Create a team
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamsRequest'
+      responses:
+        '201':
+          description: Team created
+          headers:
+            Location:
+              description: URL of the created team
+              schema:
+                type: string
+                example: /games/1/teams/1
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  team:
+                    $ref: '#/components/schemas/Team'
+                required: [team]
+        '400':
+          description: Invalid request
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game not found
+  /games/{gameID}/teams/{teamID}:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: teamID
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      operationId: updateTeam
+      tags: [Teams]
+      summary: Update a team
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamsRequest'
+      responses:
+        '200':
+          description: Team updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  team:
+                    $ref: '#/components/schemas/Team'
+                required: [team]
+        '400':
+          description: Invalid request
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Team or game not found
+    delete:
+      operationId: deleteTeam
+      tags: [Teams]
+      summary: Delete a team
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Team deleted
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Team or game not found
+  /games/{gameID}/teams/{teamID}/players:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: teamID
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: createPlayer
+      tags: [Players]
+      summary: Create player in a team
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayersRequest'
+      responses:
+        '201':
+          description: Player created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayersResponse'
+        '400':
+          description: Invalid body
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Team or game not found
+  /games/{gameID}/teams/{teamID}/players/{playerID}:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: teamID
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: playerID
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      operationId: updatePlayer
+      tags: [Players]
+      summary: Update player
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlayersRequest'
+      responses:
+        '200':
+          description: Player updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayersResponse'
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Player or team not found
+    delete:
+      operationId: deletePlayer
+      tags: [Players]
+      summary: Delete player
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Player deleted
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Player or team not found
+  /games/{gameID}/rounds/{roundNumber}/tables:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: roundNumber
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getTables
+      tags: [Tables]
+      summary: List tables for a round
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tables found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Table'
+        '400':
+          description: Invalid path parameters
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game or round not found
+  /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: roundNumber
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: tableNumber
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getTable
+      tags: [Tables]
+      summary: Get a table by number in round
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Table found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Table'
+        '400':
+          description: Invalid path parameters
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Round or table not found
+  /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: roundNumber
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: tableNumber
+        in: path
+        required: true
+        schema:
+          type: integer
+    put:
+      operationId: updateScores
+      tags: [Scores]
+      summary: Update scores for a table
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScoresRequest'
+      responses:
+        '200':
+          description: Updated game with new scores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  game:
+                    $ref: '#/components/schemas/Game'
+                required: [game]
+        '400':
+          description: Invalid request body or path params
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game, round, or table not found
+tags:
+  - name: Health
+    description: Health check
+  - name: Games
+    description: Game management
+  - name: Teams
+    description: Team management
+  - name: Players
+    description: Player management
+  - name: Tables
+    description: Tables per round
+  - name: Scores
+    description: Table scores
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    GameOwner:
+      type: object
+      properties:
+        gameID:
+          type: integer
+          example: 1
+        ownerSub:
+          type: string
+          example: sub-1
+      required: [gameID, ownerSub]
+    Player:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Player 1
+        teamID:
+          type: integer
+          example: 1
+      required: [id, name, teamID]
+    Team:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Team A
+        gameID:
+          type: integer
+          example: 1
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/Player'
+      required: [id, name, gameID]
+    Table:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        tableNumber:
+          type: integer
+          example: 1
+        roundID:
+          type: integer
+          example: 5
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/Player'
+        scores:
+          type: array
+          items:
+            $ref: '#/components/schemas/Score'
+      required: [id, tableNumber, roundID]
+    Score:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 100
+        playerID:
+          type: integer
+          example: 1
+        tableID:
+          type: integer
+          example: 10
+        score:
+          type: integer
+          example: 6
+      required: [id, playerID, tableID, score]
+    GameRound:
+      type: object
+      properties:
+        id:
+          type: integer
+        roundNumber:
+          type: integer
+        tables:
+          type: array
+          items:
+            $ref: '#/components/schemas/Table'
+      required: [id, roundNumber]
+    Game:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Game 1
+        teamSize:
+          type: integer
+          example: 4
+        tableSize:
+          type: integer
+          example: 4
+        numberOfRounds:
+          type: integer
+          example: 2
+        status:
+          type: string
+          example: setup
+        owners:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameOwner'
+        teams:
+          type: array
+          items:
+            $ref: '#/components/schemas/Team'
+        rounds:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameRound'
+      required:
+        - id
+        - name
+        - teamSize
+        - tableSize
+        - numberOfRounds
+        - status
+        - owners
+    GameCreateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        numberOfRounds:
+          type: integer
+        teamSize:
+          type: integer
+        tableSize:
+          type: integer
+      required: [name, numberOfRounds, teamSize, tableSize]
+    GameUpdateRequest:
+      allOf:
+        - $ref: '#/components/schemas/GameCreateRequest'
+    PlayersRequest:
+      type: object
+      properties:
+        name:
+          type: string
+      required: [name]
+    PlayersResponse:
+      type: object
+      properties:
+        player:
+          $ref: '#/components/schemas/Player'
+      required: [player]
+    TeamsRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlayersRequest'
+      required: [name]
+    ScoresRequest:
+      type: object
+      properties:
+        scores:
+          type: array
+          items:
+            type: object
+            properties:
+              playerID:
+                type: integer
+              score:
+                type: integer
+            required: [playerID, score]
+      required: [scores]

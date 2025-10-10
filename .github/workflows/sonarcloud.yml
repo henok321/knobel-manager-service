@@ -33,6 +33,9 @@ jobs:
           cache-dependency-path: "**/go.sum"
           check-latest: true
 
+      - name: Generate openapi spec
+        run: make openapi
+
       - name: Install dependencies
         run: go mod tidy
 

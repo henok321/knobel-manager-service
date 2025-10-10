@@ -1,4 +1,4 @@
-.PHONY: all build check-deps clean help lint reset setup test update
+.PHONY: all build check-deps clean help lint openapi reset setup test update
 
 .DEFAULT_GOAL := all
 
@@ -12,7 +12,7 @@ all: help
 
 help:
 	@echo "Usage: make [target]"
-	@echo "Targets: help, setup, reset, lint, update, test, build, clean"
+	@echo "Targets: help, setup, reset, openapi, lint, update, test, build, clean"
 
 check-deps:
 	@echo "Checking dependencies..."
@@ -32,7 +32,27 @@ reset:
 	@echo "Cleanup local docker database..."
 	docker compose down --volumes --remove-orphans
 
-lint:
+openapi:
+	@echo "Cleanup generated files..."
+	@command rm -rf ./gen
+	@echo "Generate openapi code from spec..."
+	@echo "Generating shared types..."
+	@cd spec/config && go tool oapi-codegen --config=types.yaml ../openapi.yaml
+	@echo "Generating Health handler..."
+	@cd spec/config && go tool oapi-codegen --config=health.yaml ../openapi.yaml
+	@echo "Generating Games handler..."
+	@cd spec/config && go tool oapi-codegen --config=games.yaml ../openapi.yaml
+	@echo "Generating Teams handler..."
+	@cd spec/config && go tool oapi-codegen --config=teams.yaml ../openapi.yaml
+	@echo "Generating Players handler..."
+	@cd spec/config && go tool oapi-codegen --config=players.yaml ../openapi.yaml
+	@echo "Generating Tables handler..."
+	@cd spec/config && go tool oapi-codegen --config=tables.yaml ../openapi.yaml
+	@echo "Generating Scores handler..."
+	@cd spec/config && go tool oapi-codegen --config=scores.yaml ../openapi.yaml
+	@go mod tidy
+
+lint: openapi
 	@echo "Running linter..."
 	pre-commit run --all-files
 

@@ -5,9 +5,11 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"strconv"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/henok321/knobel-manager-service/gen/scores"
+	"github.com/henok321/knobel-manager-service/gen/tables"
 	"github.com/henok321/knobel-manager-service/pkg/table"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
@@ -25,7 +27,27 @@ func NewTablesHandler(gamesService game.GamesService, tablesService table.Tables
 	return &TablesHandler{gamesService: gamesService, tablesService: tablesService}
 }
 
-func (t TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request) {
+// Verify that TablesHandler implements both generated OpenAPI interfaces
+var (
+	_ tables.ServerInterface = (*TablesHandler)(nil)
+	_ scores.ServerInterface = (*TablesHandler)(nil)
+)
+
+func (t *TablesHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
+	errorMsg := err.Error()
+	switch {
+	case strings.Contains(errorMsg, "Invalid format for parameter gameID"):
+		JSONError(w, "Invalid gameID", http.StatusBadRequest)
+	case strings.Contains(errorMsg, "Invalid format for parameter roundNumber"):
+		JSONError(w, "Invalid roundNumber", http.StatusBadRequest)
+	case strings.Contains(errorMsg, "Invalid format for parameter tableNumber"):
+		JSONError(w, "Invalid tableNumber", http.StatusBadRequest)
+	default:
+		JSONError(w, errorMsg, http.StatusBadRequest)
+	}
+}
+
+func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request, gameID, roundNumber int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -34,19 +56,7 @@ func (t TablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
-
-	roundNumber, err := strconv.ParseInt(request.PathValue("roundNumber"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid roundNumber", http.StatusBadRequest)
-		return
-	}
-
-	gameByID, err := t.gamesService.FindByID(int(gameID), sub)
+	gameByID, err := t.gamesService.FindByID(gameID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
@@ -62,7 +72,7 @@ func (t TablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 	}
 
 	for _, round := range gameByID.Rounds {
-		if round.RoundNumber == int(roundNumber) {
+		if round.RoundNumber == roundNumber {
 			tables := round.Tables
 
 			writer.WriteHeader(http.StatusOK)
@@ -78,7 +88,7 @@ func (t TablesHandler) GetTables(writer http.ResponseWriter, request *http.Reque
 	JSONError(writer, "Round not found", http.StatusNotFound)
 }
 
-func (t TablesHandler) GetTable(writer http.ResponseWriter, request *http.Request) {
+func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -87,25 +97,7 @@ func (t TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
-
-	roundNumber, err := strconv.ParseInt(request.PathValue("roundNumber"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid roundNumber", http.StatusBadRequest)
-		return
-	}
-
-	tablesNumber, err := strconv.ParseInt(request.PathValue("tableNumber"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid tableNumber", http.StatusBadRequest)
-		return
-	}
-
-	gameByID, err := t.gamesService.FindByID(int(gameID), sub)
+	gameByID, err := t.gamesService.FindByID(gameID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
@@ -121,9 +113,9 @@ func (t TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 	}
 
 	for _, round := range gameByID.Rounds {
-		if round.RoundNumber == int(roundNumber) {
+		if round.RoundNumber == roundNumber {
 			for _, currentTable := range round.Tables {
-				if currentTable.TableNumber == int(tablesNumber) {
+				if currentTable.TableNumber == tableNumber {
 					writer.WriteHeader(http.StatusOK)
 
 					if err := json.NewEncoder(writer).Encode(currentTable); err != nil {
@@ -139,7 +131,7 @@ func (t TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reques
 	JSONError(writer, "Round or table not found", http.StatusNotFound)
 }
 
-func (t TablesHandler) UpdateTableScore(writer http.ResponseWriter, request *http.Request) {
+func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -147,24 +139,6 @@ func (t TablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 	}
 
 	sub := userContext.Sub
-
-	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
-
-	roundNumber, err := strconv.ParseInt(request.PathValue("roundNumber"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid roundNumber", http.StatusBadRequest)
-		return
-	}
-
-	tableNumber, err := strconv.ParseInt(request.PathValue("tableNumber"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid tableNumber", http.StatusBadRequest)
-		return
-	}
 
 	scoresRequest := table.ScoresRequest{}
 
@@ -180,7 +154,7 @@ func (t TablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 		return
 	}
 
-	_, err = t.tablesService.UpdateScore(int(gameID), int(roundNumber), int(tableNumber), sub, scoresRequest)
+	_, err := t.tablesService.UpdateScore(gameID, roundNumber, tableNumber, sub, scoresRequest)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrInvalidScore):
@@ -194,7 +168,7 @@ func (t TablesHandler) UpdateTableScore(writer http.ResponseWriter, request *htt
 		return
 	}
 
-	updatedGame, err := t.gamesService.FindByID(int(gameID), sub)
+	updatedGame, err := t.gamesService.FindByID(gameID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):

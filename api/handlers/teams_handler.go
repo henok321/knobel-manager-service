@@ -6,9 +6,11 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/henok321/knobel-manager-service/api/middleware"
+	"github.com/henok321/knobel-manager-service/gen/teams"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/team"
@@ -26,7 +28,22 @@ func NewTeamsHandler(service team.TeamsService) *TeamsHandler {
 	return &TeamsHandler{service}
 }
 
-func (t TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Request) {
+// Verify that TeamsHandler implements the generated OpenAPI interface
+var _ teams.ServerInterface = (*TeamsHandler)(nil)
+
+func (t *TeamsHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
+	errorMsg := err.Error()
+	switch {
+	case strings.Contains(errorMsg, "Invalid format for parameter gameID"):
+		JSONError(w, "Invalid gameID", http.StatusBadRequest)
+	case strings.Contains(errorMsg, "Invalid format for parameter teamID"):
+		JSONError(w, "Invalid teamID", http.StatusBadRequest)
+	default:
+		JSONError(w, errorMsg, http.StatusBadRequest)
+	}
+}
+
+func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -34,12 +51,6 @@ func (t TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 	}
 
 	sub := userContext.Sub
-
-	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
 
 	teamsRequest := team.TeamsRequest{}
 
@@ -54,7 +65,7 @@ func (t TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	createdTeam, err := t.service.CreateTeam(int(gameID), sub, teamsRequest)
+	createdTeam, err := t.service.CreateTeam(gameID, sub, teamsRequest)
 	if err != nil {
 		switch {
 		case errors.Is(err, entity.ErrGameNotFound):
@@ -82,7 +93,7 @@ func (t TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Reque
 	}
 }
 
-func (t TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Request) {
+func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -90,18 +101,6 @@ func (t TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 	}
 
 	sub := userContext.Sub
-
-	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
-
-	teamID, err := strconv.ParseInt(request.PathValue("teamID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid teamID", http.StatusBadRequest)
-		return
-	}
 
 	teamsRequest := team.TeamsRequest{}
 
@@ -117,7 +116,7 @@ func (t TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	updatedGame, err := t.service.UpdateTeam(int(gameID), sub, int(teamID), teamsRequest)
+	updatedGame, err := t.service.UpdateTeam(gameID, sub, teamID, teamsRequest)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
@@ -141,7 +140,7 @@ func (t TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Reque
 	}
 }
 
-func (t TeamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Request) {
+func (t *TeamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
 		JSONError(writer, "User logging not found", http.StatusInternalServerError)
@@ -150,19 +149,7 @@ func (t TeamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Reque
 
 	sub := userContext.Sub
 
-	gameID, err := strconv.ParseInt(request.PathValue("gameID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
-
-	teamID, err := strconv.ParseInt(request.PathValue("teamID"), 10, 64)
-	if err != nil {
-		JSONError(writer, "Invalid teamID", http.StatusBadRequest)
-		return
-	}
-
-	err = t.service.DeleteTeam(int(gameID), sub, int(teamID))
+	err := t.service.DeleteTeam(gameID, sub, teamID)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
