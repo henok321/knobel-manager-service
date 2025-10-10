@@ -30,6 +30,20 @@ func TestGameSetup(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
 			},
 		},
+		"Try to setup game not in setup state": {
+			method:             "POST",
+			endpoint:           "/games/1/setup",
+			expectedStatusCode: http.StatusBadRequest,
+			expectedBody:       `{"error":"Game is not in setup state"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
+				_, err := db.Exec("UPDATE games SET status = 'in_progress' WHERE id = 1")
+				if err != nil {
+					t.Fatalf("Failed to update game status: %v", err)
+				}
+			},
+		},
 	}
 
 	dbConn, teardownDatabase := setupTestDatabase(t)

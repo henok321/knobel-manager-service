@@ -11,6 +11,9 @@ COPY ./Makefile ./Makefile
 # Generate OpenAPI code
 RUN make openapi
 
+# Download dependencies again after OpenAPI generation
+RUN go mod download
+
 COPY ./api ./api
 COPY ./cmd ./cmd
 COPY ./internal ./internal

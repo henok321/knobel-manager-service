@@ -142,7 +142,6 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	// Validate required fields
 	if gameCreateRequest.Name == "" || gameCreateRequest.NumberOfRounds == 0 ||
 		gameCreateRequest.TeamSize == 0 || gameCreateRequest.TableSize == 0 {
 		JSONError(writer, "Missing required fields", http.StatusBadRequest)
@@ -257,6 +256,11 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		}
 
+		return
+	}
+
+	if gameToAssign.Status != entity.StatusSetup {
+		JSONError(writer, "Game is not in setup state", http.StatusBadRequest)
 		return
 	}
 
