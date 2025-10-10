@@ -7,11 +7,9 @@ RUN go mod download
 
 COPY ./spec ./spec
 COPY ./Makefile ./Makefile
-
-# Generate OpenAPI code
 RUN make openapi
 
-# Download dependencies again after OpenAPI generation
+COPY go.mod go.sum ./
 RUN go mod download
 
 COPY ./api ./api
