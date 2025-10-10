@@ -683,6 +683,7 @@ components:
           example: 2
         status:
           type: string
+          enum: [setup, in_progress,completed]
           example: setup
         owners:
           type: array
