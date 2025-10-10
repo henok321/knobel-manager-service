@@ -41,9 +41,10 @@ repos:
     hooks:
       - id: swagger-validate
         name: validate openapi spec
-        entry: npx swagger-cli validate spec/openapi.yaml
+        entry: npx --yes @redocly/cli lint spec/openapi.yaml
         language: system
-        files: \.ya?ml$
+        files: ^spec/.*\.ya?ml$
+        pass_filenames: false
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1
     hooks:
@@ -68,7 +69,7 @@ repos:
     hooks:
       - id: govulncheck
         name: govulncheck
-        stages: [ pre-commit ]
+        stages: [ pre-push ]
         description: Check for vulnerabilities in dependencies
         entry: go
         args: [ "tool", "govulncheck", "./..." ]
@@ -81,7 +82,9 @@ repos:
     rev: v2.5.0
     hooks:
       - id: golangci-lint-config-verify
+        stages: [ pre-push ]
       - id: golangci-lint-full
+        stages: [ pre-push ]
   - repo: local
     hooks:
       - id: go-test
