@@ -12,7 +12,7 @@ paths:
   /health:
     get:
       operationId: healthCheck
-      tags: [Health]
+      tags: [ Health ]
       summary: Health check endpoint
       security: [ ]
       responses:
@@ -26,7 +26,7 @@ paths:
                   status:
                     type: string
                     example: ok
-                required: [status]
+                required: [ status ]
         '400':
           description: Bad request
           content:
@@ -42,10 +42,10 @@ paths:
   /games:
     get:
       operationId: getGames
-      tags: [Games]
+      tags: [ Games ]
       summary: List games owned by the caller
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Games list (can be empty)
@@ -62,12 +62,12 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/Game'
-                required: [games]
+                required: [ games ]
               examples:
                 empty:
-                  value: {"games":[]}
+                  value: { "games": [ ] }
                 withActive:
-                  value: {"activeGameID":1,"games":[{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"setup","owners":[{"gameID":1,"ownerSub":"sub-1"}]}]}
+                  value: { "activeGameID": 1,"games": [ { "id": 1,"name": "Game 1","teamSize": 4,"tableSize": 4,"numberOfRounds": 2,"status": "setup","owners": [ { "gameID": 1,"ownerSub": "sub-1" } ] } ] }
         '401':
           description: Unauthorized - invalid or missing bearer token
           content:
@@ -82,10 +82,10 @@ paths:
                 $ref: '#/components/schemas/Error'
     post:
       operationId: createGame
-      tags: [Games]
+      tags: [ Games ]
       summary: Create a new game
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -108,7 +108,7 @@ paths:
                 properties:
                   game:
                     $ref: '#/components/schemas/Game'
-                required: [game]
+                required: [ game ]
         '400':
           description: Invalid request
   /games/{gameID}:
@@ -120,10 +120,10 @@ paths:
           type: integer
     get:
       operationId: getGame
-      tags: [Games]
+      tags: [ Games ]
       summary: Get game by ID
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Game found
@@ -134,7 +134,7 @@ paths:
                 properties:
                   game:
                     $ref: '#/components/schemas/Game'
-                required: [game]
+                required: [ game ]
         '400':
           description: Invalid gameID
           content:
@@ -143,7 +143,7 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 invalidId:
-                  value: {"error":"Invalid gameID"}
+                  value: { "error": "Invalid gameID" }
         '403':
           description: Not owner of the game
         '404':
@@ -154,13 +154,13 @@ paths:
                 $ref: '#/components/schemas/Error'
               examples:
                 notFound:
-                  value: {"error":"Game not found"}
+                  value: { "error": "Game not found" }
     put:
       operationId: updateGame
-      tags: [Games]
+      tags: [ Games ]
       summary: Update an existing game
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -177,7 +177,7 @@ paths:
                 properties:
                   game:
                     $ref: '#/components/schemas/Game'
-                required: [game]
+                required: [ game ]
         '400':
           description: Invalid request
         '403':
@@ -186,10 +186,10 @@ paths:
           description: Game not found
     delete:
       operationId: deleteGame
-      tags: [Games]
+      tags: [ Games ]
       summary: Delete an existing game
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       responses:
         '204':
           description: Game deleted
@@ -206,10 +206,10 @@ paths:
           type: integer
     post:
       operationId: activateGame
-      tags: [Games]
+      tags: [ Games ]
       summary: Set the active game
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       responses:
         '204':
           description: Active game set
@@ -226,10 +226,10 @@ paths:
           type: integer
     post:
       operationId: setupGame
-      tags: [Games]
+      tags: [ Games ]
       summary: Setup game and assign tables for all rounds
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       responses:
         '201':
           description: Tables assigned successfully
@@ -256,10 +256,10 @@ paths:
           type: integer
     post:
       operationId: createTeam
-      tags: [Teams]
+      tags: [ Teams ]
       summary: Create a team
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -282,7 +282,7 @@ paths:
                 properties:
                   team:
                     $ref: '#/components/schemas/Team'
-                required: [team]
+                required: [ team ]
         '400':
           description: Invalid request
         '403':
@@ -303,10 +303,10 @@ paths:
           type: integer
     put:
       operationId: updateTeam
-      tags: [Teams]
+      tags: [ Teams ]
       summary: Update a team
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -323,7 +323,7 @@ paths:
                 properties:
                   team:
                     $ref: '#/components/schemas/Team'
-                required: [team]
+                required: [ team ]
         '400':
           description: Invalid request
         '403':
@@ -332,10 +332,10 @@ paths:
           description: Team or game not found
     delete:
       operationId: deleteTeam
-      tags: [Teams]
+      tags: [ Teams ]
       summary: Delete a team
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       responses:
         '204':
           description: Team deleted
@@ -357,10 +357,10 @@ paths:
           type: integer
     post:
       operationId: createPlayer
-      tags: [Players]
+      tags: [ Players ]
       summary: Create player in a team
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -399,10 +399,10 @@ paths:
           type: integer
     put:
       operationId: updatePlayer
-      tags: [Players]
+      tags: [ Players ]
       summary: Update player
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -422,10 +422,10 @@ paths:
           description: Player or team not found
     delete:
       operationId: deletePlayer
-      tags: [Players]
+      tags: [ Players ]
       summary: Delete player
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       responses:
         '204':
           description: Player deleted
@@ -447,10 +447,10 @@ paths:
           type: integer
     get:
       operationId: getTables
-      tags: [Tables]
+      tags: [ Tables ]
       summary: List tables for a round
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Tables found
@@ -485,10 +485,10 @@ paths:
           type: integer
     get:
       operationId: getTable
-      tags: [Tables]
+      tags: [ Tables ]
       summary: Get a table by number in round
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Table found
@@ -521,10 +521,10 @@ paths:
           type: integer
     put:
       operationId: updateScores
-      tags: [Scores]
+      tags: [ Scores ]
       summary: Update scores for a table
       security:
-        - bearerAuth: []
+        - bearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -541,7 +541,7 @@ paths:
                 properties:
                   game:
                     $ref: '#/components/schemas/Game'
-                required: [game]
+                required: [ game ]
         '400':
           description: Invalid request body or path params
         '403':
@@ -573,7 +573,7 @@ components:
       properties:
         error:
           type: string
-      required: [error]
+      required: [ error ]
     GameOwner:
       type: object
       properties:
@@ -583,7 +583,7 @@ components:
         ownerSub:
           type: string
           example: sub-1
-      required: [gameID, ownerSub]
+      required: [ gameID, ownerSub ]
     Player:
       type: object
       properties:
@@ -596,7 +596,7 @@ components:
         teamID:
           type: integer
           example: 1
-      required: [id, name, teamID]
+      required: [ id, name, teamID ]
     Team:
       type: object
       properties:
@@ -613,7 +613,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Player'
-      required: [id, name, gameID]
+      required: [ id, name, gameID ]
     Table:
       type: object
       properties:
@@ -634,7 +634,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Score'
-      required: [id, tableNumber, roundID]
+      required: [ id, tableNumber, roundID ]
     Score:
       type: object
       properties:
@@ -650,7 +650,7 @@ components:
         score:
           type: integer
           example: 6
-      required: [id, playerID, tableID, score]
+      required: [ id, playerID, tableID, score ]
     GameRound:
       type: object
       properties:
@@ -662,7 +662,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Table'
-      required: [id, roundNumber]
+      required: [ id, roundNumber ]
     Game:
       type: object
       properties:
@@ -683,7 +683,7 @@ components:
           example: 2
         status:
           type: string
-          enum: [setup, in_progress,completed]
+          enum: [ setup, in_progress,completed ]
           example: setup
         owners:
           type: array
@@ -716,28 +716,34 @@ components:
           type: integer
         tableSize:
           type: integer
-      required: [name, numberOfRounds, teamSize, tableSize]
+      required: [ name, numberOfRounds, teamSize, tableSize ]
     GameUpdateRequest:
-      allOf:
-        - $ref: '#/components/schemas/GameCreateRequest'
-        - type: object
-          properties:
-            status:
-              type: string
-              enum: [setup, in_progress, completed]
-              example: in_progress
+      type: object
+      properties:
+        name:
+          type: string
+        numberOfRounds:
+          type: integer
+        teamSize:
+          type: integer
+        tableSize:
+          type: integer
+        status:
+          type: string
+          enum: [ setup, in_progress,completed ]
+      required: [ name, numberOfRounds, teamSize, tableSize, status ]
     PlayersRequest:
       type: object
       properties:
         name:
           type: string
-      required: [name]
+      required: [ name ]
     PlayersResponse:
       type: object
       properties:
         player:
           $ref: '#/components/schemas/Player'
-      required: [player]
+      required: [ player ]
     TeamsRequest:
       type: object
       properties:
@@ -747,7 +753,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PlayersRequest'
-      required: [name]
+      required: [ name ]
     ScoresRequest:
       type: object
       properties:
@@ -760,5 +766,5 @@ components:
                 type: integer
               score:
                 type: integer
-            required: [playerID, score]
-      required: [scores]
+            required: [ playerID, score ]
+      required: [ scores ]

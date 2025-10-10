@@ -109,9 +109,8 @@ func (s *gamesService) UpdateGame(id int, sub string, game types.GameUpdateReque
 	gameByID.TableSize = game.TableSize
 	gameByID.NumberOfRounds = game.NumberOfRounds
 
-	// Update status if provided
-	if game.Status != nil {
-		gameByID.Status = entity.GameStatus(*game.Status)
+	if game.Status != "" {
+		gameByID.Status = entity.GameStatus(game.Status)
 	}
 
 	return s.repo.CreateOrUpdateGame(&gameByID)
