@@ -58,3 +58,46 @@ func TestGameSetup(t *testing.T) {
 		})
 	}
 }
+
+func TestGameSetupMultipleTimes(t *testing.T) {
+	dbConn, teardownDatabase := setupTestDatabase(t)
+	defer teardownDatabase()
+
+	db, err := sql.Open("postgres", dbConn)
+	if err != nil {
+		t.Fatalf("Failed to open database connection: %v", err)
+	}
+	defer db.Close()
+
+	runGooseUp(t, db)
+
+	server, teardown := setupTestServer()
+	defer teardown(server)
+
+	// Setup test data
+	executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
+	defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+	tc := testCase{
+		method:             "POST",
+		endpoint:           "/games/1/setup",
+		expectedStatusCode: http.StatusCreated,
+		expectedHeaders:    map[string]string{"Location": "/games/1/tables"},
+		requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+	}
+
+	// First setup - should succeed
+	t.Run("First setup", func(t *testing.T) {
+		newTestRequest(t, tc, server)
+	})
+
+	// Second setup - should also succeed (tests that reset works)
+	t.Run("Second setup", func(t *testing.T) {
+		newTestRequest(t, tc, server)
+	})
+
+	// Third setup - verify it can be run multiple times
+	t.Run("Third setup", func(t *testing.T) {
+		newTestRequest(t, tc, server)
+	})
+}

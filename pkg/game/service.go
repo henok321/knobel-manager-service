@@ -134,6 +134,10 @@ func (s *gamesService) DeleteGame(id int, sub string) error {
 }
 
 func (s *gamesService) AssignTables(game entity.Game) error {
+	if err := s.repo.ResetGameTables(game.ID); err != nil {
+		return fmt.Errorf("cannot reset game tables: %w", err)
+	}
+
 	teams := map[int][]int{}
 
 	for _, team := range game.Teams {
