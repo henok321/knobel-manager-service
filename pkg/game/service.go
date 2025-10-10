@@ -138,7 +138,7 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 	}
 
 	for i := range game.NumberOfRounds {
-		tables, err := setup.AssignTables(setup.TeamSetup{Teams: teams, TeamSize: game.TeamSize, TableSize: game.TableSize}, time.Now().Unix())
+		tables, err := setup.AssignTables(setup.TeamSetup{Teams: teams, TeamSize: game.TeamSize, TableSize: game.TableSize}, time.Now().Unix()-(int64(i)*1000))
 		if err != nil {
 			return apperror.ErrTableAssignment
 		}
