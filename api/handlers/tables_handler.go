@@ -72,11 +72,11 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 
 	for _, round := range gameByID.Rounds {
 		if round.RoundNumber == roundNumber {
-			tables := round.Tables
+			tablesByRound := round.Tables
 
 			writer.WriteHeader(http.StatusOK)
 
-			if err := json.NewEncoder(writer).Encode(tables); err != nil {
+			if err := json.NewEncoder(writer).Encode(tablesByRound); err != nil {
 				slog.InfoContext(request.Context(), "Could not write body", "error", err)
 			}
 

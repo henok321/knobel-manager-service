@@ -31,7 +31,7 @@ func TestTables(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
-		"get tables for game  and round forbidden": {
+		"get tables for game 1 and round number 1 forbidden": {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/1/tables",
 			expectedStatusCode: http.StatusForbidden,
