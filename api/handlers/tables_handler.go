@@ -72,11 +72,19 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 
 	for _, round := range gameByID.Rounds {
 		if round.RoundNumber == roundNumber {
-			tablesByRound := round.Tables
+			// Convert entity tables to API tables
+			apiTables := make([]tables.Table, len(round.Tables))
+			for i, t := range round.Tables {
+				apiTables[i] = entityTableToTablesAPITable(*t)
+			}
+
+			response := tables.TablesResponse{
+				Tables: apiTables,
+			}
 
 			writer.WriteHeader(http.StatusOK)
 
-			if err := json.NewEncoder(writer).Encode(tablesByRound); err != nil {
+			if err := json.NewEncoder(writer).Encode(response); err != nil {
 				slog.InfoContext(request.Context(), "Could not write body", "error", err)
 			}
 
@@ -115,9 +123,11 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 		if round.RoundNumber == roundNumber {
 			for _, currentTable := range round.Tables {
 				if currentTable.TableNumber == tableNumber {
+					response := entityTableToTablesAPITable(*currentTable)
+
 					writer.WriteHeader(http.StatusOK)
 
-					if err := json.NewEncoder(writer).Encode(currentTable); err != nil {
+					if err := json.NewEncoder(writer).Encode(response); err != nil {
 						slog.InfoContext(request.Context(), "Could not write body", "error", err)
 					}
 
@@ -178,7 +188,11 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 		}
 	}
 
-	if err := json.NewEncoder(writer).Encode(gameResponse{Game: updatedGame}); err != nil {
+	response := types.GameResponse{
+		Game: entityGameToTypesAPIGame(updatedGame),
+	}
+
+	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
 	}
 }

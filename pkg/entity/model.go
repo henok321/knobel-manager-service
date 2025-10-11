@@ -26,67 +26,67 @@ func IsOwner(game Game, sub string) bool {
 }
 
 type Game struct {
-	ID             int          `gorm:"primaryKey" json:"id"`
-	Name           string       `gorm:"size:255;not null" json:"name"`
-	TeamSize       int          `gorm:"not null" json:"teamSize"`
-	TableSize      int          `gorm:"not null" json:"tableSize"`
-	NumberOfRounds int          `gorm:"not null" json:"numberOfRounds"`
-	Status         GameStatus   `gorm:"size:50;not null" json:"status"`
-	Owners         []*GameOwner `gorm:"foreignKey:GameID;constraint:OnDelete:CASCADE" json:"owners,omitempty"`
-	Teams          []*Team      `gorm:"foreignKey:GameID" json:"teams,omitempty"`
-	Rounds         []*Round     `gorm:"foreignKey:GameID" json:"rounds,omitempty"`
-	CreatedAt      time.Time    `json:"-"`
-	UpdatedAt      time.Time    `json:"-"`
+	ID             int          `gorm:"primaryKey"`
+	Name           string       `gorm:"size:255;not null"`
+	TeamSize       int          `gorm:"not null"`
+	TableSize      int          `gorm:"not null"`
+	NumberOfRounds int          `gorm:"not null"`
+	Status         GameStatus   `gorm:"size:50;not null"`
+	Owners         []*GameOwner `gorm:"foreignKey:GameID;constraint:OnDelete:CASCADE"`
+	Teams          []*Team      `gorm:"foreignKey:GameID"`
+	Rounds         []*Round     `gorm:"foreignKey:GameID"`
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 type GameOwner struct {
-	GameID   int    `gorm:"primaryKey" json:"gameID"`
-	OwnerSub string `gorm:"primaryKey;size:255;not null" json:"ownerSub"`
+	GameID   int    `gorm:"primaryKey"`
+	OwnerSub string `gorm:"primaryKey;size:255;not null"`
 }
 
 type ActiveGame struct {
-	OwnerSub string `gorm:"primaryKey;size:255;not null" json:"ownerSub"`
-	GameID   int    `gorm:"not null" json:"gameID"`
+	OwnerSub string `gorm:"primaryKey;size:255;not null"`
+	GameID   int    `gorm:"not null"`
 }
 
 type Team struct {
-	ID        int       `gorm:"primaryKey" json:"id"`
-	Name      string    `gorm:"size:255;not null" json:"name"`
-	GameID    int       `gorm:"not null" json:"gameID"`
-	Game      *Game     `gorm:"foreignKey:GameID" json:"-"`
-	Players   []*Player `gorm:"foreignKey:TeamID" json:"players,omitempty"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
+	ID        int       `gorm:"primaryKey"`
+	Name      string    `gorm:"size:255;not null"`
+	GameID    int       `gorm:"not null"`
+	Game      *Game     `gorm:"foreignKey:GameID"`
+	Players   []*Player `gorm:"foreignKey:TeamID"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Player struct {
-	ID        int       `gorm:"primaryKey" json:"id"`
-	Name      string    `gorm:"size:255;not null" json:"name"`
-	TeamID    int       `gorm:"not null" json:"teamID"`
-	Team      *Team     `gorm:"foreignKey:TeamID" json:"-"`
-	Scores    []*Score  `gorm:"foreignKey:PlayerID" json:"-"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
+	ID        int      `gorm:"primaryKey"`
+	Name      string   `gorm:"size:255;not null"`
+	TeamID    int      `gorm:"not null"`
+	Team      *Team    `gorm:"foreignKey:TeamID"`
+	Scores    []*Score `gorm:"foreignKey:PlayerID"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type Round struct {
-	ID          int          `gorm:"primaryKey" json:"id"`
-	RoundNumber int          `gorm:"not null;uniqueIndex:idx_game_round" json:"roundNumber"`
-	GameID      int          `gorm:"not null;uniqueIndex:idx_game_round" json:"gameID"`
-	Status      string       `gorm:"size:50;not null" json:"status"`
-	Tables      []*GameTable `gorm:"foreignKey:RoundID" json:"tables,omitempty"`
-	CreatedAt   time.Time    `json:"-"`
-	UpdatedAt   time.Time    `json:"-"`
+	ID          int          `gorm:"primaryKey"`
+	RoundNumber int          `gorm:"not null;uniqueIndex:idx_game_round"`
+	GameID      int          `gorm:"not null;uniqueIndex:idx_game_round"`
+	Status      string       `gorm:"size:50;not null"`
+	Tables      []*GameTable `gorm:"foreignKey:RoundID"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type GameTable struct {
-	ID          int       `gorm:"primaryKey" json:"id"`
-	TableNumber int       `gorm:"not null;uniqueIndex:idx_round_table" json:"tableNumber"`
-	RoundID     int       `gorm:"not null;uniqueIndex:idx_round_table" json:"roundID"`
-	Players     []*Player `gorm:"many2many:table_players" json:"players,omitempty"`
-	Scores      []*Score  `gorm:"foreignKey:TableID" json:"scores,omitempty"`
-	CreatedAt   time.Time `json:"-"`
-	UpdatedAt   time.Time `json:"-"`
+	ID          int       `gorm:"primaryKey"`
+	TableNumber int       `gorm:"not null;uniqueIndex:idx_round_table"`
+	RoundID     int       `gorm:"not null;uniqueIndex:idx_round_table"`
+	Players     []*Player `gorm:"many2many:table_players"`
+	Scores      []*Score  `gorm:"foreignKey:TableID"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 func (GameTable) TableName() string {
@@ -94,19 +94,19 @@ func (GameTable) TableName() string {
 }
 
 type Score struct {
-	ID        int        `gorm:"primaryKey" json:"id"`
-	PlayerID  int        `gorm:"not null;uniqueIndex:idx_player_table" json:"playerID"`
-	TableID   int        `gorm:"not null;uniqueIndex:idx_player_table" json:"tableID"`
-	Score     int        `gorm:"not null" json:"score"`
-	Players   []*Player  `gorm:"many2many:table_players" json:"-"`
-	GameTable *GameTable `gorm:"foreignKey:TableID" json:"-"`
-	CreatedAt time.Time  `json:"-"`
-	UpdatedAt time.Time  `json:"-"`
+	ID        int        `gorm:"primaryKey"`
+	PlayerID  int        `gorm:"not null;uniqueIndex:idx_player_table"`
+	TableID   int        `gorm:"not null;uniqueIndex:idx_player_table"`
+	Score     int        `gorm:"not null"`
+	Players   []*Player  `gorm:"many2many:table_players"`
+	GameTable *GameTable `gorm:"foreignKey:TableID"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 type TablePlayer struct {
-	TableID  int `gorm:"primaryKey;column:game_table_id" json:"tableID"`
-	PlayerID int `gorm:"primaryKey;column:player_id" json:"playerID"`
+	TableID  int `gorm:"primaryKey;column:game_table_id"`
+	PlayerID int `gorm:"primaryKey;column:player_id"`
 }
 
 func (TablePlayer) TableName() string {

@@ -58,7 +58,6 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	// Validate required fields
 	if playersRequest.Name == "" {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
@@ -82,11 +81,9 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)
 
-	response := types.PlayersResponse{Player: types.Player{
-		Id:     createPlayer.ID,
-		Name:   createPlayer.Name,
-		TeamID: createPlayer.TeamID,
-	}}
+	response := types.PlayersResponse{
+		Player: entityPlayerToAPIPlayer(createPlayer),
+	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
@@ -132,11 +129,9 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	response := types.PlayersResponse{Player: types.Player{
-		Id:     updatePlayer.ID,
-		Name:   updatePlayer.Name,
-		TeamID: updatePlayer.TeamID,
-	}}
+	response := types.PlayersResponse{
+		Player: entityPlayerToAPIPlayer(updatePlayer),
+	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.ErrorContext(request.Context(), "Could not write body", "error", err)

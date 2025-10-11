@@ -16,15 +16,6 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/game"
 )
 
-type gameResponse struct {
-	Game entity.Game `json:"game"`
-}
-
-type gamesResponse struct {
-	ActiveGameID int           `json:"activeGameID,omitempty"`
-	Games        []entity.Game `json:"games"`
-}
-
 type GamesHandler struct {
 	gamesService game.GamesService
 }
@@ -53,13 +44,19 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 
 	sub := userContext.Sub
 
-	games, err := h.gamesService.FindAllByOwner(sub)
+	gamesList, err := h.gamesService.FindAllByOwner(sub)
 	if err != nil {
 		http.Error(writer, "{'error': '"+err.Error()+"'}", http.StatusInternalServerError)
 		return
 	}
 
-	var response gamesResponse
+	// Convert entity games to API games
+	apiGames := make([]games.Game, len(gamesList))
+	for i, g := range gamesList {
+		apiGames[i] = entityGameToAPIGame(g)
+	}
+
+	var response games.GamesResponse
 
 	activeGame, err := h.gamesService.GetActiveGame(sub)
 
@@ -67,8 +64,8 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 		if errors.Is(err, entity.ErrGameNotFound) {
 			slog.WarnContext(request.Context(), "Could not find active game", "error", err)
 
-			response = gamesResponse{
-				Games: games,
+			response = games.GamesResponse{
+				Games: apiGames,
 			}
 		} else {
 			slog.ErrorContext(request.Context(), "Unknown error error while querying active game", "error", err)
@@ -77,9 +74,9 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 			return
 		}
 	} else {
-		response = gamesResponse{
-			Games:        games,
-			ActiveGameID: activeGame.ID,
+		response = games.GamesResponse{
+			Games:        apiGames,
+			ActiveGameID: &activeGame.ID,
 		}
 	}
 
@@ -117,11 +114,9 @@ func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	gameResponse := gameResponse{
-		Game: gameByID,
-	}
+	response := entityGameToAPIGame(gameByID)
 
-	if err := json.NewEncoder(writer).Encode(gameResponse); err != nil {
+	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
 	}
 }
@@ -158,11 +153,11 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Location", "/games/"+strconv.Itoa(createdGame.ID))
 	writer.WriteHeader(http.StatusCreated)
 
-	gameResponse := gameResponse{
-		Game: createdGame,
+	response := games.GameResponse{
+		Game: entityGameToAPIGame(createdGame),
 	}
 
-	if err := json.NewEncoder(writer).Encode(gameResponse); err != nil {
+	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
 	}
 }
@@ -204,9 +199,11 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	responseBody := gameResponse{Game: updatedGame}
+	response := games.GameResponse{
+		Game: entityGameToAPIGame(updatedGame),
+	}
 
-	if err := json.NewEncoder(writer).Encode(responseBody); err != nil {
+	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
 	}
 }

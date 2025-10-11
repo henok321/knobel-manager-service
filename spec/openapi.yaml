@@ -21,12 +21,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-                required: [ status ]
+                $ref: '#/components/schemas/HealthCheckResponse'
         '400':
           description: Bad request
           content:
@@ -52,17 +47,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  activeGameID:
-                    type: integer
-                    description: ID of the currently active game (omitted if no active game)
-                    example: 1
-                  games:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Game'
-                required: [ games ]
+                $ref: '#/components/schemas/GamesResponse'
               examples:
                 empty:
                   value: { "games": [ ] }
@@ -104,11 +89,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  game:
-                    $ref: '#/components/schemas/Game'
-                required: [ game ]
+                $ref: '#/components/schemas/GameResponse'
         '400':
           description: Invalid request
   /games/{gameID}:
@@ -130,11 +111,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  game:
-                    $ref: '#/components/schemas/Game'
-                required: [ game ]
+                $ref: '#/components/schemas/Game'
         '400':
           description: Invalid gameID
           content:
@@ -173,11 +150,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  game:
-                    $ref: '#/components/schemas/Game'
-                required: [ game ]
+                $ref: '#/components/schemas/GameResponse'
         '400':
           description: Invalid request
         '403':
@@ -278,11 +251,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  team:
-                    $ref: '#/components/schemas/Team'
-                required: [ team ]
+                $ref: '#/components/schemas/TeamResponse'
         '400':
           description: Invalid request
         '403':
@@ -319,11 +288,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  team:
-                    $ref: '#/components/schemas/Team'
-                required: [ team ]
+                $ref: '#/components/schemas/TeamResponse'
         '400':
           description: Invalid request
         '403':
@@ -457,12 +422,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  tables:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Table'
+                $ref: '#/components/schemas/TablesResponse'
         '400':
           description: Invalid path parameters
         '403':
@@ -540,11 +500,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  game:
-                    $ref: '#/components/schemas/Game'
-                required: [ game ]
+                $ref: '#/components/schemas/GameResponse'
         '400':
           description: Invalid request body or path params
         '403':
@@ -659,13 +615,17 @@ components:
       properties:
         id:
           type: integer
+        gameID:
+          type: integer
         roundNumber:
           type: integer
+        status:
+          $ref: '#/components/schemas/RoundStatus'
         tables:
           type: array
           items:
             $ref: '#/components/schemas/Table'
-      required: [ id, roundNumber ]
+      required: [ id, gameID, roundNumber, status ]
     Game:
       type: object
       properties:
@@ -771,3 +731,52 @@ components:
                 type: integer
             required: [ playerID, score ]
       required: [ scores ]
+    HealthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+      required: [ status ]
+    GamesResponse:
+      type: object
+      properties:
+        activeGameID:
+          type: integer
+          description: ID of the currently active game (omitted if no active game)
+          example: 1
+        games:
+          type: array
+          items:
+            $ref: '#/components/schemas/Game'
+      required: [ games ]
+    GameResponse:
+      type: object
+      properties:
+        game:
+          $ref: '#/components/schemas/Game'
+      required: [ game ]
+    TeamResponse:
+      type: object
+      properties:
+        team:
+          $ref: '#/components/schemas/Team'
+      required: [ team ]
+    TablesResponse:
+      type: object
+      properties:
+        tables:
+          type: array
+          items:
+            $ref: '#/components/schemas/Table'
+      required: [ tables ]
+    TableResponse:
+      type: object
+      properties:
+        table:
+          $ref: '#/components/schemas/Table'
+      required: [ table ]
+    RoundStatus:
+      type: string
+      enum: [ setup, in_progress, completed ]
+      example: in_progress

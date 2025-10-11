@@ -16,10 +16,6 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/team"
 )
 
-type teamResponse struct {
-	Team entity.Team `json:"team"`
-}
-
 type TeamsHandler struct {
 	service team.TeamsService
 }
@@ -86,9 +82,11 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Content-Type", "application/json")
 	writer.Header().Set("Location", request.URL.String()+"/"+strconv.FormatInt(int64(createdTeam.ID), 10))
 
-	teamResponse := teamResponse{Team: createdTeam}
+	response := teams.TeamResponse{
+		Team: entityTeamToTeamsAPITeam(createdTeam),
+	}
 
-	if err := json.NewEncoder(writer).Encode(teamResponse); err != nil {
+	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.InfoContext(request.Context(), "Could not write body", "error", err)
 	}
 }
@@ -132,7 +130,9 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 	writer.WriteHeader(http.StatusOK)
 	writer.Header().Set("Content-Type", "application/json")
 
-	response := teamResponse{Team: updatedGame}
+	response := teams.TeamResponse{
+		Team: entityTeamToTeamsAPITeam(updatedGame),
+	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.InfoContext(request.Context(), "Could not write body", "error", err)
