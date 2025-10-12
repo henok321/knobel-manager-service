@@ -54,10 +54,14 @@ func (app *RouteSetup) setup() {
 	teamService := team.InitializeTeamsModule(app.database)
 
 	healthHandler := handlers.NewHealthHandler()
+	openAPIHandler := handlers.NewOpenAPIHandler()
 	gamesHandler := handlers.NewGamesHandler(gameService)
 	playersHandler := handlers.NewPlayersHandler(playerService)
 	tablesHandler := handlers.NewTablesHandler(gameService, tableService)
 	teamsHandler := handlers.NewTeamsHandler(teamService)
+
+	app.router.Handle("/openapi.yaml", app.publicEndpoint(http.HandlerFunc(openAPIHandler.GetOpenAPIConfig)))
+	app.router.Handle("/docs", app.publicEndpoint(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
 
 	app.router.Handle("/health", app.publicEndpoint(health.Handler(healthHandler)))
 
