@@ -16,6 +16,7 @@ COPY ./api ./api
 COPY ./cmd ./cmd
 COPY ./internal ./internal
 COPY ./pkg ./pkg
+COPY ./spec ./spec
 
 RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
     go build -o knobel-manager-service \
@@ -34,7 +35,8 @@ RUN apt-get update && \
 WORKDIR /home/appuser
 
 COPY --from=builder /app/knobel-manager-service /home/appuser/knobel-manager-service
-RUN chown appuser:appgroup /home/appuser/knobel-manager-service
+COPY --from=builder /app/spec /home/appuser/spec
+RUN chown -R appuser:appgroup /home/appuser/knobel-manager-service /home/appuser/spec
 
 EXPOSE 8080
 
