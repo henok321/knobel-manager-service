@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -85,9 +86,29 @@ func main() {
 
 	router := routes.SetupRouter(database, authClient)
 
+	// Configure CORS with allowed origins from environment
+	allowedOrigins := []string{"https://knobel-manager-webapp.web.app", "http://localhost:3000"}
+	if customOrigins := os.Getenv("ALLOWED_ORIGINS"); customOrigins != "" {
+		allowedOrigins = strings.Split(customOrigins, ",")
+		// Trim whitespace from each origin
+		for i, origin := range allowedOrigins {
+			allowedOrigins[i] = strings.TrimSpace(origin)
+		}
+	}
+
+	slog.Info("CORS configured", "allowedOrigins", allowedOrigins)
+
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins:   allowedOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Authorization", "Content-Type"},
+		AllowCredentials: true,
+		MaxAge:           300, // 5 minutes
+	})
+
 	mainServer := &http.Server{
 		Addr:         ":8080",
-		Handler:      cors.AllowAll().Handler(router),
+		Handler:      corsHandler.Handler(router),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
@@ -96,9 +117,16 @@ func main() {
 	metricsRouter := http.NewServeMux()
 	metricsRouter.Handle("GET /metrics", promhttp.Handler())
 
+	// Metrics server - restrict access
+	metricsCors := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:*"},
+		AllowedMethods: []string{"GET"},
+		MaxAge:         300,
+	})
+
 	metricsServer := &http.Server{
 		Addr:         ":9090",
-		Handler:      cors.AllowAll().Handler(metricsRouter),
+		Handler:      metricsCors.Handler(metricsRouter),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
