@@ -79,7 +79,7 @@ func main() {
 	databaseURL := os.Getenv("DATABASE_URL")
 	database, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
-		slog.Error("Starting application failed, cannot connect to database", "databaseUrl", databaseURL, "error", err)
+		slog.Error("Starting application failed, cannot connect to database", "error", err)
 		exitCode = 1
 		return
 	}
