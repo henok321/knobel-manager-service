@@ -41,15 +41,17 @@ func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth) *http.Se
 
 func (app *RouteSetup) publicEndpoint(handler http.Handler) http.Handler {
 	return middleware.SecurityHeaders(
-		middleware.Metrics(
-			middleware.RequestLogging(slog.LevelDebug, handler)))
+		middleware.RateLimit(
+			middleware.Metrics(
+				middleware.RequestLogging(slog.LevelDebug, handler))))
 }
 
 func (app *RouteSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
 	return middleware.SecurityHeaders(
-		middleware.Metrics(
-			middleware.RequestLogging(slog.LevelInfo,
-				middleware.Authentication(app.authClient, handler))))
+		middleware.RateLimit(
+			middleware.Metrics(
+				middleware.RequestLogging(slog.LevelInfo,
+					middleware.Authentication(app.authClient, handler)))))
 }
 
 func (app *RouteSetup) setup() {
