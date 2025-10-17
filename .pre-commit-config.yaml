@@ -1,4 +1,4 @@
-default_stages: [ pre-commit, pre-push ]
+default_stages: [pre-commit, pre-push]
 fail_fast: false
 default_language_version:
   node: system
@@ -30,9 +30,9 @@ repos:
     rev: v1.4.0
     hooks:
       - id: mbake-format
-        args: [ "--config", ".bake.toml" ]
+        args: ["--config", ".bake.toml"]
       - id: mbake-validate
-        args: [ "--config", ".bake.toml" ]
+        args: ["--config", ".bake.toml"]
   - repo: https://github.com/sqlfluff/sqlfluff
     rev: 3.4.2
     hooks:
@@ -57,41 +57,41 @@ repos:
     rev: v0.1.0
     hooks:
       - id: dockerfilelint
-        stages: [ pre-commit ]
+        stages: [pre-commit]
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.45.0
     hooks:
       - id: markdownlint
         files: \.(md|markdown|mdown)$
-        args: [ "--disable=MD013", "--disable=MD033" ]
+        args: ["--disable=MD013", "--disable=MD033"]
 
   - repo: local
     hooks:
       - id: govulncheck
         name: govulncheck
-        stages: [ pre-commit ]
+        stages: [pre-commit]
         description: Check for vulnerabilities in dependencies
         entry: go
-        args: [ "tool", "govulncheck", "./..." ]
+        args: ["tool", "govulncheck", "./..."]
         language: system
-        types: [ go ]
+        types: [go]
         pass_filenames: false
 
   - repo: https://github.com/golangci/golangci-lint
     rev: v2.5.0
     hooks:
       - id: golangci-lint-config-verify
-        stages: [ pre-commit ]
+        stages: [pre-commit]
       - id: golangci-lint-full
-        stages: [ pre-commit ]
+        stages: [pre-commit]
   - repo: local
     hooks:
       - id: go-test
         name: go-test
-        stages: [ pre-push ]
+        stages: [pre-push]
         description: Run all tests
         entry: go test -v ./...
-        types: [ go ]
+        types: [go]
         language: golang
         require_serial: true
         pass_filenames: false

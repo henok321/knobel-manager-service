@@ -40,7 +40,6 @@ Ensure the following dependencies are installed:
 - [Go](https://go.dev/doc/install)
 - [Docker](https://docs.docker.com/get-docker/)
 - [pre-commit](https://pre-commit.com/) (`pip install pre-commit`)
-- [Goose](https://github.com/pressly/goose) (`go install github.com/pressly/goose/v3/cmd/goose@latest`)
 
 ## Setup and Development
 

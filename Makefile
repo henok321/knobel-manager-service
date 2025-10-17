@@ -1,4 +1,4 @@
-.PHONY: all build check-deps clean help lint openapi reset setup test update
+.PHONY: all build check-deps clean help lint lint-all lint-go openapi reset setup test update
 
 .DEFAULT_GOAL := all
 
@@ -52,6 +52,10 @@ openapi:
 	@cd spec/config && go tool oapi-codegen --config=scores.yaml ../openapi.yaml
 	@go mod tidy
 
+lint-go: openapi
+	@echo "Running Go linter..."
+	go tool golangci-lint run ./...
+
 lint: openapi
 	@echo "Running linter..."
 	pre-commit run --all-files
@@ -63,7 +67,7 @@ update:
 	go get -u ./...
 	go mod tidy
 
-test: lint
+test: lint-go
 	@echo "Running tests..."
 	go test -v ./...
 
