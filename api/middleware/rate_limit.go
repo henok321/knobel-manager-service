@@ -11,9 +11,7 @@ import (
 )
 
 const (
-	// DefaultIPRateLimit is requests per minute per IP
-	DefaultIPRateLimit = 100
-	// DefaultUserRateLimit is requests per minute per authenticated user
+	DefaultIPRateLimit   = 100
 	DefaultUserRateLimit = 200
 )
 
@@ -33,10 +31,9 @@ func newRateLimiter(requestsPerMinute int) *rateLimiter {
 	rl := &rateLimiter{
 		visitors: make(map[string]*visitor),
 		rate:     requestsPerMinute,
-		burst:    requestsPerMinute, // Allow burst up to rate
+		burst:    requestsPerMinute,
 	}
 
-	// Cleanup old visitors every 5 minutes
 	go rl.cleanupVisitors()
 
 	return rl
@@ -97,25 +94,21 @@ func initLimiters() {
 	userLimiter = newRateLimiter(userRate)
 }
 
-// RateLimit applies both IP-based and user-based rate limiting
 func RateLimit(next http.Handler) http.Handler {
 	once.Do(initLimiters)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Extract IP address (handle X-Forwarded-For for proxies)
 		ip := r.RemoteAddr
 		if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
 			ip = forwarded
 		}
 
-		// Check IP-based rate limit
 		ipLimiterInstance := ipLimiter.getVisitor(ip)
 		if !ipLimiterInstance.Allow() {
 			http.Error(w, `{"error": "rate limit exceeded"}`, http.StatusTooManyRequests)
 			return
 		}
 
-		// Check user-based rate limit for authenticated requests
 		if user, ok := UserFromContext(r.Context()); ok && user.Sub != "" {
 			userLimiterInstance := userLimiter.getVisitor(user.Sub)
 			if !userLimiterInstance.Allow() {
