@@ -66,7 +66,21 @@ func (s *gamesService) GetActiveGame(sub string) (entity.Game, error) {
 }
 
 func (s *gamesService) SetActiveGame(id int, sub string) error {
-	err := s.repo.UpdateActiveGame(entity.ActiveGame{
+	// Verify game exists and user is owner before setting as active
+	gameByID, err := s.repo.FindByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.ErrGameNotFound
+		}
+
+		return err
+	}
+
+	if !entity.IsOwner(gameByID, sub) {
+		return apperror.ErrNotOwner
+	}
+
+	err = s.repo.UpdateActiveGame(entity.ActiveGame{
 		GameID:   id,
 		OwnerSub: sub,
 	})
