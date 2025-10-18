@@ -73,6 +73,7 @@ var (
 	ipLimiter   *rateLimiter
 	userLimiter *rateLimiter
 	once        sync.Once
+	mu          sync.Mutex
 )
 
 func initLimiters() {
@@ -93,6 +94,15 @@ func initLimiters() {
 
 	ipLimiter = newRateLimiter(ipRate)
 	userLimiter = newRateLimiter(userRate)
+}
+
+// ResetRateLimitForTesting resets the rate limiters - should only be used in tests
+func ResetRateLimitForTesting() {
+	mu.Lock()
+	defer mu.Unlock()
+	once = sync.Once{}
+	ipLimiter = nil
+	userLimiter = nil
 }
 
 func RateLimit(next http.Handler) http.Handler {

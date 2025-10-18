@@ -6,15 +6,22 @@ import (
 	"os"
 	"testing"
 
+	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRateLimit(t *testing.T) {
-	// Set limits for testing
-	// IP limit: 50 (high enough to not interfere with user tests)
-	// User limit: 10 (for testing user rate limiting)
+	// Reset rate limiter to ensure this test is isolated from others
+	middleware.ResetRateLimitForTesting()
+
 	os.Setenv("RATE_LIMIT_IP", "50")
 	os.Setenv("RATE_LIMIT_USER", "10")
+
+	defer func() {
+		os.Unsetenv("RATE_LIMIT_IP")
+		os.Unsetenv("RATE_LIMIT_USER")
+		middleware.ResetRateLimitForTesting()
+	}()
 
 	dbConn, teardownDatabase := setupTestDatabase(t)
 	defer teardownDatabase()
