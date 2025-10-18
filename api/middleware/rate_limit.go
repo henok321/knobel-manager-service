@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -101,6 +102,11 @@ func RateLimit(next http.Handler) http.Handler {
 		ip := r.RemoteAddr
 		if forwarded := r.Header.Get("X-Forwarded-For"); forwarded != "" {
 			ip = forwarded
+		}
+
+		// Strip port from IP address for rate limiting
+		if host, _, err := net.SplitHostPort(ip); err == nil {
+			ip = host
 		}
 
 		ipLimiterInstance := ipLimiter.getVisitor(ip)
