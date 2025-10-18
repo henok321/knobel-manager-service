@@ -48,10 +48,10 @@ func (app *RouteSetup) publicEndpoint(handler http.Handler) http.Handler {
 
 func (app *RouteSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
 	return middleware.SecurityHeaders(
-		middleware.RateLimit(
-			middleware.Metrics(
-				middleware.RequestLogging(slog.LevelInfo,
-					middleware.Authentication(app.authClient, handler)))))
+		middleware.Metrics(
+			middleware.RequestLogging(slog.LevelInfo,
+				middleware.Authentication(app.authClient,
+					middleware.RateLimit(handler)))))
 }
 
 func (app *RouteSetup) setup() {
