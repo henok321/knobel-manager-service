@@ -57,9 +57,12 @@ func Authentication(authClient FirebaseAuth, next http.Handler) http.Handler {
 			return
 		}
 
+		// Safely extract email claim with type assertion to prevent panic
+		email, _ := token.Claims["email"].(string)
+
 		userContext := &User{
 			Sub:   token.UID,
-			Email: token.Claims["email"].(string),
+			Email: email,
 		}
 
 		ctx := context.WithValue(requestContext, userKey, userContext)
