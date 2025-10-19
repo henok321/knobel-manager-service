@@ -85,11 +85,9 @@ func main() {
 
 	router := routes.SetupRouter(database, authClient)
 
-	// Configure CORS with allowed origins from environment
-	allowedOrigins := []string{"https://knobel-manager-webapp.web.app", "http://localhost:3000"}
+	allowedOrigins := []string{"https://knobel-manager-webapp.web.app"}
 	if customOrigins := os.Getenv("ALLOWED_ORIGINS"); customOrigins != "" {
 		allowedOrigins = strings.Split(customOrigins, ",")
-		// Trim whitespace from each origin
 		for i, origin := range allowedOrigins {
 			allowedOrigins[i] = strings.TrimSpace(origin)
 		}
@@ -116,9 +114,8 @@ func main() {
 	metricsRouter := http.NewServeMux()
 	metricsRouter.Handle("GET /metrics", promhttp.Handler())
 
-	// Metrics server - restrict access
 	metricsCors := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost:*"},
+		AllowedOrigins: []string{"https://knobel-manager-webapp.web.app"},
 		AllowedMethods: []string{"GET"},
 		MaxAge:         300,
 	})

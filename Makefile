@@ -52,12 +52,12 @@ openapi:
 	@cd spec/config && go tool oapi-codegen --config=scores.yaml ../openapi.yaml
 	@go mod tidy
 
-lint-go: openapi
+lint-go:
 	@echo "Running Go linter..."
 	go fmt ./...
 	go tool golangci-lint run --fix ./...
 
-lint: openapi
+lint:
 	@echo "Running linter..."
 	go fmt ./...
 	pre-commit run --all-files
@@ -69,7 +69,7 @@ update:
 	go get -u ./...
 	go mod tidy
 
-test: openapi
+test:
 	@echo "Running tests..."
 	go test -v ./...
 
