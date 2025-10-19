@@ -10,14 +10,11 @@ import (
 
 type keyFunc func(r *http.Request) string
 
-var (
-	limiterCache *cache.Cache
-)
+var limiterCache *cache.Cache
 
 func getLimiter(key string, limit rate.Limit, burst int) *rate.Limiter {
 	if limiterCache == nil {
-		// Default expiration: 15 minutes, cleanup interval: 30 minutes
-		limiterCache = cache.New(15*time.Minute, 30*time.Minute)
+		limiterCache = cache.New(10*time.Minute, 1*time.Minute)
 	}
 
 	if l, found := limiterCache.Get(key); found {
