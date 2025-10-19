@@ -1,10 +1,12 @@
-INSERT INTO games (id, name, team_size, table_size, number_of_rounds, status)
+INSERT INTO games (
+    id, game_name, team_size, table_size, number_of_rounds, status
+)
 VALUES (1, 'Game 1', 4, 4, 2, 'setup');
 
 INSERT INTO game_owners (game_id, owner_sub)
 VALUES (1, 'sub-1');
 
-INSERT INTO teams (game_id, id, name)
+INSERT INTO teams (game_id, id, team_name)
 VALUES (1, 1, 'Team 1'),
 (1, 2, 'Team 2'),
 (1, 3, 'Team 3'),
@@ -15,7 +17,7 @@ VALUES (1, 1, 'Team 1'),
 (1, 8, 'Team 8');
 
 
-INSERT INTO players (id, name, team_id)
+INSERT INTO players (id, player_name, team_id)
 VALUES (1, 'Player 1', 1),
 (2, 'Player 2', 1),
 (3, 'Player 3', 1),

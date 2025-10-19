@@ -7,6 +7,7 @@ CREATE TYPE game_status AS ENUM ('setup', 'in_progress', 'completed');
 CREATE TABLE games
 (
     id SERIAL PRIMARY KEY,
+    -- noqa: disable=RF04
     name VARCHAR(255) NOT NULL,
     team_size INTEGER NOT NULL,
     table_size INTEGER NOT NULL,
@@ -36,6 +37,7 @@ CREATE INDEX idx_game_owners_owner_sub ON game_owners (owner_sub);
 CREATE TABLE teams
 (
     id SERIAL PRIMARY KEY,
+    -- noqa: disable=RF04
     name VARCHAR(255) NOT NULL,
     game_id INTEGER NOT NULL REFERENCES games (id) ON DELETE CASCADE,
     CONSTRAINT fk_team_game FOREIGN KEY (game_id) REFERENCES games (
@@ -50,6 +52,7 @@ CREATE INDEX idx_teams_game_id ON teams (game_id);
 CREATE TABLE players
 (
     id SERIAL PRIMARY KEY,
+    -- noqa: disable=RF04
     name VARCHAR(255) NOT NULL,
     team_id INTEGER NOT NULL REFERENCES teams (id) ON DELETE CASCADE,
     CONSTRAINT fk_player_team FOREIGN KEY (team_id) REFERENCES teams (

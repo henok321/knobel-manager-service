@@ -27,7 +27,7 @@ func IsOwner(game Game, sub string) bool {
 
 type Game struct {
 	ID             int          `gorm:"primaryKey"`
-	Name           string       `gorm:"size:255;not null"`
+	Name           string       `gorm:"column:game_name;size:255;not null"`
 	TeamSize       int          `gorm:"not null"`
 	TableSize      int          `gorm:"not null"`
 	NumberOfRounds int          `gorm:"not null"`
@@ -51,7 +51,7 @@ type ActiveGame struct {
 
 type Team struct {
 	ID        int       `gorm:"primaryKey"`
-	Name      string    `gorm:"size:255;not null"`
+	Name      string    `gorm:"column:team_name;size:255;not null"`
 	GameID    int       `gorm:"not null"`
 	Game      *Game     `gorm:"foreignKey:GameID"`
 	Players   []*Player `gorm:"foreignKey:TeamID"`
@@ -61,7 +61,7 @@ type Team struct {
 
 type Player struct {
 	ID        int      `gorm:"primaryKey"`
-	Name      string   `gorm:"size:255;not null"`
+	Name      string   `gorm:"column:player_name;size:255;not null"`
 	TeamID    int      `gorm:"not null"`
 	Team      *Team    `gorm:"foreignKey:TeamID"`
 	Scores    []*Score `gorm:"foreignKey:PlayerID"`

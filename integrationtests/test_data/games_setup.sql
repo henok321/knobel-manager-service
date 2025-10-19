@@ -1,4 +1,6 @@
-INSERT INTO games (id, name, team_size, table_size, number_of_rounds, status)
+INSERT INTO games (
+    id, game_name, team_size, table_size, number_of_rounds, status
+)
 VALUES (1, 'Game 1', 4, 4, 2, 'setup');
 
 INSERT INTO game_owners (game_id, owner_sub)
