@@ -61,12 +61,13 @@ func getIP(r *http.Request) string {
 
 func (app *RouteSetup) publicEndpoint(handler http.Handler) http.Handler {
 	limit, burst := rateLimit()
-	return middleware.SecurityHeaders(middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, middleware.RateLimit(getIP, limit, burst, handler))))
+	return middleware.RateLimit(getIP, limit, burst, middleware.SecurityHeaders(middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
 }
 
 func (app *RouteSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
 	limit, burst := rateLimit()
-	return middleware.SecurityHeaders(middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, middleware.RateLimit(getIP, limit, burst, handler)))))
+
+	return middleware.RateLimit(getIP, limit, burst, middleware.SecurityHeaders(middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, handler)))))
 }
 
 func (app *RouteSetup) setup() {

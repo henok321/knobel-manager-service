@@ -69,7 +69,7 @@ update:
 	go get -u ./...
 	go mod tidy
 
-test: lint-go
+test: openapi
 	@echo "Running tests..."
 	go test -v ./...
 
