@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/henok321/knobel-manager-service/gen/games"
 	"github.com/henok321/knobel-manager-service/gen/health"
@@ -24,7 +25,7 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/game"
 )
 
-func rateLimit() (rate.Limit, int) {
+func rateLimitConfig() middleware.RateConfig {
 	maxRequestsPerSecond, err := strconv.Atoi(os.Getenv("RATE_LIMIT_REQUESTS_PER_SECOND"))
 	if err != nil {
 		slog.Info("Rate limit requests per seconds (rps) not set, defaulting to 100 requests per second")
@@ -35,7 +36,13 @@ func rateLimit() (rate.Limit, int) {
 		slog.Info("Rate limit burst not set, defaulting to 20 requests")
 		burstSize = 20
 	}
-	return rate.Limit(maxRequestsPerSecond), burstSize
+	return middleware.RateConfig{
+		Limit:                rate.Limit(maxRequestsPerSecond),
+		Burst:                burstSize,
+		KeyFunc:              func(r *http.Request) string { return r.Header.Get("X-Forwarded-For") },
+		CacheDefaultDuration: 10 * time.Minute,
+		CacheCleanupPeriod:   1 * time.Minute,
+	}
 }
 
 type RouteSetup struct {
@@ -55,19 +62,12 @@ func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth) *http.Se
 	return instance.router
 }
 
-func getIP(r *http.Request) string {
-	return r.Header.Get("X-Forwarded-For")
-}
-
 func (app *RouteSetup) publicEndpoint(handler http.Handler) http.Handler {
-	limit, burst := rateLimit()
-	return middleware.RateLimit(getIP, limit, burst, middleware.SecurityHeaders(middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
+	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders(middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
 }
 
 func (app *RouteSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
-	limit, burst := rateLimit()
-
-	return middleware.RateLimit(getIP, limit, burst, middleware.SecurityHeaders(middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, handler)))))
+	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders(middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, handler)))))
 }
 
 func (app *RouteSetup) setup() {

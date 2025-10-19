@@ -12,9 +12,17 @@ type keyFunc func(r *http.Request) string
 
 var limiterCache *cache.Cache
 
-func getLimiter(key string, limit rate.Limit, burst int) *rate.Limiter {
+type RateConfig struct {
+	Limit                rate.Limit
+	Burst                int
+	KeyFunc              keyFunc
+	CacheDefaultDuration time.Duration
+	CacheCleanupPeriod   time.Duration
+}
+
+func getLimiter(key string, limit rate.Limit, burst int, cacheDefaultDuration, cacheCleanupPeriod time.Duration) *rate.Limiter {
 	if limiterCache == nil {
-		limiterCache = cache.New(10*time.Minute, 1*time.Minute)
+		limiterCache = cache.New(cacheDefaultDuration, cacheCleanupPeriod)
 	}
 
 	if l, found := limiterCache.Get(key); found {
@@ -25,9 +33,9 @@ func getLimiter(key string, limit rate.Limit, burst int) *rate.Limiter {
 	return l
 }
 
-func RateLimit(keyFunc keyFunc, limit rate.Limit, burst int, next http.Handler) http.Handler {
+func RateLimit(config RateConfig, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		limiter := getLimiter(keyFunc(r), limit, burst)
+		limiter := getLimiter(config.KeyFunc(r), config.Limit, config.Burst, config.CacheDefaultDuration, config.CacheCleanupPeriod)
 
 		if !limiter.Allow() {
 			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
