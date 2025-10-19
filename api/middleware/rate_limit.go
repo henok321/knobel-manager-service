@@ -20,7 +20,7 @@ type RateConfig struct {
 	CacheCleanupPeriod   time.Duration
 }
 
-func getLimiter(key string, limit rate.Limit, burst int, cacheDefaultDuration, cacheCleanupPeriod time.Duration) *rate.Limiter {
+func cachedLimiterByKey(key string, limit rate.Limit, burst int, cacheDefaultDuration, cacheCleanupPeriod time.Duration) *rate.Limiter {
 	if limiterCache == nil {
 		limiterCache = cache.New(cacheDefaultDuration, cacheCleanupPeriod)
 	}
@@ -35,7 +35,7 @@ func getLimiter(key string, limit rate.Limit, burst int, cacheDefaultDuration, c
 
 func RateLimit(config RateConfig, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		limiter := getLimiter(config.KeyFunc(r), config.Limit, config.Burst, config.CacheDefaultDuration, config.CacheCleanupPeriod)
+		limiter := cachedLimiterByKey(config.KeyFunc(r), config.Limit, config.Burst, config.CacheDefaultDuration, config.CacheCleanupPeriod)
 
 		if !limiter.Allow() {
 			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
