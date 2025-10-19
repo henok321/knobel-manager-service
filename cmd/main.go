@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/henok321/knobel-manager-service/api/logging"
-
 	"github.com/rs/cors"
 
 	firebase "firebase.google.com/go/v4"

@@ -54,7 +54,7 @@ openapi:
 
 lint-go: openapi
 	@echo "Running Go linter..."
-	go tool golangci-lint run ./...
+	go tool golangci-lint run --fix ./...
 
 lint: openapi
 	@echo "Running linter..."
