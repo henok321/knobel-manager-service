@@ -43,7 +43,6 @@ func newTestRequest(t *testing.T, tc testCase, server *httptest.Server) {
 		requestBody = bytes.NewBuffer([]byte(tc.requestBody))
 	}
 
-	// Create the HTTP request
 	req, err := http.NewRequest(tc.method, server.URL+tc.endpoint, requestBody)
 	if err != nil {
 		t.Fatalf("Failed to create %s request: %v", tc.method, err)

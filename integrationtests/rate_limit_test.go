@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRateLimitNotExceededWithDefault(t *testing.T) {
+func TestRateLimitNotExceededWithDefaults(t *testing.T) {
 	dbConn, teardownDatabase := setupTestDatabase(t)
 	defer teardownDatabase()
 
@@ -43,7 +43,7 @@ func TestRateLimitNotExceededWithDefault(t *testing.T) {
 	})
 }
 
-func TestRateLimitExceeded(t *testing.T) {
+func TestRateLimitExceededWithEnv(t *testing.T) {
 	err := os.Setenv("RATE_LIMIT_REQUESTS_PER_SECOND", "10")
 	if err != nil {
 		t.Fatalf("Failed to set RATE_LIMIT_REQUESTS_PER_SECOND: %v", err)
