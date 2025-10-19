@@ -54,10 +54,12 @@ openapi:
 
 lint-go: openapi
 	@echo "Running Go linter..."
+	go fmt ./...
 	go tool golangci-lint run --fix ./...
 
 lint: openapi
 	@echo "Running linter..."
+	go fmt ./...
 	pre-commit run --all-files
 
 update:
