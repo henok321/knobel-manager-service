@@ -36,12 +36,25 @@ func rateLimitConfig() middleware.RateConfig {
 		slog.Info("Rate limit burst not set, defaulting to 20 requests")
 		burstSize = 20
 	}
+
+	cacheDefaultDuration, err := time.ParseDuration(os.Getenv("RATE_LIMIT_CACHE_DEFAULT_DURATION"))
+	if err != nil {
+		slog.Info("Rate limit cache default duration not set, defaulting to 10 minutes")
+		cacheDefaultDuration = 10 * time.Minute
+	}
+
+	cacheCleanupPeriod, err := time.ParseDuration(os.Getenv("RATE_LIMIT_CACHE_CLEANUP_PERIOD"))
+	if err != nil {
+		slog.Info("Rate limit cache cleanup period not set, defaulting to 1 minute")
+		cacheCleanupPeriod = 1 * time.Minute
+	}
+
 	return middleware.RateConfig{
 		Limit:                rate.Limit(maxRequestsPerSecond),
 		Burst:                burstSize,
 		KeyFunc:              func(r *http.Request) string { return r.Header.Get("X-Forwarded-For") },
-		CacheDefaultDuration: 10 * time.Minute,
-		CacheCleanupPeriod:   1 * time.Minute,
+		CacheDefaultDuration: cacheDefaultDuration,
+		CacheCleanupPeriod:   cacheCleanupPeriod,
 	}
 }
 
