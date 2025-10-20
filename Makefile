@@ -1,4 +1,4 @@
-.PHONY: all build check-deps clean help lint lint-all lint-go openapi reset setup test update
+.PHONY: all build check-deps clean help lint lint-all lint-go openapi reset setup test test-coverage update
 
 .DEFAULT_GOAL := all
 
