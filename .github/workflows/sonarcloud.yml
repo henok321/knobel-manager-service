@@ -14,6 +14,7 @@ on:
       - "README.md"
       - "LICENSE"
       - ".pre-commit-config.yaml"
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -26,18 +27,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache-dependency-path: "**/go.sum"
-          check-latest: true
-
-      - name: Generate openapi spec
-        run: make openapi
-
-      - name: Install dependencies
-        run: go mod tidy
+      - name: Setup Go and OpenAPI
+        uses: ./.github/actions/setup-go-openapi
 
       - name: Run tests, generate coverage and report files
         run: go test ./... -coverpkg=./... -coverprofile=coverage.out --json > test-report.out
