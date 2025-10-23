@@ -25,55 +25,28 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: true
           cache-dependency-path: "**/go.sum"
           check-latest: true
-
-      - name: Cache Go build
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-sonar-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-sonar-
-            ${{ runner.os }}-go-build-
-
-      - name: Cache SonarCloud packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar-cache-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-sonar-cache-
 
       - name: Generate openapi spec
         run: make openapi
 
       - name: Install dependencies
-        run: go mod download
-
-      - name: Start Docker
-        run: sudo systemctl start docker
+        run: go mod tidy
 
       - name: Run tests, generate coverage and report files
-        env:
-          TESTCONTAINERS_RYUK_DISABLED: true
         run: go test ./... -coverpkg=./... -coverprofile=coverage.out --json > test-report.out
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v8
         with:
           version: v2.4
-          args: "--timeout 5m --out-format checkstyle:golangci-lint-report.xml"
+          args: "--timeout 5m --output.checkstyle.path golangci-lint-report.xml"
 
       - name: Analyze project and upload coverage
         uses: sonarsource/sonarqube-scan-action@master

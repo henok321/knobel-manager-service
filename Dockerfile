@@ -2,28 +2,23 @@ FROM golang:1.25.3-trixie AS builder
 
 WORKDIR /app
 
-# Download dependencies first (cached layer)
 COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod download
+RUN go mod download
 
-# Generate OpenAPI code (cached if spec unchanged)
 COPY ./spec ./spec
 COPY ./Makefile ./Makefile
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    make openapi
+RUN make openapi
 
-# Copy source code
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY ./api ./api
 COPY ./cmd ./cmd
 COPY ./internal ./internal
 COPY ./pkg ./pkg
+COPY ./spec ./spec
 
-# Build with cache mounts
-RUN --mount=type=cache,target=/go/pkg/mod \
-    --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
+RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
     go build -o knobel-manager-service \
     -a -ldflags="-s -w -extldflags '-static'" ./cmd/
 
