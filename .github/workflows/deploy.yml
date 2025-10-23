@@ -9,35 +9,23 @@ on:
     types:
       - completed
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   db_migration:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     name: DB Migration
     runs-on: ubuntu-latest
-    env:
-      GOOSE_DRIVER: postgres
-      GOOSE_DBSTRING: postgres://${{ vars.DB_USERNAME }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ vars.DB_NAME }}?sslmode=disable
-      GOOSE_MIGRATION_DIR: ./db_migration
     steps:
       - name: Check out code
         uses: actions/checkout@v5
 
-      - name: Setup Go and OpenAPI
-        uses: ./.github/actions/setup-go-openapi
-
-      - name: Cache Goose binary
-        id: cache-goose
-        uses: actions/cache@v4
+      - name: Set up Go
+        uses: actions/setup-go@v6
         with:
-          path: ~/go/bin/goose
-          key: ${{ runner.os }}-goose-${{ hashFiles('go.mod') }}
+          go-version-file: go.mod
+          check-latest: true
+          cache-dependency-path: "**/go.sum"
 
       - name: Install Goose
-        if: steps.cache-goose.outputs.cache-hit != 'true'
         run: go install github.com/pressly/goose/v3/cmd/goose@latest
 
       - name: Set up Flyctl
@@ -49,10 +37,20 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_DB_TOKEN }}
 
       - name: Validate migration
-        run: goose validate
+        env:
+          GOOSE_DRIVER: "postgres"
+          GOOSE_DBSTRING: "postgres://${{ vars.DB_USERNAME }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ vars.DB_NAME }}?sslmode=disable"
+          GOOSE_MIGRATION_DIR: "./db_migration"
+        run: |
+          goose validate
 
       - name: Apply migration
-        run: goose up
+        env:
+          GOOSE_DRIVER: "postgres"
+          GOOSE_DBSTRING: "postgres://${{ vars.DB_USERNAME }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ vars.DB_NAME }}?sslmode=disable"
+          GOOSE_MIGRATION_DIR: "./db_migration"
+        run: |
+          goose up
 
       - name: Stop Fly Proxy
         run: pkill -f "flyctl proxy"

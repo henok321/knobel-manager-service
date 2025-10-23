@@ -47,16 +47,15 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-npm-
 
-      - name: Setup Go and OpenAPI
-        uses: ./.github/actions/setup-go-openapi
-
-      - name: Cache pre-commit environments
-        uses: actions/cache@v4
+      - name: Set up Go
+        uses: actions/setup-go@v6
         with:
-          path: ~/.cache/pre-commit
-          key: ${{ runner.os }}-pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pre-commit-
+          go-version-file: go.mod
+          check-latest: true
+          cache-dependency-path: "**/go.sum"
+
+      - name: Generate openapi spec
+        run: make openapi
 
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
@@ -70,11 +69,18 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v5
 
-      - name: Setup Go and OpenAPI
-        uses: ./.github/actions/setup-go-openapi
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          check-latest: true
+          cache-dependency-path: "**/go.sum"
 
       - name: Start Docker
         run: sudo systemctl start docker
+
+      - name: Generate openapi spec
+        run: make openapi
 
       - name: Run Tests
         env:
