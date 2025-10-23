@@ -76,15 +76,15 @@ func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth) *http.Se
 }
 
 func (app *RouteSetup) publicEndpoint(handler http.Handler) http.Handler {
-	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders(middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
+	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders("default-src 'self'", middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
 }
 
 func (app *RouteSetup) publicOpenAPIEndpoint(handler http.Handler) http.Handler {
-	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeadersForOpenAPI(middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
+	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:", middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
 }
 
 func (app *RouteSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
-	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders(middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, handler)))))
+	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders("default-src 'self'", middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, handler)))))
 }
 
 func (app *RouteSetup) setup() {

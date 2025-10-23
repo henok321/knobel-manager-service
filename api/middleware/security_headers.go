@@ -10,15 +10,7 @@ const (
 	DefaultMaxRequestSize = 1048576
 )
 
-func SecurityHeaders(next http.Handler) http.Handler {
-	return securityHeaders(next, "default-src 'self'")
-}
-
-func SecurityHeadersForOpenAPI(next http.Handler) http.Handler {
-	return securityHeaders(next, "default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:")
-}
-
-func securityHeaders(next http.Handler, csp string) http.Handler {
+func SecurityHeaders(contentSecurityPolicy string, next http.Handler) http.Handler {
 	maxSize := DefaultMaxRequestSize
 
 	if maxSizeEnv := os.Getenv("MAX_REQUEST_SIZE"); maxSizeEnv != "" {
@@ -42,7 +34,7 @@ func securityHeaders(next http.Handler, csp string) http.Handler {
 			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 		}
 
-		w.Header().Set("Content-Security-Policy", csp)
+		w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
 
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
 
