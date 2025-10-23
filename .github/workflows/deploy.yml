@@ -23,9 +23,22 @@ jobs:
         with:
           go-version-file: go.mod
           check-latest: true
+          cache: true
           cache-dependency-path: "**/go.sum"
 
+      - name: Cache Go tools
+        id: cache-goose
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/bin/goose
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-goose-${{ hashFiles('go.mod') }}
+          restore-keys: |
+            ${{ runner.os }}-goose-
+
       - name: Install Goose
+        if: steps.cache-goose.outputs.cache-hit != 'true'
         run: go install github.com/pressly/goose/v3/cmd/goose@latest
 
       - name: Set up Flyctl
