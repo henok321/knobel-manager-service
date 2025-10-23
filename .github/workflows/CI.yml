@@ -26,7 +26,7 @@ jobs:
     name: Lint Code
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout repository.go
         uses: actions/checkout@v5
 
       - name: Install python
