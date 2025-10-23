@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   db_migration:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     name: DB Migration
     runs-on: ubuntu-latest
     env:
@@ -47,6 +47,9 @@ jobs:
         run: flyctl proxy 5432 -a database-postgres &
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_DB_TOKEN }}
+
+      - name: Wait for proxy to be ready
+        run: sleep 5
 
       - name: Validate migration
         run: goose validate
