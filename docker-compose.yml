@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:latest
+    image: postgres:18
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: secret
@@ -8,7 +8,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql
 
 volumes:
   db-data:

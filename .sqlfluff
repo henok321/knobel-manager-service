@@ -2,3 +2,12 @@
 dialect = postgres
 quoted_identifiers_policy = all
 unquoted_identifiers_policy = all
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.identifiers]
+capitalisation_policy = lower
+
+[sqlfluff:rules:capitalisation.functions]
+capitalisation_policy = upper

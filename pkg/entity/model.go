@@ -46,7 +46,7 @@ type GameOwner struct {
 
 type ActiveGame struct {
 	OwnerSub string `gorm:"primaryKey;size:255;not null"`
-	GameID   int    `gorm:"not null"`
+	GameID   int    `gorm:"primaryKey;not null"`
 }
 
 type Team struct {
