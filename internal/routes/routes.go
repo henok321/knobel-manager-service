@@ -79,6 +79,10 @@ func (app *RouteSetup) publicEndpoint(handler http.Handler) http.Handler {
 	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders(middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
 }
 
+func (app *RouteSetup) publicOpenAPIEndpoint(handler http.Handler) http.Handler {
+	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeadersForOpenAPI(middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
+}
+
 func (app *RouteSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
 	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders(middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, handler)))))
 }
@@ -97,7 +101,7 @@ func (app *RouteSetup) setup() {
 	teamsHandler := handlers.NewTeamsHandler(teamService)
 
 	app.router.Handle("/openapi.yaml", app.publicEndpoint(http.HandlerFunc(openAPIHandler.GetOpenAPIConfig)))
-	app.router.Handle("/docs", app.publicEndpoint(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
+	app.router.Handle("/docs", app.publicOpenAPIEndpoint(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
 
 	app.router.Handle("/health", app.publicEndpoint(health.Handler(healthHandler)))
 
