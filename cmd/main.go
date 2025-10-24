@@ -115,8 +115,8 @@ func main() {
 	metricsRouter.Handle("GET /metrics", promhttp.Handler())
 
 	metricsCors := cors.New(cors.Options{
-		AllowedOrigins: []string{"https://knobel-manager-webapp.web.app"},
-		AllowedMethods: []string{"GET"},
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"OPTIONS", "GET"},
 		MaxAge:         300,
 	})
 
