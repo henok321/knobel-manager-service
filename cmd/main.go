@@ -117,7 +117,7 @@ func main() {
 	metricsCors := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"OPTIONS", "GET"},
-		MaxAge:         300,
+		MaxAge:         300, // 5 minutes
 	})
 
 	metricsServer := &http.Server{
