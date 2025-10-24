@@ -130,7 +130,7 @@ func TestScores(t *testing.T) {
 			}
 
 			defer executeSQLFile(t, db, "./test_data/cleanup.sql")
-			newTestRequest(t, tc, server)
+			newTestRequest(t, tc, server, db)
 		})
 	}
 }

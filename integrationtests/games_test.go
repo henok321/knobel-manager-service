@@ -175,6 +175,52 @@ func TestGames(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
 		},
+		"Switch active game": {
+			method:             http.MethodPost,
+			endpoint:           "/games/2/activate",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusNoContent,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_switch_active.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				var activeGameID int
+				err := db.QueryRow("SELECT game_id FROM active_games WHERE owner_sub = 'sub-1'").Scan(&activeGameID)
+				if err != nil {
+					t.Fatalf("Failed to query active game: %v", err)
+				}
+				if activeGameID != 2 {
+					t.Errorf("Expected active game to be 2, got %d", activeGameID)
+				}
+
+				var count int
+				err = db.QueryRow("SELECT COUNT(*) FROM active_games WHERE owner_sub = 'sub-1'").Scan(&count)
+				if err != nil {
+					t.Fatalf("Failed to count active games: %v", err)
+				}
+				if count != 1 {
+					t.Errorf("Expected only 1 active game, got %d", count)
+				}
+			},
+		},
+		"Verify active game after switch": {
+			method:             http.MethodGet,
+			endpoint:           "/games",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusOK,
+			expectedBody:       readContentFromFile(t, "./test_data/games_switch_active.json"),
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_switch_active.sql")
+				_, err := db.Exec("DELETE FROM active_games WHERE owner_sub = 'sub-1'")
+				if err != nil {
+					t.Fatalf("Failed to delete active games: %v", err)
+				}
+				_, err = db.Exec("INSERT INTO active_games (game_id, owner_sub) VALUES (2, 'sub-1')")
+				if err != nil {
+					t.Fatalf("Failed to insert active game: %v", err)
+				}
+			},
+		},
 	}
 
 	dbConn, teardownDatabase := setupTestDatabase(t)
@@ -199,7 +245,7 @@ func TestGames(t *testing.T) {
 			}
 
 			defer executeSQLFile(t, db, "./test_data/cleanup.sql")
-			newTestRequest(t, tc, server)
+			newTestRequest(t, tc, server, db)
 		})
 	}
 }

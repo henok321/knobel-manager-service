@@ -130,7 +130,11 @@ func (r *gamesRepository) UpdateActiveGame(activeGame entity.ActiveGame) error {
 			return apperror.ErrNotOwner
 		}
 
-		if err := tx.Save(activeGame).Error; err != nil {
+		if err := tx.Where("owner_sub = ?", activeGame.OwnerSub).Delete(&entity.ActiveGame{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Create(&activeGame).Error; err != nil {
 			return err
 		}
 

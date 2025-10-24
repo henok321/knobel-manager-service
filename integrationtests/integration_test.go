@@ -35,9 +35,10 @@ type testCase struct {
 	expectedStatusCode int
 	expectedBody       string
 	expectedHeaders    map[string]string
+	assertions         func(t *testing.T, db *sql.DB)
 }
 
-func newTestRequest(t *testing.T, tc testCase, server *httptest.Server) {
+func newTestRequest(t *testing.T, tc testCase, server *httptest.Server, db *sql.DB) {
 	var requestBody io.Reader
 	if tc.requestBody != "" {
 		requestBody = bytes.NewBuffer([]byte(tc.requestBody))
@@ -66,6 +67,10 @@ func newTestRequest(t *testing.T, tc testCase, server *httptest.Server) {
 
 	if tc.expectedBody != "" {
 		assert.JSONEq(t, tc.expectedBody, responseBodyString)
+	}
+
+	if tc.assertions != nil {
+		tc.assertions(t, db)
 	}
 }
 

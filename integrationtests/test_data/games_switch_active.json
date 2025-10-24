@@ -1,0 +1,1 @@
+{"games":[{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"setup","owners":[{"gameID":1,"ownerSub":"sub-1"}]},{"id":2,"name":"Game 2","teamSize":4,"tableSize":4,"numberOfRounds":3,"status":"setup","owners":[{"gameID":2,"ownerSub":"sub-1"}]}],"activeGameID":2}

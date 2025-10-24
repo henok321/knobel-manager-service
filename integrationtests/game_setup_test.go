@@ -68,7 +68,7 @@ func TestGameSetup(t *testing.T) {
 			}
 
 			defer executeSQLFile(t, db, "./test_data/cleanup.sql")
-			newTestRequest(t, tc, server)
+			newTestRequest(t, tc, server, db)
 		})
 	}
 }
@@ -102,16 +102,16 @@ func TestGameSetupMultipleTimes(t *testing.T) {
 
 	// First setup - should succeed
 	t.Run("First setup", func(t *testing.T) {
-		newTestRequest(t, tc, server)
+		newTestRequest(t, tc, server, db)
 	})
 
 	// Second setup - should also succeed (tests that reset works)
 	t.Run("Second setup", func(t *testing.T) {
-		newTestRequest(t, tc, server)
+		newTestRequest(t, tc, server, db)
 	})
 
 	// Third setup - verify it can be run multiple times
 	t.Run("Third setup", func(t *testing.T) {
-		newTestRequest(t, tc, server)
+		newTestRequest(t, tc, server, db)
 	})
 }
