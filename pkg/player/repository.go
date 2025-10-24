@@ -7,8 +7,7 @@ import (
 
 type PlayersRepository interface {
 	FindPlayerByID(id int) (entity.Player, error)
-	CreatePlayer(player *entity.Player) (entity.Player, error)
-	UpdatePlayer(player *entity.Player) (entity.Player, error)
+	CreateOrUpdatePlayer(player *entity.Player) (entity.Player, error)
 	DeletePlayer(id int) error
 }
 
@@ -31,17 +30,8 @@ func (r *playersRepository) FindPlayerByID(id int) (entity.Player, error) {
 	return player, nil
 }
 
-func (r *playersRepository) CreatePlayer(player *entity.Player) (entity.Player, error) {
-	err := r.db.Create(player).Error
-	if err != nil {
-		return entity.Player{}, err
-	}
-
-	return *player, nil
-}
-
-func (r *playersRepository) UpdatePlayer(player *entity.Player) (entity.Player, error) {
-	err := r.db.Model(player).Updates(player).Error
+func (r *playersRepository) CreateOrUpdatePlayer(player *entity.Player) (entity.Player, error) {
+	err := r.db.Save(player).Error
 	if err != nil {
 		return entity.Player{}, err
 	}

@@ -7,8 +7,7 @@ import (
 
 type TeamsRepository interface {
 	FindByID(id int) (entity.Team, error)
-	CreateTeam(team *entity.Team) (entity.Team, error)
-	UpdateTeam(team *entity.Team) (entity.Team, error)
+	CreateOrUpdateTeam(team *entity.Team) (entity.Team, error)
 	DeleteTeam(id int) error
 }
 
@@ -31,17 +30,8 @@ func (r *teamsRepository) FindByID(id int) (entity.Team, error) {
 	return team, nil
 }
 
-func (r *teamsRepository) CreateTeam(team *entity.Team) (entity.Team, error) {
-	err := r.db.Create(team).Error
-	if err != nil {
-		return entity.Team{}, err
-	}
-
-	return *team, nil
-}
-
-func (r *teamsRepository) UpdateTeam(team *entity.Team) (entity.Team, error) {
-	err := r.db.Model(team).Updates(team).Error
+func (r *teamsRepository) CreateOrUpdateTeam(team *entity.Team) (entity.Team, error) {
+	err := r.db.Save(team).Error
 	if err != nil {
 		return entity.Team{}, err
 	}

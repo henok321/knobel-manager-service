@@ -65,7 +65,7 @@ func (s *teamsService) CreateTeam(gameID int, sub string, request types.TeamsReq
 		Players: players,
 	}
 
-	return s.teamRepo.CreateTeam(&team)
+	return s.teamRepo.CreateOrUpdateTeam(&team)
 }
 
 func (s *teamsService) UpdateTeam(gameID int, sub string, teamID int, request types.TeamsRequest) (entity.Team, error) {
@@ -82,21 +82,14 @@ func (s *teamsService) UpdateTeam(gameID int, sub string, teamID int, request ty
 		return entity.Team{}, apperror.ErrNotOwner
 	}
 
-	team, err := s.teamRepo.FindByID(teamID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Team{}, apperror.ErrTeamNotFound
+	for _, team := range gameByID.Teams {
+		if team.ID == teamID {
+			team.Name = request.Name
+			return s.teamRepo.CreateOrUpdateTeam(team)
 		}
-		return entity.Team{}, err
 	}
 
-	if team.GameID != gameID {
-		return entity.Team{}, apperror.ErrTeamNotFound
-	}
-
-	team.Name = request.Name
-
-	return s.teamRepo.UpdateTeam(&team)
+	return entity.Team{}, apperror.ErrTeamNotFound
 }
 
 func (s *teamsService) DeleteTeam(gameID int, sub string, teamID int) error {

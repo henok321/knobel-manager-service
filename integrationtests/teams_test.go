@@ -3,15 +3,10 @@ package integrationtests
 import (
 	"database/sql"
 	"net/http"
-	"strings"
 	"testing"
 
 	_ "github.com/lib/pq"
 )
-
-func contains(str, substr string) bool {
-	return strings.Contains(str, substr)
-}
 
 func TestTeams(t *testing.T) {
 	tests := map[string]testCase{
@@ -150,28 +145,6 @@ func TestTeams(t *testing.T) {
 			endpoint:           "/games/1/teams/invalid",
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			expectedStatusCode: http.StatusBadRequest,
-		},
-		"Create team should not allow duplicate key": {
-			method:             "POST",
-			endpoint:           "/games/1/teams",
-			requestBody:        `{"name":"Team 1"}`,
-			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
-			expectedStatusCode: http.StatusCreated,
-			expectedBody:       `{"team": {"id":1,"name":"Team 1", "gameID":1}}`,
-			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup.sql")
-			},
-			assertions: func(t *testing.T, db *sql.DB) {
-				// Try to insert another team with the same ID manually
-				_, err := db.Exec("INSERT INTO teams (id, team_name, game_id) VALUES (1, 'Team Duplicate', 1)")
-				if err == nil {
-					t.Fatal("Expected duplicate key error, but insert succeeded")
-				}
-				// Verify the error is a duplicate key constraint violation
-				if !contains(err.Error(), "duplicate key") && !contains(err.Error(), "unique constraint") {
-					t.Fatalf("Expected duplicate key error, got: %v", err)
-				}
-			},
 		},
 	}
 

@@ -101,7 +101,7 @@ func (s *gamesService) CreateGame(sub string, game *types.GameCreateRequest) (en
 		Status:         entity.StatusSetup,
 	}
 
-	return s.repo.CreateGame(&gameModel)
+	return s.repo.CreateOrUpdateGame(&gameModel)
 }
 
 func (s *gamesService) UpdateGame(id int, sub string, game types.GameUpdateRequest) (entity.Game, error) {
@@ -127,7 +127,7 @@ func (s *gamesService) UpdateGame(id int, sub string, game types.GameUpdateReque
 		gameByID.Status = entity.GameStatus(game.Status)
 	}
 
-	return s.repo.UpdateGame(&gameByID)
+	return s.repo.CreateOrUpdateGame(&gameByID)
 }
 
 func (s *gamesService) DeleteGame(id int, sub string) error {

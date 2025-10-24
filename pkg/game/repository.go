@@ -11,8 +11,7 @@ import (
 type GamesRepository interface {
 	FindAllByOwner(sub string) ([]entity.Game, error)
 	FindByID(id int) (entity.Game, error)
-	CreateGame(game *entity.Game) (entity.Game, error)
-	UpdateGame(game *entity.Game) (entity.Game, error)
+	CreateOrUpdateGame(game *entity.Game) (entity.Game, error)
 	DeleteGame(id int) error
 	CreateRound(round *entity.Round) (entity.Round, error)
 	CreateGameTables(gameTables []entity.GameTable) error
@@ -68,17 +67,8 @@ func (r *gamesRepository) FindByID(id int) (entity.Game, error) {
 	return game, nil
 }
 
-func (r *gamesRepository) CreateGame(game *entity.Game) (entity.Game, error) {
-	err := r.db.Create(game).Error
-	if err != nil {
-		return entity.Game{}, err
-	}
-
-	return *game, nil
-}
-
-func (r *gamesRepository) UpdateGame(game *entity.Game) (entity.Game, error) {
-	err := r.db.Model(game).Updates(game).Error
+func (r *gamesRepository) CreateOrUpdateGame(game *entity.Game) (entity.Game, error) {
+	err := r.db.Save(game).Error
 	if err != nil {
 		return entity.Game{}, err
 	}
@@ -96,7 +86,7 @@ func (r *gamesRepository) DeleteGame(id int) error {
 }
 
 func (r *gamesRepository) CreateRound(round *entity.Round) (entity.Round, error) {
-	err := r.db.Create(round).Error
+	err := r.db.Save(round).Error
 	if err != nil {
 		return entity.Round{}, err
 	}
@@ -105,7 +95,7 @@ func (r *gamesRepository) CreateRound(round *entity.Round) (entity.Round, error)
 }
 
 func (r *gamesRepository) CreateGameTables(gameTables []entity.GameTable) error {
-	err := r.db.Create(gameTables).Error
+	err := r.db.Save(gameTables).Error
 	if err != nil {
 		return err
 	}
