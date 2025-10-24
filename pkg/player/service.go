@@ -41,7 +41,7 @@ func (s playersService) CreatePlayer(request types.PlayersRequest, teamID int, s
 
 	player := entity.Player{Name: request.Name, TeamID: teamID}
 
-	createdPlayer, err := s.playersRepo.CreateOrUpdatePlayer(&player)
+	createdPlayer, err := s.playersRepo.CreatePlayer(&player)
 	if err != nil {
 		return entity.Player{}, err
 	}
@@ -67,7 +67,7 @@ func (s playersService) UpdatePlayer(id int, request types.PlayersRequest, sub s
 
 	player.Name = request.Name
 
-	updatePlayer, err := s.playersRepo.CreateOrUpdatePlayer(&player)
+	updatePlayer, err := s.playersRepo.UpdatePlayer(&player)
 	if err != nil {
 		return entity.Player{}, err
 	}
