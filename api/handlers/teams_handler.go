@@ -42,7 +42,7 @@ func (t *TeamsHandler) HandleValidationError(w http.ResponseWriter, _ *http.Requ
 func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -78,9 +78,9 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	writer.WriteHeader(http.StatusCreated)
 	writer.Header().Set("Content-Type", "application/json")
 	writer.Header().Set("Location", request.URL.String()+"/"+strconv.FormatInt(int64(createdTeam.ID), 10))
+	writer.WriteHeader(http.StatusCreated)
 
 	response := teams.TeamResponse{
 		Team: entityTeamToTeamsAPITeam(createdTeam),
@@ -94,7 +94,7 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -127,8 +127,8 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	writer.WriteHeader(http.StatusOK)
 	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
 
 	response := teams.TeamResponse{
 		Team: entityTeamToTeamsAPITeam(updatedGame),
@@ -142,7 +142,7 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 func (t *TeamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 

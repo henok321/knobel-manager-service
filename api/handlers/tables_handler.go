@@ -49,7 +49,7 @@ func (t *TablesHandler) HandleValidationError(w http.ResponseWriter, _ *http.Req
 func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request, gameID, roundNumber int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -82,6 +82,7 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 				Tables: apiTables,
 			}
 
+			writer.Header().Set("Content-Type", "application/json")
 			writer.WriteHeader(http.StatusOK)
 
 			if err := json.NewEncoder(writer).Encode(response); err != nil {
@@ -98,7 +99,7 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -125,6 +126,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 				if currentTable.TableNumber == tableNumber {
 					response := entityTableToTablesAPITable(*currentTable)
 
+					writer.Header().Set("Content-Type", "application/json")
 					writer.WriteHeader(http.StatusOK)
 
 					if err := json.NewEncoder(writer).Encode(response); err != nil {
@@ -143,7 +145,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -156,7 +158,6 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	// Validate required fields
 	if len(scoresRequest.Scores) == 0 {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
@@ -186,11 +187,16 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 		default:
 			JSONError(writer, err.Error(), http.StatusInternalServerError)
 		}
+
+		return
 	}
 
 	response := types.GameResponse{
 		Game: entityGameToTypesAPIGame(updatedGame),
 	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.ErrorContext(request.Context(), "Could not write body", "error", err)

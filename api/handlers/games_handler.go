@@ -24,7 +24,6 @@ func NewGamesHandler(gamesService game.GamesService) *GamesHandler {
 	return &GamesHandler{gamesService}
 }
 
-// Verify that GamesHandler implements the generated OpenAPI interface
 var _ games.ServerInterface = (*GamesHandler)(nil)
 
 func (h *GamesHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
@@ -38,7 +37,7 @@ func (h *GamesHandler) HandleValidationError(w http.ResponseWriter, _ *http.Requ
 func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -46,7 +45,7 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 
 	gamesList, err := h.gamesService.FindAllByOwner(sub)
 	if err != nil {
-		http.Error(writer, "{'error': '"+err.Error()+"'}", http.StatusInternalServerError)
+		JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -91,7 +90,7 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		http.Error(writer, `{'error': 'User logging not found'}`, http.StatusUnauthorized)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -124,7 +123,7 @@ func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request
 func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Request) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -145,7 +144,7 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 
 	createdGame, err := h.gamesService.CreateGame(sub, &gameCreateRequest)
 	if err != nil {
-		http.Error(writer, "{'error': '"+err.Error()+"'}", http.StatusInternalServerError)
+		JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -165,7 +164,7 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -178,7 +177,6 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	// Validate required fields
 	if gameUpdateRequest.Name == "" || gameUpdateRequest.NumberOfRounds == 0 ||
 		gameUpdateRequest.TeamSize == 0 || gameUpdateRequest.TableSize == 0 {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
@@ -203,6 +201,9 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 		Game: entityGameToAPIGame(updatedGame),
 	}
 
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
 	}
@@ -211,7 +212,7 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -236,7 +237,7 @@ func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -274,7 +275,7 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 func (h *GamesHandler) ActivateGame(writer http.ResponseWriter, request *http.Request, gameID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 

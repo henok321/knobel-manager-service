@@ -45,7 +45,7 @@ func (h *PlayersHandler) HandleValidationError(w http.ResponseWriter, _ *http.Re
 func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -93,7 +93,7 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -141,7 +141,7 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 func (h *PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
 	userContext, ok := middleware.UserFromContext(request.Context())
 	if !ok {
-		JSONError(writer, "User logging not found", http.StatusInternalServerError)
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
