@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
@@ -86,11 +85,9 @@ func main() {
 	router := routes.SetupRouter(database, authClient)
 
 	allowedOrigins := []string{"https://knobel-manager-webapp.web.app"}
-	if customOrigins := os.Getenv("ALLOWED_ORIGINS"); customOrigins != "" {
-		allowedOrigins = strings.Split(customOrigins, ",")
-		for i, origin := range allowedOrigins {
-			allowedOrigins[i] = strings.TrimSpace(origin)
-		}
+
+	if os.Getenv("ENVIRONMENT") == "local" {
+		allowedOrigins = []string{"https://localhost:5174"}
 	}
 
 	slog.Info("CORS configured", "allowedOrigins", allowedOrigins)
