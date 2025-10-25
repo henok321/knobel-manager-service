@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/henok321/knobel-manager-service/pkg/entity"
 	_ "github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGames(t *testing.T) {
@@ -97,7 +99,26 @@ func TestGames(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"in_progress","owners":[{"gameID":1,"ownerSub":"sub-1"}]}}`,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_assignable.sql")
+			},
+		},
+		"Update game status to in_progress with invalid setup": {
+			method:             http.MethodPut,
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1","numberOfRounds":2, "teamSize":4, "tableSize":4, "status":"in_progress"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_not_assignable.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				var gameStatus *string
+
+				if err := db.QueryRow("SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
+					t.Fatalf("Failed to query game status: %v", err)
+				}
+
+				assert.Equal(t, entity.StatusSetup, entity.GameStatus(*gameStatus))
 			},
 		},
 		"Update an existing game invalid request": {

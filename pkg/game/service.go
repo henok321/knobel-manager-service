@@ -127,6 +127,22 @@ func (s *gamesService) UpdateGame(id int, sub string, game types.GameUpdateReque
 		gameByID.Status = entity.GameStatus(game.Status)
 	}
 
+	if game.Status == "in_progress" {
+		teams := map[int][]int{}
+
+		for _, team := range gameByID.Teams {
+			for _, player := range team.Players {
+				teams[team.ID] = append(teams[team.ID], player.ID)
+			}
+		}
+
+		validSetup := setup.IsAssignable(teams, gameByID.TeamSize, gameByID.TableSize)
+
+		if !validSetup {
+			return entity.Game{}, apperror.ErrInvalidGameSetup
+		}
+	}
+
 	return s.repo.CreateOrUpdateGame(&gameByID)
 }
 

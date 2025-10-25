@@ -12,7 +12,7 @@ type Player struct {
 	TeamID int
 }
 
-func validInput(teams map[int][]int, teamSize, tableSize int) bool {
+func IsAssignable(teams map[int][]int, teamSize, tableSize int) bool {
 	if teamSize%tableSize > 0 {
 		return false
 	}
@@ -26,8 +26,10 @@ func validInput(teams map[int][]int, teamSize, tableSize int) bool {
 			return false
 		}
 	}
+	numberOfPlayers := len(teams) * teamSize
+	numberOfTables := numberOfPlayers / tableSize
 
-	return true
+	return numberOfTables >= teamSize
 }
 
 type TeamsPlayersMapping map[int][]Player
@@ -40,7 +42,7 @@ type TeamSetup struct {
 
 func AssignTables(teamSetup TeamSetup, seed int64) (TeamsPlayersMapping, error) {
 	for {
-		if !validInput(teamSetup.Teams, teamSetup.TeamSize, teamSetup.TableSize) {
+		if !IsAssignable(teamSetup.Teams, teamSetup.TeamSize, teamSetup.TableSize) {
 			return nil, fmt.Errorf("invalid input")
 		}
 

@@ -157,6 +157,8 @@ paths:
           description: Not owner of the game
         '404':
           description: Game not found
+        '409':
+          description: Cannot update game status due to invalid state (e.g. Setup -> In Progress)
     delete:
       operationId: deleteGame
       tags: [ Games ]

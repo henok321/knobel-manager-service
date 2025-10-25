@@ -73,7 +73,14 @@ func (r *gamesRepository) CreateOrUpdateGame(game *entity.Game) (entity.Game, er
 		return entity.Game{}, err
 	}
 
-	return *game, nil
+	// Reload game without associations to avoid returning stale preloaded data
+	var savedGame entity.Game
+	err = r.db.Preload("Owners").First(&savedGame, game.ID).Error
+	if err != nil {
+		return entity.Game{}, err
+	}
+
+	return savedGame, nil
 }
 
 func (r *gamesRepository) DeleteGame(id int) error {

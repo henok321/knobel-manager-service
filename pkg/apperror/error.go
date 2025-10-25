@@ -10,4 +10,5 @@ var (
 	ErrInvalidScore         = errors.New("invalid score")
 	ErrRoundOrTableNotFound = errors.New("round or table not found")
 	ErrTeamSizeNotAllowed   = errors.New("team size not allowed")
+	ErrInvalidGameSetup     = errors.New("invalid game setup")
 )
