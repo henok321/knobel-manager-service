@@ -39,7 +39,14 @@ func (t tablesRepository) FindTable(sub string, gameID, roundNumber, tableNumber
 }
 
 func (t tablesRepository) UpdateTable(table *entity.GameTable) (entity.GameTable, error) {
-	err := t.db.Save(table).Error
+	for _, score := range table.Scores {
+		err := t.db.Save(score).Error
+		if err != nil {
+			return entity.GameTable{}, err
+		}
+	}
+
+	err := t.db.Preload("Scores").Preload("Players").First(table, table.ID).Error
 	if err != nil {
 		return entity.GameTable{}, err
 	}

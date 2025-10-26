@@ -28,13 +28,23 @@ func (t tablesService) UpdateScore(gameID, roundNumber, tableNumber int, sub str
 		return entity.GameTable{}, apperror.ErrInvalidScore
 	}
 
+	existingScores := make(map[int]*entity.Score)
+	for _, score := range table.Scores {
+		existingScores[score.PlayerID] = score
+	}
+
 	scores := make([]*entity.Score, 0, len(table.Players))
 	for _, s := range scoresRequest.Scores {
-		scores = append(scores, &entity.Score{
-			PlayerID: s.PlayerID,
-			TableID:  table.ID,
-			Score:    s.Score,
-		})
+		if existingScore, exists := existingScores[s.PlayerID]; exists {
+			existingScore.Score = s.Score
+			scores = append(scores, existingScore)
+		} else {
+			scores = append(scores, &entity.Score{
+				PlayerID: s.PlayerID,
+				TableID:  table.ID,
+				Score:    s.Score,
+			})
+		}
 	}
 
 	table.Scores = scores

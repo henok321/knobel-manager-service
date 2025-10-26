@@ -10,7 +10,7 @@ import (
 
 func TestScores(t *testing.T) {
 	tests := map[string]testCase{
-		"Update score for game": {
+		"Add new score for game": {
 			method:             "PUT",
 			endpoint:           "/games/1/rounds/1/tables/1/scores",
 			expectedStatusCode: http.StatusOK,
@@ -19,6 +19,17 @@ func TestScores(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+			},
+		},
+		"Update existing score for game": {
+			method:             "PUT",
+			endpoint:           "/games/1/rounds/1/tables/1/scores",
+			expectedStatusCode: http.StatusOK,
+			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			expectedBody:       readContentFromFile(t, "./test_data/game_update_score_response.json"),
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned_with_scores.sql")
 			},
 		},
 		"Update score not game owner": {
