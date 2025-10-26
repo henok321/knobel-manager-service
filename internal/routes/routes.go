@@ -28,19 +28,19 @@ import (
 func rateLimitConfig() middleware.RateConfig {
 	maxRequestsPerSecond, err := strconv.Atoi(os.Getenv("RATE_LIMIT_REQUESTS_PER_SECOND"))
 	if err != nil {
-		slog.Info("Rate limit requests per seconds (rps) not set, defaulting to 100 requests per second")
-		maxRequestsPerSecond = 100
+		maxRequestsPerSecond = 20
+		slog.Info("Rate limit requests per seconds (rps) not set, fallback to default", "defaultMaxRequestsPerSecond", maxRequestsPerSecond)
 	}
 	burstSize, err := strconv.Atoi(os.Getenv("RATE_LIMIT_BURST_SIZE"))
 	if err != nil {
-		slog.Info("Rate limit burst not set, defaulting to 20 requests")
-		burstSize = 20
+		burstSize = 40
+		slog.Info("Rate limit burst not set, fallback to default", "defaultBurstSize", burstSize)
 	}
 
 	cacheDefaultDuration, err := time.ParseDuration(os.Getenv("RATE_LIMIT_CACHE_DEFAULT_DURATION"))
 	if err != nil {
-		slog.Info("Rate limit cache default duration not set, defaulting to 10 minutes")
-		cacheDefaultDuration = 10 * time.Minute
+		cacheDefaultDuration = 5 * time.Minute
+		slog.Info("Rate limit cache default duration not set, fallback to default", "defaultCacheDefaultDuration", cacheDefaultDuration)
 	}
 
 	cacheCleanupPeriod, err := time.ParseDuration(os.Getenv("RATE_LIMIT_CACHE_CLEANUP_PERIOD"))
