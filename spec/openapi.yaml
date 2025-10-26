@@ -210,7 +210,7 @@ paths:
           description: Tables assigned successfully
           headers:
             Location:
-              description: URL of the updates entity
+              description: URL of the updated game
               schema:
                 type: string
                 example: /games/1
