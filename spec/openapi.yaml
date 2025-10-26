@@ -210,10 +210,10 @@ paths:
           description: Tables assigned successfully
           headers:
             Location:
-              description: URL to view the tables
+              description: URL of the updates entity
               schema:
                 type: string
-                example: /games/1/tables
+                example: /games/1
         '400':
           description: Invalid gameID
         '403':

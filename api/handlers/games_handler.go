@@ -3,9 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
@@ -149,7 +149,7 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
-	writer.Header().Set("Location", "/games/"+strconv.Itoa(createdGame.ID))
+	writer.Header().Set("Location", fmt.Sprintf("/games/%d", createdGame.ID))
 	writer.WriteHeader(http.StatusCreated)
 
 	response := games.GameResponse{
@@ -271,7 +271,7 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	writer.Header().Set("Location", "/games/"+strconv.Itoa(gameID)+"/tables")
+	writer.Header().Set("Location", fmt.Sprintf("/games/%d", gameID))
 	writer.WriteHeader(http.StatusCreated)
 }
 
