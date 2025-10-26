@@ -84,16 +84,8 @@ func main() {
 
 	router := routes.SetupRouter(database, authClient)
 
-	allowedOrigins := []string{"https://knobel-manager-webapp.web.app"}
-
-	if os.Getenv("ENVIRONMENT") == "local" {
-		allowedOrigins = []string{"https://localhost:5174"}
-	}
-
-	slog.Info("CORS configured", "allowedOrigins", allowedOrigins)
-
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   allowedOrigins,
+		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Authorization", "Content-Type"},
 		AllowCredentials: true,
