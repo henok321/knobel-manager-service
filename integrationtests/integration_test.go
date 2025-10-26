@@ -69,6 +69,12 @@ func newTestRequest(t *testing.T, tc testCase, server *httptest.Server, db *sql.
 		assert.JSONEq(t, tc.expectedBody, responseBodyString)
 	}
 
+	if tc.expectedHeaders != nil {
+		for key, value := range tc.expectedHeaders {
+			assert.Equal(t, value, resp.Header.Get(key))
+		}
+	}
+
 	if tc.assertions != nil {
 		tc.assertions(t, db)
 	}
