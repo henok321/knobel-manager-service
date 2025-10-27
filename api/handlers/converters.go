@@ -8,8 +8,6 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
 
-// Convert entity types to generated OpenAPI types
-
 func entityGameToAPIGame(e entity.Game) games.Game {
 	g := games.Game{
 		Id:             e.ID,
@@ -20,7 +18,6 @@ func entityGameToAPIGame(e entity.Game) games.Game {
 		TeamSize:       e.TeamSize,
 	}
 
-	// Convert owners
 	if len(e.Owners) > 0 {
 		owners := make([]games.GameOwner, len(e.Owners))
 		for i, owner := range e.Owners {
@@ -32,7 +29,6 @@ func entityGameToAPIGame(e entity.Game) games.Game {
 		g.Owners = owners
 	}
 
-	// Convert teams
 	if len(e.Teams) > 0 {
 		teamsSlice := make([]games.Team, len(e.Teams))
 		for i, team := range e.Teams {
@@ -41,7 +37,6 @@ func entityGameToAPIGame(e entity.Game) games.Game {
 		g.Teams = &teamsSlice
 	}
 
-	// Convert rounds
 	if len(e.Rounds) > 0 {
 		rounds := make([]games.GameRound, len(e.Rounds))
 		for i, round := range e.Rounds {
@@ -129,7 +124,6 @@ func entityTableToAPITable(e entity.GameTable) games.Table {
 	return t
 }
 
-// Converter functions for team handler
 func entityTeamToTeamsAPITeam(e entity.Team) teams.Team {
 	t := teams.Team{
 		GameID: e.GameID,
@@ -152,7 +146,6 @@ func entityTeamToTeamsAPITeam(e entity.Team) teams.Team {
 	return t
 }
 
-// Converter functions for players handler (types package)
 func entityPlayerToAPIPlayer(e entity.Player) types.Player {
 	return types.Player{
 		Id:     e.ID,
@@ -161,7 +154,6 @@ func entityPlayerToAPIPlayer(e entity.Player) types.Player {
 	}
 }
 
-// Converter for types.Game (used in scores handler)
 func entityGameToTypesAPIGame(e entity.Game) types.Game {
 	g := types.Game{
 		Id:             e.ID,
@@ -172,7 +164,6 @@ func entityGameToTypesAPIGame(e entity.Game) types.Game {
 		TeamSize:       e.TeamSize,
 	}
 
-	// Convert owners
 	if len(e.Owners) > 0 {
 		owners := make([]types.GameOwner, len(e.Owners))
 		for i, owner := range e.Owners {
@@ -184,7 +175,6 @@ func entityGameToTypesAPIGame(e entity.Game) types.Game {
 		g.Owners = owners
 	}
 
-	// Convert teams
 	if len(e.Teams) > 0 {
 		teamsSlice := make([]types.Team, len(e.Teams))
 		for i, team := range e.Teams {
@@ -209,7 +199,6 @@ func entityGameToTypesAPIGame(e entity.Game) types.Game {
 		g.Teams = &teamsSlice
 	}
 
-	// Convert rounds
 	if len(e.Rounds) > 0 {
 		rounds := make([]types.GameRound, len(e.Rounds))
 		for i, round := range e.Rounds {
@@ -262,7 +251,6 @@ func entityGameToTypesAPIGame(e entity.Game) types.Game {
 	return g
 }
 
-// Converter functions for tables handler
 func entityTableToTablesAPITable(e entity.GameTable) tables.Table {
 	t := tables.Table{
 		Id:          e.ID,

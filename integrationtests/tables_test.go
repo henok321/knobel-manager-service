@@ -21,6 +21,17 @@ func TestTables(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
+		"get tables for gameID 1 and round number 1 with scores": {
+			method:             "GET",
+			endpoint:           "/games/1/rounds/1/tables",
+			expectedStatusCode: http.StatusOK,
+			expectedBody:       readContentFromFile(t, "./test_data/round_1_tables_scores.json"),
+
+			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned_with_scores.sql")
+			},
+		},
 		"get tables for gameID 1 and round number 2": {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/2/tables",

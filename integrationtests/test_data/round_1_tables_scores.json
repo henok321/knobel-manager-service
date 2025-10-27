@@ -1,0 +1,246 @@
+{
+  "tables": [
+    {
+      "id": 1,
+      "tableNumber": 1,
+      "roundID": 1,
+      "scores": [
+        {
+          "id": 1,
+          "playerID": 1,
+          "tableID": 1,
+          "score": 5
+        },
+        {
+          "id": 2,
+          "playerID": 5,
+          "tableID": 1,
+          "score": 3
+        },
+        {
+          "id": 3,
+          "playerID": 9,
+          "tableID": 1,
+          "score": 2
+        },
+        {
+          "id": 4,
+          "playerID": 13,
+          "tableID": 1,
+          "score": 1
+        }
+      ],
+      "players": [
+        {
+          "id": 1,
+          "name": "Player 1",
+          "teamID": 1
+        },
+        {
+          "id": 5,
+          "name": "Player 5",
+          "teamID": 2
+        },
+        {
+          "id": 9,
+          "name": "Player 9",
+          "teamID": 3
+        },
+        {
+          "id": 13,
+          "name": "Player 13",
+          "teamID": 4
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "tableNumber": 2,
+      "roundID": 1,
+      "players": [
+        {
+          "id": 17,
+          "name": "Player 17",
+          "teamID": 5
+        },
+        {
+          "id": 21,
+          "name": "Player 21",
+          "teamID": 6
+        },
+        {
+          "id": 25,
+          "name": "Player 25",
+          "teamID": 7
+        },
+        {
+          "id": 29,
+          "name": "Player 29",
+          "teamID": 8
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "tableNumber": 3,
+      "roundID": 1,
+      "players": [
+        {
+          "id": 2,
+          "name": "Player 2",
+          "teamID": 1
+        },
+        {
+          "id": 6,
+          "name": "Player 6",
+          "teamID": 2
+        },
+        {
+          "id": 10,
+          "name": "Player 10",
+          "teamID": 3
+        },
+        {
+          "id": 14,
+          "name": "Player 14",
+          "teamID": 4
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "tableNumber": 4,
+      "roundID": 1,
+      "players": [
+        {
+          "id": 18,
+          "name": "Player 18",
+          "teamID": 5
+        },
+        {
+          "id": 22,
+          "name": "Player 22",
+          "teamID": 6
+        },
+        {
+          "id": 26,
+          "name": "Player 26",
+          "teamID": 7
+        },
+        {
+          "id": 30,
+          "name": "Player 30",
+          "teamID": 8
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "tableNumber": 5,
+      "roundID": 1,
+      "players": [
+        {
+          "id": 3,
+          "name": "Player 3",
+          "teamID": 1
+        },
+        {
+          "id": 7,
+          "name": "Player 7",
+          "teamID": 2
+        },
+        {
+          "id": 11,
+          "name": "Player 11",
+          "teamID": 3
+        },
+        {
+          "id": 15,
+          "name": "Player 15",
+          "teamID": 4
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "tableNumber": 6,
+      "roundID": 1,
+      "players": [
+        {
+          "id": 19,
+          "name": "Player 19",
+          "teamID": 5
+        },
+        {
+          "id": 23,
+          "name": "Player 23",
+          "teamID": 6
+        },
+        {
+          "id": 27,
+          "name": "Player 27",
+          "teamID": 7
+        },
+        {
+          "id": 31,
+          "name": "Player 31",
+          "teamID": 8
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "tableNumber": 7,
+      "roundID": 1,
+      "players": [
+        {
+          "id": 4,
+          "name": "Player 4",
+          "teamID": 1
+        },
+        {
+          "id": 8,
+          "name": "Player 8",
+          "teamID": 2
+        },
+        {
+          "id": 12,
+          "name": "Player 12",
+          "teamID": 3
+        },
+        {
+          "id": 16,
+          "name": "Player 16",
+          "teamID": 4
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "tableNumber": 8,
+      "roundID": 1,
+      "players": [
+        {
+          "id": 20,
+          "name": "Player 20",
+          "teamID": 5
+        },
+        {
+          "id": 24,
+          "name": "Player 24",
+          "teamID": 6
+        },
+        {
+          "id": 28,
+          "name": "Player 28",
+          "teamID": 7
+        },
+        {
+          "id": 32,
+          "name": "Player 32",
+          "teamID": 8
+        }
+      ]
+    }
+  ]
+}

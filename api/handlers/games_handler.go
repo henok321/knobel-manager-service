@@ -49,7 +49,6 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	// Convert entity games to API games
 	apiGames := make([]games.Game, len(gamesList))
 	for i, g := range gamesList {
 		apiGames[i] = entityGameToAPIGame(g)
