@@ -29,7 +29,7 @@ jobs:
         run: go install github.com/pressly/goose/v3/cmd/goose@latest
 
       - name: Set up Flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@master
+        uses: superfly/flyctl-actions/setup-flyctl@1.5
 
       - name: Start Fly Proxy to Database
         run: flyctl proxy 5432 -a database-postgres &
@@ -63,7 +63,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Set up Flyctl
-        uses: superfly/flyctl-actions/setup-flyctl@master
+        uses: superfly/flyctl-actions/setup-flyctl@1.5
 
       - name: Deploy to Fly.io
         run: flyctl deploy --remote-only
