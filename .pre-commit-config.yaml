@@ -33,11 +33,6 @@ repos:
         args: ["--config", ".bake.toml"]
       - id: mbake-validate
         args: ["--config", ".bake.toml"]
-  - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.34.1
-    hooks:
-      - id: check-github-workflows
-        name: "Validate GitHub Workflows against schema"
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.8
     hooks:
