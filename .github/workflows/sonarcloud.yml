@@ -49,6 +49,6 @@ jobs:
           args: "--timeout 5m --output.checkstyle.path golangci-lint-report.xml"
 
       - name: Analyze project and upload coverage
-        uses: sonarsource/sonarqube-scan-action@v4.2.2
+        uses: sonarsource/sonarqube-scan-action@v6.0.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
