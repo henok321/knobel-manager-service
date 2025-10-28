@@ -195,7 +195,7 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 		gameTables := make([]entity.GameTable, 0, len(tables))
 
 		for tableNumber, players := range tables {
-			gameTable := entity.GameTable{TableNumber: tableNumber, RoundID: round.ID}
+			gameTable := entity.GameTable{TableNumber: tableNumber + 1, RoundID: round.ID}
 			for _, playerID := range players {
 				gameTable.Players = append(gameTable.Players, &entity.Player{ID: playerID.ID})
 			}
