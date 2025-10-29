@@ -9,14 +9,14 @@
 REST API service for the dice game "Knobeln" (aka "Schocken") tournament manager. Built with Go, OpenAPI-first design,
 PostgreSQL, and Firebase JWT authentication.
 
-**Frontend**: [knobel-manager-app](https://github.com/henok321/knobel-manager-app) (React)
+**Client app**: [knobel-manager-app](https://github.com/henok321/knobel-manager-app)
 
 ## Architecture
 
 ```mermaid
 graph TB
     Client[Client App<br/>React Frontend]
-    API[Knobel Manager API<br/>Go REST Service<br/>:8080]
+    API[Knobel Manager Service<br/>Go REST Service<br/>:8080]
     DB[(PostgreSQL<br/>Database)]
     Firebase[Firebase Auth<br/>JWT Validation]
     Metrics[Prometheus<br/>Metrics<br/>:9090]
@@ -65,7 +65,7 @@ Required variables (set by `make setup` in `.env` for local development):
 | Variable          | Description                                                        |
 |-------------------|--------------------------------------------------------------------|
 | `FIREBASE_SECRET` | Base64-encoded Firebase service account JSON                       |
-| `DATABASE_URL`    | PostgresSQL connection string                                      |
+| `DATABASE_URL`    | PostgreSQL connection string                                       |
 | `ENVIRONMENT`     | Environment name (`local` for debug logging, otherwise info level) |
 
 Optional variables (with defaults):
