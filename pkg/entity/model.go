@@ -44,11 +44,6 @@ type GameOwner struct {
 	OwnerSub string `gorm:"primaryKey;size:255;not null"`
 }
 
-type ActiveGame struct {
-	OwnerSub string `gorm:"primaryKey;size:255;not null"`
-	GameID   int    `gorm:"primaryKey;not null"`
-}
-
 type Team struct {
 	ID        int       `gorm:"primaryKey"`
 	Name      string    `gorm:"column:team_name;size:255;not null"`
