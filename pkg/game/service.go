@@ -15,8 +15,6 @@ import (
 type GamesService interface {
 	FindAllByOwner(sub string) ([]entity.Game, error)
 	FindByID(id int, sub string) (entity.Game, error)
-	GetActiveGame(sub string) (entity.Game, error)
-	SetActiveGame(id int, sub string) error
 	CreateGame(sub string, game *types.GameCreateRequest) (entity.Game, error)
 	UpdateGame(id int, sub string, game types.GameUpdateRequest) (entity.Game, error)
 	DeleteGame(id int, sub string) error
@@ -50,45 +48,6 @@ func (s *gamesService) FindByID(id int, sub string) (entity.Game, error) {
 	}
 
 	return gameByID, nil
-}
-
-func (s *gamesService) GetActiveGame(sub string) (entity.Game, error) {
-	activeGame, err := s.repo.FindActiveGame(sub)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Game{}, entity.ErrGameNotFound
-		}
-
-		return entity.Game{}, err
-	}
-
-	return activeGame, nil
-}
-
-func (s *gamesService) SetActiveGame(id int, sub string) error {
-	// Verify game exists and user is owner before setting as active
-	gameByID, err := s.repo.FindByID(id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.ErrGameNotFound
-		}
-
-		return err
-	}
-
-	if !entity.IsOwner(gameByID, sub) {
-		return apperror.ErrNotOwner
-	}
-
-	err = s.repo.UpdateActiveGame(entity.ActiveGame{
-		GameID:   id,
-		OwnerSub: sub,
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s *gamesService) CreateGame(sub string, game *types.GameCreateRequest) (entity.Game, error) {

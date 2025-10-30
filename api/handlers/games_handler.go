@@ -54,28 +54,8 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 		apiGames[i] = entityGameToAPIGame(g)
 	}
 
-	var response games.GamesResponse
-
-	activeGame, err := h.gamesService.GetActiveGame(sub)
-
-	if err != nil {
-		if errors.Is(err, entity.ErrGameNotFound) {
-			slog.WarnContext(request.Context(), "Could not find active game", "error", err)
-
-			response = games.GamesResponse{
-				Games: apiGames,
-			}
-		} else {
-			slog.ErrorContext(request.Context(), "Unknown error error while querying active game", "error", err)
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-
-			return
-		}
-	} else {
-		response = games.GamesResponse{
-			Games:        apiGames,
-			ActiveGameID: &activeGame.ID,
-		}
+	response := games.GamesResponse{
+		Games: apiGames,
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -272,30 +252,4 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 
 	writer.Header().Set("Location", fmt.Sprintf("/games/%d", gameID))
 	writer.WriteHeader(http.StatusCreated)
-}
-
-func (h *GamesHandler) ActivateGame(writer http.ResponseWriter, request *http.Request, gameID int) {
-	userContext, ok := middleware.UserFromContext(request.Context())
-	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
-		return
-	}
-
-	sub := userContext.Sub
-
-	err := h.gamesService.SetActiveGame(gameID, sub)
-	if err != nil {
-		switch {
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "Forbidden", http.StatusForbidden)
-		default:
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-		}
-
-		return
-	}
-
-	writer.WriteHeader(http.StatusNoContent)
 }
