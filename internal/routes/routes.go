@@ -21,6 +21,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/henok321/knobel-manager-service/api/handlers"
+	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/pkg/game"
 )
@@ -92,7 +93,11 @@ func (app *RouteSetup) setup() {
 	tableService := table.InitializeTablesModule(app.database)
 	teamService := team.InitializeTeamsModule(app.database)
 
-	healthHandler := handlers.NewHealthHandler()
+	dbChecker := healthpkg.NewDatabaseChecker(app.database, 500*time.Millisecond)
+	firebaseChecker := healthpkg.NewFirebaseChecker(app.authClient, 500*time.Millisecond)
+	healthService := healthpkg.NewService(dbChecker, firebaseChecker)
+
+	healthHandler := handlers.NewHealthHandler(healthService)
 	openAPIHandler := handlers.NewOpenAPIHandler()
 	gamesHandler := handlers.NewGamesHandler(gameService)
 	playersHandler := handlers.NewPlayersHandler(playerService)
@@ -102,7 +107,9 @@ func (app *RouteSetup) setup() {
 	app.router.Handle("/openapi.yaml", app.publicEndpoint(http.HandlerFunc(openAPIHandler.GetOpenAPIConfig)))
 	app.router.Handle("/docs", app.publicOpenAPIEndpoint(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
 
-	app.router.Handle("/health", app.publicEndpoint(health.Handler(healthHandler)))
+	healthRoutes := health.Handler(healthHandler)
+	app.router.Handle("/health", app.publicEndpoint(healthRoutes))
+	app.router.Handle("/health/", app.publicEndpoint(healthRoutes))
 
 	gamesRoutes := games.HandlerWithOptions(gamesHandler, games.StdHTTPServerOptions{
 		ErrorHandlerFunc: gamesHandler.HandleValidationError,
