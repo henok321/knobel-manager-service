@@ -14,7 +14,6 @@ func NewHealthHandler() *HealthHandler {
 	return &HealthHandler{}
 }
 
-// Verify that HealthHandler implements the generated OpenAPI interface
 var _ health.ServerInterface = (*HealthHandler)(nil)
 
 func (h *HealthHandler) HealthCheck(writer http.ResponseWriter, request *http.Request) {

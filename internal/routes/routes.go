@@ -52,7 +52,6 @@ func rateLimitConfig() middleware.RateConfig {
 	return middleware.RateConfig{
 		Limit:                rate.Limit(maxRequestsPerSecond),
 		Burst:                burstSize,
-		KeyFunc:              func(r *http.Request) string { return r.Header.Get("X-Forwarded-For") },
 		CacheDefaultDuration: cacheDefaultDuration,
 		CacheCleanupPeriod:   cacheCleanupPeriod,
 	}

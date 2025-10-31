@@ -50,7 +50,9 @@ func main() {
 
 	firebaseSecret, err := base64.RawStdEncoding.DecodeString(os.Getenv("FIREBASE_SECRET"))
 	if err != nil {
-		slog.Error("Starting application failed, cannot decode FIREBASE_SECRET")
+		slog.Error("Starting application failed, cannot decode FIREBASE_SECRET", "error", err)
+		exitCode = 1
+		return
 	}
 
 	if len(firebaseSecret) == 0 {
@@ -77,7 +79,7 @@ func main() {
 	databaseURL := os.Getenv("DATABASE_URL")
 	database, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
-		slog.Error("Starting application failed, cannot connect to database", "error", err)
+		slog.Error("Starting application failed, cannot open database", "error", err)
 		exitCode = 1
 		return
 	}
