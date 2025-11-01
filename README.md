@@ -38,7 +38,7 @@ The system uses a client-server model:
 - **Database**: PostgreSQL with GORM, migrations via `goose`
 - **Authentication**: Firebase JWT tokens validated on each request
 - **Deployment**: GitHub Actions CI/CD pipeline deploying to Fly.io
-- **Monitoring**: Prometheus metrics at `:9090/metrics`, health endpoint at `:8080/health`
+- **Monitoring**: Prometheus metrics at `:9090/metrics`, health endpoints at `:8080/health/live` (liveness) and `:8080/health/ready` (readiness)
 
 ## Prerequisites
 
