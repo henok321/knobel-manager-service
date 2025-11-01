@@ -5,6 +5,7 @@
 
 app = 'knobel-manager-service'
 primary_region = 'ams'
+kill_signal = "SIGTERM"
 
 [build]
 dockerfile = "Dockerfile"
