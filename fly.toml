@@ -22,5 +22,12 @@ path = "/metrics"
 port = 9090
 processes = ['app']
 
+[[http_service.checks]]
+grace_period = "10s"
+interval = "15s"
+timeout = "5s"
+method = "GET"
+path = "/health/ready"
+
 [[vm]]
 size = 'shared-cpu-1x'
