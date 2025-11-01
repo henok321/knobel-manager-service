@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/integrationtests/mock"
 	pg "gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -120,7 +121,10 @@ func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 		log.Fatalln("Starting application failed, cannot start connect to database", err)
 	}
 
-	router := routes.SetupRouter(database, mock.FirebaseAuthMock{})
+	dbChecker := healthpkg.NewDatabaseChecker(database, 500*time.Millisecond)
+	firebaseChecker := healthpkg.NewFirebaseChecker(mock.FirebaseAuthMock{}, 500*time.Millisecond)
+	healthService := healthpkg.NewService(dbChecker, firebaseChecker)
+	router := routes.SetupRouter(database, mock.FirebaseAuthMock{}, healthService)
 
 	server := httptest.NewServer(router)
 	teardown := func(*httptest.Server) {

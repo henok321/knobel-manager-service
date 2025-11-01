@@ -8,14 +8,11 @@ import (
 	"gorm.io/gorm"
 )
 
-// DatabaseChecker checks database connectivity using GORM.
 type DatabaseChecker struct {
 	db      *gorm.DB
 	timeout time.Duration
 }
 
-// NewDatabaseChecker creates a new database health checker with the specified timeout.
-// The recommended timeout is 500ms to keep readiness probes fast.
 func NewDatabaseChecker(db *gorm.DB, timeout time.Duration) *DatabaseChecker {
 	return &DatabaseChecker{
 		db:      db,
@@ -23,16 +20,11 @@ func NewDatabaseChecker(db *gorm.DB, timeout time.Duration) *DatabaseChecker {
 	}
 }
 
-// Name returns the identifier for this checker.
 func (c *DatabaseChecker) Name() string {
 	return "database"
 }
 
-// Check performs a database ping with a timeout.
-// This validates that GORM and the underlying database connection are available.
-// Returns nil if the database is reachable, error otherwise.
 func (c *DatabaseChecker) Check(ctx context.Context) error {
-	// Create a context with timeout
 	checkCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 

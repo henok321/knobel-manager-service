@@ -21,18 +21,6 @@ func NewHealthHandler(healthService *healthpkg.Service) *HealthHandler {
 
 var _ health.ServerInterface = (*HealthHandler)(nil)
 
-func (h *HealthHandler) HealthCheck(writer http.ResponseWriter, request *http.Request) {
-	slog.DebugContext(request.Context(), "Handle health request (deprecated)")
-	response := health.HealthCheckResponse{
-		Status: "ok",
-	}
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(request.Context(), "Failed to write response", "error", err)
-	}
-}
-
 func (h *HealthHandler) LivenessCheck(writer http.ResponseWriter, request *http.Request) {
 	slog.DebugContext(request.Context(), "Handle liveness check")
 

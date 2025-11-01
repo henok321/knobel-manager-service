@@ -59,16 +59,18 @@ func rateLimitConfig() middleware.RateConfig {
 }
 
 type RouteSetup struct {
-	database   *gorm.DB
-	authClient middleware.FirebaseAuth
-	router     *http.ServeMux
+	database      *gorm.DB
+	authClient    middleware.FirebaseAuth
+	router        *http.ServeMux
+	healthService *healthpkg.Service
 }
 
-func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth) *http.ServeMux {
+func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthClient *healthpkg.Service) *http.ServeMux {
 	instance := RouteSetup{
-		database:   database,
-		authClient: authClient,
-		router:     http.NewServeMux(),
+		database:      database,
+		authClient:    authClient,
+		router:        http.NewServeMux(),
+		healthService: healthClient,
 	}
 	instance.setup()
 
@@ -93,11 +95,7 @@ func (app *RouteSetup) setup() {
 	tableService := table.InitializeTablesModule(app.database)
 	teamService := team.InitializeTeamsModule(app.database)
 
-	dbChecker := healthpkg.NewDatabaseChecker(app.database, 500*time.Millisecond)
-	firebaseChecker := healthpkg.NewFirebaseChecker(app.authClient, 500*time.Millisecond)
-	healthService := healthpkg.NewService(dbChecker, firebaseChecker)
-
-	healthHandler := handlers.NewHealthHandler(healthService)
+	healthHandler := handlers.NewHealthHandler(app.healthService)
 	openAPIHandler := handlers.NewOpenAPIHandler()
 	gamesHandler := handlers.NewGamesHandler(gameService)
 	playersHandler := handlers.NewPlayersHandler(playerService)

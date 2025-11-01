@@ -9,32 +9,6 @@ info:
 servers:
   - url: /
 paths:
-  /health:
-    get:
-      operationId: healthCheck
-      tags: [ Health ]
-      summary: Health check endpoint (deprecated, use /health/live or /health/ready)
-      deprecated: true
-      security: [ ]
-      responses:
-        '200':
-          description: Service is healthy
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HealthCheckResponse'
-        '400':
-          description: Bad request
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
   /health/live:
     get:
       operationId: livenessCheck

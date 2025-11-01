@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/logging"
 	"github.com/rs/cors"
 
@@ -84,7 +85,10 @@ func main() {
 		return
 	}
 
-	router := routes.SetupRouter(database, authClient)
+	dbChecker := healthpkg.NewDatabaseChecker(database, 500*time.Millisecond)
+	firebaseChecker := healthpkg.NewFirebaseChecker(authClient, 500*time.Millisecond)
+	healthService := healthpkg.NewService(dbChecker, firebaseChecker)
+	router := routes.SetupRouter(database, authClient, healthService)
 
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
@@ -142,6 +146,11 @@ func main() {
 
 	<-signalCtx.Done()
 	slog.Info("Shutdown signal received, shutting down gracefully...")
+
+	healthService.StartDraining()
+
+	slog.Info("Waiting for load balancer to drain...")
+	time.Sleep(20 * time.Second)
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
