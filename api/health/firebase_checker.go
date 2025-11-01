@@ -10,14 +10,14 @@ import (
 )
 
 type FirebaseChecker struct {
-	client  middleware.FirebaseAuth
-	timeout time.Duration
+	authClient middleware.FirebaseAuth
+	timeout    time.Duration
 }
 
-func NewFirebaseChecker(client middleware.FirebaseAuth, timeout time.Duration) *FirebaseChecker {
+func NewFirebaseChecker(authClient middleware.FirebaseAuth, timeout time.Duration) *FirebaseChecker {
 	return &FirebaseChecker{
-		client:  client,
-		timeout: timeout,
+		authClient: authClient,
+		timeout:    timeout,
 	}
 }
 
@@ -29,7 +29,7 @@ func (c *FirebaseChecker) Check(ctx context.Context) error {
 	checkCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	_, err := c.client.VerifyIDToken(checkCtx, "health-check-invalid-token")
+	_, err := c.authClient.VerifyIDToken(checkCtx, "health-check-invalid-token")
 	if err != nil {
 		if errors.Is(checkCtx.Err(), context.DeadlineExceeded) {
 			return fmt.Errorf("firebase jwt validation endpoint timeout: %w", err)
