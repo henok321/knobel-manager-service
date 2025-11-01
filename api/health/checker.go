@@ -10,11 +10,11 @@ type Checker interface {
 
 type CheckResult struct {
 	Name    string
-	Status  string // "pass" or "fail"
-	Message string // Optional error message if status is "fail"
+	Status  string
+	Message string
 }
 
 type CheckResults struct {
-	Status string                 // "healthy", "unhealthy", or "draining"
-	Checks map[string]CheckResult // Map of checker name to result
+	Status string
+	Checks map[string]CheckResult
 }

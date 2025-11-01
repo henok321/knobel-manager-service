@@ -28,13 +28,11 @@ func (c *DatabaseChecker) Check(ctx context.Context) error {
 	checkCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	// Get the underlying sql.DB from GORM
 	sqlDB, err := c.db.DB()
 	if err != nil {
 		return fmt.Errorf("failed to get database connection: %w", err)
 	}
 
-	// Perform the ping
 	if err := sqlDB.PingContext(checkCtx); err != nil {
 		return fmt.Errorf("database ping failed: %w", err)
 	}
