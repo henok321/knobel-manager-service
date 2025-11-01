@@ -14,7 +14,7 @@ paths:
       operationId: livenessCheck
       tags: [ Health ]
       summary: Liveness probe - checks if the process is running
-      description: Returns 200 if the process is alive. No dependencies checked. Use for Kubernetes liveness probes.
+      description: Returns 200 if the process is alive. No dependencies checked.
       security: [ ]
       responses:
         '200':
@@ -28,7 +28,7 @@ paths:
       operationId: readinessCheck
       tags: [ Health ]
       summary: Readiness probe - checks if the service can handle requests
-      description: Returns 200 if all dependencies are healthy and service is ready to serve traffic. Returns 503 if any dependency is down or service is draining. Use for Kubernetes readiness probes.
+      description: Returns 200 if all dependencies are healthy and service is ready to serve traffic. Returns 503 if any dependency is down or service is draining.
       security: [ ]
       responses:
         '200':
