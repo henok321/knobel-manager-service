@@ -21,6 +21,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/henok321/knobel-manager-service/api/handlers"
+	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/pkg/game"
 )
@@ -52,23 +53,24 @@ func rateLimitConfig() middleware.RateConfig {
 	return middleware.RateConfig{
 		Limit:                rate.Limit(maxRequestsPerSecond),
 		Burst:                burstSize,
-		KeyFunc:              func(r *http.Request) string { return r.Header.Get("X-Forwarded-For") },
 		CacheDefaultDuration: cacheDefaultDuration,
 		CacheCleanupPeriod:   cacheCleanupPeriod,
 	}
 }
 
 type RouteSetup struct {
-	database   *gorm.DB
-	authClient middleware.FirebaseAuth
-	router     *http.ServeMux
+	database      *gorm.DB
+	authClient    middleware.FirebaseAuth
+	router        *http.ServeMux
+	healthService *healthpkg.Service
 }
 
-func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth) *http.ServeMux {
+func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthClient *healthpkg.Service) *http.ServeMux {
 	instance := RouteSetup{
-		database:   database,
-		authClient: authClient,
-		router:     http.NewServeMux(),
+		database:      database,
+		authClient:    authClient,
+		router:        http.NewServeMux(),
+		healthService: healthClient,
 	}
 	instance.setup()
 
@@ -93,7 +95,7 @@ func (app *RouteSetup) setup() {
 	tableService := table.InitializeTablesModule(app.database)
 	teamService := team.InitializeTeamsModule(app.database)
 
-	healthHandler := handlers.NewHealthHandler()
+	healthHandler := handlers.NewHealthHandler(app.healthService)
 	openAPIHandler := handlers.NewOpenAPIHandler()
 	gamesHandler := handlers.NewGamesHandler(gameService)
 	playersHandler := handlers.NewPlayersHandler(playerService)
@@ -103,7 +105,9 @@ func (app *RouteSetup) setup() {
 	app.router.Handle("/openapi.yaml", app.publicEndpoint(http.HandlerFunc(openAPIHandler.GetOpenAPIConfig)))
 	app.router.Handle("/docs", app.publicOpenAPIEndpoint(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
 
-	app.router.Handle("/health", app.publicEndpoint(health.Handler(healthHandler)))
+	healthRoutes := health.Handler(healthHandler)
+	app.router.Handle("/health", app.publicEndpoint(healthRoutes))
+	app.router.Handle("/health/", app.publicEndpoint(healthRoutes))
 
 	gamesRoutes := games.HandlerWithOptions(gamesHandler, games.StdHTTPServerOptions{
 		ErrorHandlerFunc: gamesHandler.HandleValidationError,

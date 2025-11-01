@@ -28,7 +28,7 @@ func TestRateLimitNotExceededWithDefaults(t *testing.T) {
 		client := &http.Client{}
 
 		for i := range 10 {
-			req, err := http.NewRequest(http.MethodGet, server.URL+"/health", nil)
+			req, err := http.NewRequest(http.MethodGet, server.URL+"/health/live", nil)
 			if err != nil {
 				t.Fatalf("Failed to create request: %v", err)
 			}
@@ -79,7 +79,7 @@ func TestRateLimitExceededWithEnv(t *testing.T) {
 		client := &http.Client{}
 
 		for i := range 11 {
-			req, err := http.NewRequest(http.MethodGet, server.URL+"/health", nil)
+			req, err := http.NewRequest(http.MethodGet, server.URL+"/health/live", nil)
 			if err != nil {
 				t.Fatalf("Failed to create request: %v", err)
 			}

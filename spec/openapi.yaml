@@ -9,31 +9,40 @@ info:
 servers:
   - url: /
 paths:
-  /health:
+  /health/live:
     get:
-      operationId: healthCheck
+      operationId: livenessCheck
       tags: [ Health ]
-      summary: Health check endpoint
+      summary: Liveness probe - checks if the process is running
+      description: Returns 200 if the process is alive. No dependencies checked. Use for Kubernetes liveness probes.
       security: [ ]
       responses:
         '200':
-          description: Service is healthy
+          description: Process is alive
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthCheckResponse'
-        '400':
-          description: Bad request
+  /health/ready:
+    get:
+      operationId: readinessCheck
+      tags: [ Health ]
+      summary: Readiness probe - checks if the service can handle requests
+      description: Returns 200 if all dependencies are healthy and service is ready to serve traffic. Returns 503 if any dependency is down or service is draining. Use for Kubernetes readiness probes.
+      security: [ ]
+      responses:
+        '200':
+          description: Service is ready to serve traffic
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal server error
+                $ref: '#/components/schemas/HealthCheckDetailedResponse'
+        '503':
+          description: Service is not ready (dependencies down or draining)
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/HealthCheckDetailedResponse'
   /games:
     get:
       operationId: getGames
@@ -719,6 +728,28 @@ components:
         status:
           type: string
           example: ok
+      required: [ status ]
+    HealthCheckDetailedResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ healthy, unhealthy, draining ]
+          example: healthy
+        checks:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [ pass, fail ]
+              message:
+                type: string
+            required: [ status ]
+          example:
+            database:
+              status: pass
       required: [ status ]
     GamesResponse:
       type: object

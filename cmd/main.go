@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/logging"
 	"github.com/rs/cors"
 
@@ -50,7 +51,9 @@ func main() {
 
 	firebaseSecret, err := base64.RawStdEncoding.DecodeString(os.Getenv("FIREBASE_SECRET"))
 	if err != nil {
-		slog.Error("Starting application failed, cannot decode FIREBASE_SECRET")
+		slog.Error("Starting application failed, cannot decode FIREBASE_SECRET", "error", err)
+		exitCode = 1
+		return
 	}
 
 	if len(firebaseSecret) == 0 {
@@ -77,12 +80,15 @@ func main() {
 	databaseURL := os.Getenv("DATABASE_URL")
 	database, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
-		slog.Error("Starting application failed, cannot connect to database", "error", err)
+		slog.Error("Starting application failed, cannot open database", "error", err)
 		exitCode = 1
 		return
 	}
 
-	router := routes.SetupRouter(database, authClient)
+	dbChecker := healthpkg.NewDatabaseChecker(database, 500*time.Millisecond)
+	firebaseChecker := healthpkg.NewFirebaseChecker(authClient, 500*time.Millisecond)
+	healthService := healthpkg.NewService(dbChecker, firebaseChecker)
+	router := routes.SetupRouter(database, authClient, healthService)
 
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
@@ -140,6 +146,11 @@ func main() {
 
 	<-signalCtx.Done()
 	slog.Info("Shutdown signal received, shutting down gracefully...")
+
+	healthService.StartDraining()
+
+	slog.Info("Waiting for load balancer to drain...")
+	time.Sleep(20 * time.Second)
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
