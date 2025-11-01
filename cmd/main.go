@@ -150,7 +150,7 @@ func main() {
 	healthService.StartDraining()
 
 	slog.Info("Waiting for load balancer to drain...")
-	time.Sleep(20 * time.Second)
+	time.Sleep(15 * time.Second)
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()

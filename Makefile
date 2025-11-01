@@ -77,7 +77,7 @@ test-coverage:
 	@echo "Running tests with coverage..."
 	go test ./... -coverpkg=./... -coverprofile=coverage.out --json > test-report.out
 
-build: test
+build: openapi
 	@echo "Building the service..."
 	CGO_ENABLED=0 GOARCH=$(GOARCH) GOOS=$(GOOS) go build $(BUILD_FLAGS) -o $(OUTPUT) $(CMD_DIR)/
 

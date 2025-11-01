@@ -38,7 +38,8 @@ The system uses a client-server model:
 - **Database**: PostgreSQL with GORM, migrations via `goose`
 - **Authentication**: Firebase JWT tokens validated on each request
 - **Deployment**: GitHub Actions CI/CD pipeline deploying to Fly.io
-- **Monitoring**: Prometheus metrics at `:9090/metrics`, health endpoints at `:8080/health/live` (liveness) and `:8080/health/ready` (readiness)
+- **Monitoring**: Prometheus metrics at `:9090/metrics`, health endpoints at `:8080/health/live` (liveness) and
+  `:8080/health/ready` (readiness)
 
 ## Prerequisites
 
@@ -51,11 +52,12 @@ The system uses a client-server model:
 
 1. Download Firebase credentials
    from [Firebase Console](https://console.firebase.google.com/u/1/project/knobel-manager-webapp/settings/serviceaccounts/adminsdk)
-   and save as `firebase-credentials.json`
+   and save as `firebaseServiceAccount.json`
 2. Run setup:
 
    ```sh
-   make setup  # Installs hooks, starts database, runs migrations, creates .env
+   make setup  # Installs hooks, starts database, runs database migrations, creates .env for local development
+   make reset  # Reset docker database, remove .env, uninstall pre-commit hooks (run make setup again)
    ```
 
 ## Environment Variables
@@ -81,24 +83,18 @@ Optional variables (with defaults):
 ## Development
 
 ```sh
-make openapi                 # Generate server code from OpenAPI spec
+set -o allexport             # Export all variables
 source .env                  # Load environment variables
+make openapi                 # Generate server code from OpenAPI spec
 go run cmd/main.go           # Start API server (localhost:8080)
-```
-
-Database commands:
-
-```sh
-make reset                   # Reset database
-docker compose up -d         # Start PostgreSQL
-docker compose down -v       # Stop and remove database
+set +o allexport             # Disable exporting variables
 ```
 
 ## Code Quality
 
 ```sh
 make lint                   # Run golangci-lint only (fast)
-make lint-all               # Run all pre-commit hooks (includes OpenAPI generation)
+make lint-all               # Run all pre-commit hooks
 make test                   # Run tests
 make test-coverage          # Generate coverage reports
 ```
@@ -106,7 +102,7 @@ make test-coverage          # Generate coverage reports
 ## Build & Deploy
 
 ```sh
-make build                  # Build binary (runs tests first)
+make build                  # Build binary
 ./knobel-manager-service    # Run binary (requires sourced .env)
 ```
 
