@@ -16,7 +16,7 @@ PostgreSQL, and Firebase JWT authentication.
 ```mermaid
 ---
 config:
-    theme: neutral
+    theme: forest
 ---
 graph TB
     Client[Client App<br/>React Frontend]
