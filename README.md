@@ -14,6 +14,10 @@ PostgreSQL, and Firebase JWT authentication.
 ## Architecture
 
 ```mermaid
+---
+config:
+    theme: neutral
+---
 graph TB
     Client[Client App<br/>React Frontend]
     API[Knobel Manager Service<br/>Go REST Service<br/>:8080]
@@ -25,11 +29,6 @@ graph TB
     API -->|Validate JWT| Firebase
     API -->|SQL Queries| DB
     API -->|Export Metrics| Metrics
-    style API fill: green
-    style DB fill: darkorchid
-    style Firebase fill: darkcyan
-    style Client fill: crimson
-    style Metrics fill: chocolate
 ```
 
 The system uses a client-server model:
