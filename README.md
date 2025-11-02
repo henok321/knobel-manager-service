@@ -14,10 +14,6 @@ PostgreSQL, and Firebase JWT authentication.
 ## Architecture
 
 ```mermaid
----
-config:
-    theme: neutral
----
 graph TB
     Client[Client App<br/>React Frontend]
     API[Knobel Manager Service<br/>Go REST Service<br/>:8080]
