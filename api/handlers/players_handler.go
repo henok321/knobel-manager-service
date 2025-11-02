@@ -106,7 +106,6 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	// Validate required fields
 	if playersRequest.Name == "" {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
 		return
