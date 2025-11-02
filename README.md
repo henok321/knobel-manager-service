@@ -25,11 +25,11 @@ graph TB
     API -->|Validate JWT| Firebase
     API -->|SQL Queries| DB
     API -->|Export Metrics| Metrics
-    style API fill: #4A90E2
-    style DB fill: #336791
-    style Firebase fill: #FFA611
-    style Client fill: #61DAFB
-    style Metrics fill: #E6522C
+    style API fill: green
+    style DB fill: darkorchid
+    style Firebase fill: darkcyan
+    style Client fill: crimson
+    style Metrics fill: chocolate
 ```
 
 The system uses a client-server model:
