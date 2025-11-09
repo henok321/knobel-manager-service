@@ -25,7 +25,7 @@ require (
 	golang.org/x/time v0.14.0
 	google.golang.org/api v0.254.0
 	gorm.io/driver/postgres v1.6.0
-	gorm.io/gorm v1.31.0
+	gorm.io/gorm v1.31.1
 )
 
 require (
