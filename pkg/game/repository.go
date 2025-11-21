@@ -97,44 +97,42 @@ func (r *gamesRepository) CreateGameTables(gameTables []entity.GameTable) error 
 }
 
 func (r *gamesRepository) ResetGameTables(gameID int) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		var roundIDs []int
-		if err := tx.Model(&entity.Round{}).Where("game_id = ?", gameID).Pluck("id", &roundIDs).Error; err != nil {
+	var roundIDs []int
+	if err := r.db.Model(&entity.Round{}).Where("game_id = ?", gameID).Pluck("id", &roundIDs).Error; err != nil {
+		return err
+	}
+
+	if len(roundIDs) > 0 {
+		var tableIDs []int
+		if err := r.db.Model(&entity.GameTable{}).Where("round_id IN ?", roundIDs).Pluck("id", &tableIDs).Error; err != nil {
 			return err
 		}
 
-		if len(roundIDs) > 0 {
-			var tableIDs []int
-			if err := tx.Model(&entity.GameTable{}).Where("round_id IN ?", roundIDs).Pluck("id", &tableIDs).Error; err != nil {
+		if len(tableIDs) > 0 {
+			if err := r.db.Where("table_id IN ?", tableIDs).Delete(&entity.Score{}).Error; err != nil {
 				return err
 			}
 
-			if len(tableIDs) > 0 {
-				if err := tx.Where("table_id IN ?", tableIDs).Delete(&entity.Score{}).Error; err != nil {
-					return err
-				}
-
-				if err := tx.Where("game_table_id IN ?", tableIDs).Delete(&entity.TablePlayer{}).Error; err != nil {
-					return err
-				}
-			}
-
-			if err := tx.Where("round_id IN ?", roundIDs).Delete(&entity.GameTable{}).Error; err != nil {
+			if err := r.db.Where("game_table_id IN ?", tableIDs).Delete(&entity.TablePlayer{}).Error; err != nil {
 				return err
 			}
 		}
 
-		if err := tx.Where("game_id = ?", gameID).Delete(&entity.Round{}).Error; err != nil {
+		if err := r.db.Where("round_id IN ?", roundIDs).Delete(&entity.GameTable{}).Error; err != nil {
 			return err
 		}
+	}
 
-		return nil
-	})
+	if err := r.db.Where("game_id = ?", gameID).Delete(&entity.Round{}).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (r *gamesRepository) WithinTransaction(fn func(txRepo GamesRepository) error) error {
+func (r *gamesRepository) WithinTransaction(operation func(txRepo GamesRepository) error) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		txRepo := &gamesRepository{db: tx}
-		return fn(txRepo)
+		return operation(txRepo)
 	})
 }
