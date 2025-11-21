@@ -1,14 +1,16 @@
 package team
 
 import (
+	"context"
+
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"gorm.io/gorm"
 )
 
 type TeamsRepository interface {
-	FindByID(id int) (entity.Team, error)
-	CreateOrUpdateTeam(team *entity.Team) (entity.Team, error)
-	DeleteTeam(id int) error
+	FindByID(ctx context.Context, id int) (entity.Team, error)
+	CreateOrUpdateTeam(ctx context.Context, team *entity.Team) (entity.Team, error)
+	DeleteTeam(ctx context.Context, id int) error
 }
 
 type teamsRepository struct {
@@ -19,10 +21,10 @@ func NewTeamsRepository(db *gorm.DB) TeamsRepository {
 	return &teamsRepository{db}
 }
 
-func (r *teamsRepository) FindByID(id int) (entity.Team, error) {
+func (r *teamsRepository) FindByID(ctx context.Context, id int) (entity.Team, error) {
 	team := entity.Team{}
 
-	err := r.db.Where("id = ?", id).Preload("Game").Preload("Game.Owners").First(&team).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).Preload("Game").Preload("Game.Owners").First(&team).Error
 	if err != nil {
 		return entity.Team{}, err
 	}
@@ -30,8 +32,8 @@ func (r *teamsRepository) FindByID(id int) (entity.Team, error) {
 	return team, nil
 }
 
-func (r *teamsRepository) CreateOrUpdateTeam(team *entity.Team) (entity.Team, error) {
-	err := r.db.Save(team).Error
+func (r *teamsRepository) CreateOrUpdateTeam(ctx context.Context, team *entity.Team) (entity.Team, error) {
+	err := r.db.WithContext(ctx).Save(team).Error
 	if err != nil {
 		return entity.Team{}, err
 	}
@@ -39,6 +41,6 @@ func (r *teamsRepository) CreateOrUpdateTeam(team *entity.Team) (entity.Team, er
 	return *team, nil
 }
 
-func (r *teamsRepository) DeleteTeam(id int) error {
-	return r.db.Delete(&entity.Team{}, id).Error
+func (r *teamsRepository) DeleteTeam(ctx context.Context, id int) error {
+	return r.db.WithContext(ctx).Delete(&entity.Team{}, id).Error
 }

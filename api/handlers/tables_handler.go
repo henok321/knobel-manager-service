@@ -47,7 +47,9 @@ func (t *TablesHandler) HandleValidationError(w http.ResponseWriter, _ *http.Req
 }
 
 func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request, gameID, roundNumber int) {
-	userContext, ok := middleware.UserFromContext(request.Context())
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
 	if !ok {
 		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
@@ -55,7 +57,7 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	gameByID, err := t.gamesService.FindByID(gameID, sub)
+	gameByID, err := t.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
@@ -86,7 +88,7 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 			writer.WriteHeader(http.StatusOK)
 
 			if err := json.NewEncoder(writer).Encode(response); err != nil {
-				slog.InfoContext(request.Context(), "Could not write body", "error", err)
+				slog.InfoContext(ctx, "Could not write body", "error", err)
 			}
 
 			return
@@ -97,7 +99,9 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 }
 
 func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
-	userContext, ok := middleware.UserFromContext(request.Context())
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
 	if !ok {
 		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
@@ -105,7 +109,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 
 	sub := userContext.Sub
 
-	gameByID, err := t.gamesService.FindByID(gameID, sub)
+	gameByID, err := t.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
@@ -130,7 +134,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 					writer.WriteHeader(http.StatusOK)
 
 					if err := json.NewEncoder(writer).Encode(response); err != nil {
-						slog.InfoContext(request.Context(), "Could not write body", "error", err)
+						slog.InfoContext(ctx, "Could not write body", "error", err)
 					}
 
 					return
@@ -143,7 +147,9 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 }
 
 func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
-	userContext, ok := middleware.UserFromContext(request.Context())
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
 	if !ok {
 		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
@@ -163,7 +169,7 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	_, err := t.tablesService.UpdateScore(gameID, roundNumber, tableNumber, sub, scoresRequest)
+	_, err := t.tablesService.UpdateScore(ctx, gameID, roundNumber, tableNumber, sub, scoresRequest)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrInvalidScore):
@@ -177,7 +183,7 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	updatedGame, err := t.gamesService.FindByID(gameID, sub)
+	updatedGame, err := t.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
@@ -199,6 +205,6 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 	writer.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
+		slog.ErrorContext(ctx, "Could not write body", "error", err)
 	}
 }

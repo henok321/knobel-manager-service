@@ -35,7 +35,9 @@ func (h *GamesHandler) HandleValidationError(w http.ResponseWriter, _ *http.Requ
 }
 
 func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := middleware.UserFromContext(request.Context())
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
 	if !ok {
 		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
@@ -43,31 +45,33 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 
 	sub := userContext.Sub
 
-	gamesList, err := h.gamesService.FindAllByOwner(sub)
+	allGames, err := h.gamesService.FindAllByOwner(ctx, sub)
 	if err != nil {
 		JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	apiGames := make([]games.Game, len(gamesList))
-	for i, g := range gamesList {
-		apiGames[i] = entityGameToAPIGame(g)
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+
+	apiGames := make([]games.Game, len(allGames))
+	for i, entry := range allGames {
+		apiGames[i] = entityGameToAPIGame(entry)
 	}
 
 	response := games.GamesResponse{
 		Games: apiGames,
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
+		slog.ErrorContext(ctx, "Could not write body", "error", err)
 	}
 }
 
 func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request, gameID int) {
-	userContext, ok := middleware.UserFromContext(request.Context())
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
 	if !ok {
 		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
@@ -75,7 +79,7 @@ func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request
 
 	sub := userContext.Sub
 
-	gameByID, err := h.gamesService.FindByID(gameID, sub)
+	gameByID, err := h.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
@@ -95,12 +99,14 @@ func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request
 	response := entityGameToAPIGame(gameByID)
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
+		slog.ErrorContext(ctx, "Could not write body", "error", err)
 	}
 }
 
 func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Request) {
-	userContext, ok := middleware.UserFromContext(request.Context())
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
 	if !ok {
 		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
@@ -121,7 +127,7 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	createdGame, err := h.gamesService.CreateGame(sub, &gameCreateRequest)
+	createdGame, err := h.gamesService.CreateGame(ctx, sub, &gameCreateRequest)
 	if err != nil {
 		JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		return
@@ -136,12 +142,14 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
+		slog.ErrorContext(ctx, "Could not write body", "error", err)
 	}
 }
 
 func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Request, gameID int) {
-	userContext, ok := middleware.UserFromContext(request.Context())
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
 	if !ok {
 		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
@@ -162,7 +170,7 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	updatedGame, err := h.gamesService.UpdateGame(gameID, sub, gameUpdateRequest)
+	updatedGame, err := h.gamesService.UpdateGame(ctx, gameID, sub, gameUpdateRequest)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
@@ -187,12 +195,14 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 	writer.WriteHeader(http.StatusOK)
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
+		slog.ErrorContext(ctx, "Could not write body", "error", err)
 	}
 }
 
 func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Request, gameID int) {
-	userContext, ok := middleware.UserFromContext(request.Context())
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
 	if !ok {
 		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
@@ -200,7 +210,7 @@ func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	if err := h.gamesService.DeleteGame(gameID, sub); err != nil {
+	if err := h.gamesService.DeleteGame(ctx, gameID, sub); err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
 			JSONError(writer, "forbidden", http.StatusForbidden)
@@ -217,7 +227,9 @@ func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 }
 
 func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Request, gameID int) {
-	userContext, ok := middleware.UserFromContext(request.Context())
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
 	if !ok {
 		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
@@ -225,7 +237,7 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 
 	sub := userContext.Sub
 
-	gameToAssign, err := h.gamesService.FindByID(gameID, sub)
+	gameToAssign, err := h.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrNotOwner):
@@ -244,7 +256,7 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	err = h.gamesService.AssignTables(gameToAssign)
+	err = h.gamesService.AssignTables(ctx, gameToAssign)
 	if err != nil {
 		JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		return

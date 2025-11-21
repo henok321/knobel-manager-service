@@ -1,13 +1,15 @@
 package table
 
 import (
+	"context"
+
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"gorm.io/gorm"
 )
 
 type TablesRepository interface {
-	FindTable(sub string, gameID, roundNumber, tableNumber int) (entity.GameTable, error)
-	UpdateTable(table *entity.GameTable) (entity.GameTable, error)
+	FindTable(ctx context.Context, sub string, gameID, roundNumber, tableNumber int) (entity.GameTable, error)
+	UpdateTable(ctx context.Context, table *entity.GameTable) (entity.GameTable, error)
 }
 
 type tablesRepository struct {
@@ -18,10 +20,10 @@ func NewTablesRepository(db *gorm.DB) TablesRepository {
 	return &tablesRepository{db}
 }
 
-func (t *tablesRepository) FindTable(sub string, gameID, roundNumber, tableNumber int) (entity.GameTable, error) {
+func (t *tablesRepository) FindTable(ctx context.Context, sub string, gameID, roundNumber, tableNumber int) (entity.GameTable, error) {
 	tableEntity := entity.GameTable{}
 
-	err := t.db.
+	err := t.db.WithContext(ctx).
 		Joins("JOIN rounds ON rounds.id = game_tables.round_id").
 		Joins("JOIN game_owners ON game_owners.game_id = rounds.game_id").
 		Preload("Scores").
@@ -38,15 +40,15 @@ func (t *tablesRepository) FindTable(sub string, gameID, roundNumber, tableNumbe
 	return tableEntity, nil
 }
 
-func (t *tablesRepository) UpdateTable(table *entity.GameTable) (entity.GameTable, error) {
+func (t *tablesRepository) UpdateTable(ctx context.Context, table *entity.GameTable) (entity.GameTable, error) {
 	for _, score := range table.Scores {
-		err := t.db.Save(score).Error
+		err := t.db.WithContext(ctx).Save(score).Error
 		if err != nil {
 			return entity.GameTable{}, err
 		}
 	}
 
-	err := t.db.Preload("Scores").Preload("Players").First(table, table.ID).Error
+	err := t.db.WithContext(ctx).Preload("Scores").Preload("Players").First(table, table.ID).Error
 	if err != nil {
 		return entity.GameTable{}, err
 	}

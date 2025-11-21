@@ -1,6 +1,7 @@
 package player
 
 import (
+	"context"
 	"errors"
 
 	"github.com/henok321/knobel-manager-service/gen/types"
@@ -11,9 +12,9 @@ import (
 )
 
 type PlayersService interface {
-	CreatePlayer(request types.PlayersRequest, teamID int, sub string) (entity.Player, error)
-	UpdatePlayer(id int, request types.PlayersRequest, sub string) (entity.Player, error)
-	DeletePlayer(id int, sub string) error
+	CreatePlayer(ctx context.Context, request types.PlayersRequest, teamID int, sub string) (entity.Player, error)
+	UpdatePlayer(ctx context.Context, id int, request types.PlayersRequest, sub string) (entity.Player, error)
+	DeletePlayer(ctx context.Context, id int, sub string) error
 }
 
 type playersService struct {
@@ -25,8 +26,8 @@ func NewPlayersService(playersRepo PlayersRepository, teamsRepo team.TeamsReposi
 	return &playersService{playersRepo: playersRepo, teamsRepo: teamsRepo}
 }
 
-func (s playersService) CreatePlayer(request types.PlayersRequest, teamID int, sub string) (entity.Player, error) {
-	teamByID, err := s.teamsRepo.FindByID(teamID)
+func (s playersService) CreatePlayer(ctx context.Context, request types.PlayersRequest, teamID int, sub string) (entity.Player, error) {
+	teamByID, err := s.teamsRepo.FindByID(ctx, teamID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return entity.Player{}, apperror.ErrTeamNotFound
@@ -42,7 +43,7 @@ func (s playersService) CreatePlayer(request types.PlayersRequest, teamID int, s
 
 	player := entity.Player{Name: request.Name, TeamID: teamID}
 
-	createdPlayer, err := s.playersRepo.CreateOrUpdatePlayer(&player)
+	createdPlayer, err := s.playersRepo.CreateOrUpdatePlayer(ctx, &player)
 	if err != nil {
 		return entity.Player{}, err
 	}
@@ -50,8 +51,8 @@ func (s playersService) CreatePlayer(request types.PlayersRequest, teamID int, s
 	return createdPlayer, nil
 }
 
-func (s playersService) UpdatePlayer(id int, request types.PlayersRequest, sub string) (entity.Player, error) {
-	player, err := s.playersRepo.FindPlayerByID(id)
+func (s playersService) UpdatePlayer(ctx context.Context, id int, request types.PlayersRequest, sub string) (entity.Player, error) {
+	player, err := s.playersRepo.FindPlayerByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return entity.Player{}, apperror.ErrPlayerNotFound
@@ -68,7 +69,7 @@ func (s playersService) UpdatePlayer(id int, request types.PlayersRequest, sub s
 
 	player.Name = request.Name
 
-	updatePlayer, err := s.playersRepo.CreateOrUpdatePlayer(&player)
+	updatePlayer, err := s.playersRepo.CreateOrUpdatePlayer(ctx, &player)
 	if err != nil {
 		return entity.Player{}, err
 	}
@@ -76,8 +77,8 @@ func (s playersService) UpdatePlayer(id int, request types.PlayersRequest, sub s
 	return updatePlayer, nil
 }
 
-func (s playersService) DeletePlayer(id int, sub string) error {
-	player, err := s.playersRepo.FindPlayerByID(id)
+func (s playersService) DeletePlayer(ctx context.Context, id int, sub string) error {
+	player, err := s.playersRepo.FindPlayerByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return apperror.ErrPlayerNotFound
@@ -92,5 +93,5 @@ func (s playersService) DeletePlayer(id int, sub string) error {
 		return apperror.ErrNotOwner
 	}
 
-	return s.playersRepo.DeletePlayer(id)
+	return s.playersRepo.DeletePlayer(ctx, id)
 }
