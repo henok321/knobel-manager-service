@@ -123,50 +123,52 @@ func (s *gamesService) DeleteGame(id int, sub string) error {
 }
 
 func (s *gamesService) AssignTables(game entity.Game) error {
-	if err := s.repo.ResetGameTables(game.ID); err != nil {
-		return fmt.Errorf("cannot reset game tables: %w", err)
-	}
-
-	teams := map[int][]int{}
-
-	for _, team := range game.Teams {
-		for _, player := range team.Players {
-			teams[team.ID] = append(teams[team.ID], player.ID)
-		}
-	}
-
-	for i := range game.NumberOfRounds {
-		tables, err := setup.AssignTables(setup.TeamSetup{Teams: teams, TeamSize: game.TeamSize, TableSize: game.TableSize}, time.Now().Unix()-(int64(i)*1000))
-		if err != nil {
-			return apperror.ErrTableAssignment
+	return s.repo.WithinTransaction(func(txRepo GamesRepository) error {
+		if err := txRepo.ResetGameTables(game.ID); err != nil {
+			return fmt.Errorf("cannot reset game tables: %w", err)
 		}
 
-		round := entity.Round{
-			RoundNumber: i + 1,
-			GameID:      game.ID,
+		teams := map[int][]int{}
+
+		for _, team := range game.Teams {
+			for _, player := range team.Players {
+				teams[team.ID] = append(teams[team.ID], player.ID)
+			}
 		}
 
-		round, err = s.repo.CreateRound(&round)
-		if err != nil {
-			return fmt.Errorf("cannot create round %w", err)
-		}
-
-		gameTables := make([]entity.GameTable, 0, len(tables))
-
-		for tableNumber, players := range tables {
-			gameTable := entity.GameTable{TableNumber: tableNumber + 1, RoundID: round.ID}
-			for _, playerID := range players {
-				gameTable.Players = append(gameTable.Players, &entity.Player{ID: playerID.ID})
+		for i := range game.NumberOfRounds {
+			tables, err := setup.AssignTables(setup.TeamSetup{Teams: teams, TeamSize: game.TeamSize, TableSize: game.TableSize}, time.Now().Unix()-(int64(i)*1000))
+			if err != nil {
+				return apperror.ErrTableAssignment
 			}
 
-			gameTables = append(gameTables, gameTable)
+			round := entity.Round{
+				RoundNumber: i + 1,
+				GameID:      game.ID,
+			}
+
+			round, err = txRepo.CreateRound(&round)
+			if err != nil {
+				return fmt.Errorf("cannot create round: %w", err)
+			}
+
+			gameTables := make([]entity.GameTable, 0, len(tables))
+
+			for tableNumber, players := range tables {
+				gameTable := entity.GameTable{TableNumber: tableNumber + 1, RoundID: round.ID}
+				for _, playerID := range players {
+					gameTable.Players = append(gameTable.Players, &entity.Player{ID: playerID.ID})
+				}
+
+				gameTables = append(gameTables, gameTable)
+			}
+
+			err = txRepo.CreateGameTables(gameTables)
+			if err != nil {
+				return fmt.Errorf("cannot create game tables: %w", err)
+			}
 		}
 
-		err = s.repo.CreateGameTables(gameTables)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+		return nil
+	})
 }

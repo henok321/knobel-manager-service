@@ -13,6 +13,7 @@ type GamesRepository interface {
 	CreateRound(round *entity.Round) (entity.Round, error)
 	CreateGameTables(gameTables []entity.GameTable) error
 	ResetGameTables(gameID int) error
+	WithinTransaction(fn func(txRepo GamesRepository) error) error
 }
 
 type gamesRepository struct {
@@ -79,12 +80,7 @@ func (r *gamesRepository) CreateOrUpdateGame(game *entity.Game) (entity.Game, er
 }
 
 func (r *gamesRepository) DeleteGame(id int) error {
-	err := r.db.Delete(&entity.Game{}, id).Error
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return r.db.Delete(&entity.Game{}, id).Error
 }
 
 func (r *gamesRepository) CreateRound(round *entity.Round) (entity.Round, error) {
@@ -97,12 +93,7 @@ func (r *gamesRepository) CreateRound(round *entity.Round) (entity.Round, error)
 }
 
 func (r *gamesRepository) CreateGameTables(gameTables []entity.GameTable) error {
-	err := r.db.Save(gameTables).Error
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return r.db.Save(gameTables).Error
 }
 
 func (r *gamesRepository) ResetGameTables(gameID int) error {
@@ -138,5 +129,12 @@ func (r *gamesRepository) ResetGameTables(gameID int) error {
 		}
 
 		return nil
+	})
+}
+
+func (r *gamesRepository) WithinTransaction(fn func(txRepo GamesRepository) error) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		txRepo := &gamesRepository{db: tx}
+		return fn(txRepo)
 	})
 }

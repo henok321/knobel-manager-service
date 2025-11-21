@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/patrickmn/go-cache"
@@ -34,7 +35,10 @@ func getClientIP(r *http.Request) (string, error) {
 	return ip, nil
 }
 
-var limiterCache *cache.Cache
+var (
+	limiterCache *cache.Cache
+	initOnce     sync.Once
+)
 
 type RateConfig struct {
 	Limit                rate.Limit
@@ -43,10 +47,14 @@ type RateConfig struct {
 	CacheCleanupPeriod   time.Duration
 }
 
-func cachedLimiterByKey(key string, limit rate.Limit, burst int, cacheDefaultDuration, cacheCleanupPeriod time.Duration) *rate.Limiter {
-	if limiterCache == nil {
+func initCache(cacheDefaultDuration, cacheCleanupPeriod time.Duration) {
+	initOnce.Do(func() {
 		limiterCache = cache.New(cacheDefaultDuration, cacheCleanupPeriod)
-	}
+	})
+}
+
+func cachedLimiterByKey(key string, limit rate.Limit, burst int, cacheDefaultDuration, cacheCleanupPeriod time.Duration) *rate.Limiter {
+	initCache(cacheDefaultDuration, cacheCleanupPeriod)
 
 	if l, found := limiterCache.Get(key); found {
 		return l.(*rate.Limiter)

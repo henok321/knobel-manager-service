@@ -40,10 +40,5 @@ func (r *playersRepository) CreateOrUpdatePlayer(player *entity.Player) (entity.
 }
 
 func (r *playersRepository) DeletePlayer(id int) error {
-	err := r.db.Delete(&entity.Player{}, id).Error
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return r.db.Delete(&entity.Player{}, id).Error
 }
