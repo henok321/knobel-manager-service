@@ -1,6 +1,7 @@
 package game
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -13,12 +14,12 @@ import (
 )
 
 type GamesService interface {
-	FindAllByOwner(sub string) ([]entity.Game, error)
-	FindByID(id int, sub string) (entity.Game, error)
-	CreateGame(sub string, game *types.GameCreateRequest) (entity.Game, error)
-	UpdateGame(id int, sub string, game types.GameUpdateRequest) (entity.Game, error)
-	DeleteGame(id int, sub string) error
-	AssignTables(game entity.Game) error
+	FindAllByOwner(ctx context.Context, sub string) ([]entity.Game, error)
+	FindByID(ctx context.Context, id int, sub string) (entity.Game, error)
+	CreateGame(ctx context.Context, sub string, game *types.GameCreateRequest) (entity.Game, error)
+	UpdateGame(ctx context.Context, id int, sub string, game types.GameUpdateRequest) (entity.Game, error)
+	DeleteGame(ctx context.Context, id int, sub string) error
+	AssignTables(ctx context.Context, game entity.Game) error
 }
 
 type gamesService struct {
@@ -29,12 +30,12 @@ func NewGamesService(repo GamesRepository) GamesService {
 	return &gamesService{repo}
 }
 
-func (s *gamesService) FindAllByOwner(sub string) ([]entity.Game, error) {
-	return s.repo.FindAllByOwner(sub)
+func (s *gamesService) FindAllByOwner(ctx context.Context, sub string) ([]entity.Game, error) {
+	return s.repo.FindAllByOwner(ctx, sub)
 }
 
-func (s *gamesService) FindByID(id int, sub string) (entity.Game, error) {
-	gameByID, err := s.repo.FindByID(id)
+func (s *gamesService) FindByID(ctx context.Context, id int, sub string) (entity.Game, error) {
+	gameByID, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return entity.Game{}, entity.ErrGameNotFound
@@ -50,7 +51,7 @@ func (s *gamesService) FindByID(id int, sub string) (entity.Game, error) {
 	return gameByID, nil
 }
 
-func (s *gamesService) CreateGame(sub string, game *types.GameCreateRequest) (entity.Game, error) {
+func (s *gamesService) CreateGame(ctx context.Context, sub string, game *types.GameCreateRequest) (entity.Game, error) {
 	gameModel := entity.Game{
 		Name:           game.Name,
 		TeamSize:       game.TeamSize,
@@ -60,11 +61,11 @@ func (s *gamesService) CreateGame(sub string, game *types.GameCreateRequest) (en
 		Status:         entity.StatusSetup,
 	}
 
-	return s.repo.CreateOrUpdateGame(&gameModel)
+	return s.repo.CreateOrUpdateGame(ctx, &gameModel)
 }
 
-func (s *gamesService) UpdateGame(id int, sub string, game types.GameUpdateRequest) (entity.Game, error) {
-	gameByID, err := s.repo.FindByID(id)
+func (s *gamesService) UpdateGame(ctx context.Context, id int, sub string, game types.GameUpdateRequest) (entity.Game, error) {
+	gameByID, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return entity.Game{}, entity.ErrGameNotFound
@@ -102,11 +103,11 @@ func (s *gamesService) UpdateGame(id int, sub string, game types.GameUpdateReque
 		}
 	}
 
-	return s.repo.CreateOrUpdateGame(&gameByID)
+	return s.repo.CreateOrUpdateGame(ctx, &gameByID)
 }
 
-func (s *gamesService) DeleteGame(id int, sub string) error {
-	gameByID, err := s.repo.FindByID(id)
+func (s *gamesService) DeleteGame(ctx context.Context, id int, sub string) error {
+	gameByID, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return entity.ErrGameNotFound
@@ -119,12 +120,12 @@ func (s *gamesService) DeleteGame(id int, sub string) error {
 		return apperror.ErrNotOwner
 	}
 
-	return s.repo.DeleteGame(id)
+	return s.repo.DeleteGame(ctx, id)
 }
 
-func (s *gamesService) AssignTables(game entity.Game) error {
-	return s.repo.WithinTransaction(func(txRepo GamesRepository) error {
-		if err := txRepo.ResetGameTables(game.ID); err != nil {
+func (s *gamesService) AssignTables(ctx context.Context, game entity.Game) error {
+	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo GamesRepository) error {
+		if err := txRepo.ResetGameTables(ctx, game.ID); err != nil {
 			return fmt.Errorf("cannot reset game tables: %w", err)
 		}
 
@@ -147,7 +148,7 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 				GameID:      game.ID,
 			}
 
-			round, err = txRepo.CreateRound(&round)
+			round, err = txRepo.CreateRound(ctx, &round)
 			if err != nil {
 				return fmt.Errorf("cannot create round: %w", err)
 			}
@@ -163,7 +164,7 @@ func (s *gamesService) AssignTables(game entity.Game) error {
 				gameTables = append(gameTables, gameTable)
 			}
 
-			err = txRepo.CreateGameTables(gameTables)
+			err = txRepo.CreateGameTables(ctx, gameTables)
 			if err != nil {
 				return fmt.Errorf("cannot create game tables: %w", err)
 			}

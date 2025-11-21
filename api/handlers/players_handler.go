@@ -43,7 +43,9 @@ func (h *PlayersHandler) HandleValidationError(w http.ResponseWriter, _ *http.Re
 }
 
 func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
-	userContext, ok := middleware.UserFromContext(request.Context())
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
 	if !ok {
 		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
@@ -63,7 +65,7 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	createPlayer, err := h.playersService.CreatePlayer(playersRequest, teamID, sub)
+	createPlayer, err := h.playersService.CreatePlayer(ctx, playersRequest, teamID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrTeamNotFound):
@@ -86,12 +88,14 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
+		slog.ErrorContext(ctx, "Could not write body", "error", err)
 	}
 }
 
 func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
-	userContext, ok := middleware.UserFromContext(request.Context())
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
 	if !ok {
 		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
@@ -111,7 +115,7 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	updatePlayer, err := h.playersService.UpdatePlayer(playerID, playersRequest, sub)
+	updatePlayer, err := h.playersService.UpdatePlayer(ctx, playerID, playersRequest, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrTeamNotFound), errors.Is(err, apperror.ErrPlayerNotFound):
@@ -133,12 +137,14 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(request.Context(), "Could not write body", "error", err)
+		slog.ErrorContext(ctx, "Could not write body", "error", err)
 	}
 }
 
 func (h *PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
-	userContext, ok := middleware.UserFromContext(request.Context())
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
 	if !ok {
 		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
@@ -146,7 +152,7 @@ func (h *PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.
 
 	sub := userContext.Sub
 
-	err := h.playersService.DeletePlayer(playerID, sub)
+	err := h.playersService.DeletePlayer(ctx, playerID, sub)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrPlayerNotFound):
