@@ -15,10 +15,10 @@ type tablesService struct {
 }
 
 func NewTablesService(repo TablesRepository) TablesService {
-	return tablesService{repo}
+	return &tablesService{repo}
 }
 
-func (t tablesService) UpdateScore(gameID, roundNumber, tableNumber int, sub string, scoresRequest types.ScoresRequest) (entity.GameTable, error) {
+func (t *tablesService) UpdateScore(gameID, roundNumber, tableNumber int, sub string, scoresRequest types.ScoresRequest) (entity.GameTable, error) {
 	table, err := t.repo.FindTable(sub, gameID, roundNumber, tableNumber)
 	if err != nil {
 		return entity.GameTable{}, apperror.ErrRoundOrTableNotFound

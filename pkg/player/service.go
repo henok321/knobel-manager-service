@@ -31,6 +31,7 @@ func (s playersService) CreatePlayer(request types.PlayersRequest, teamID int, s
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return entity.Player{}, apperror.ErrTeamNotFound
 		}
+		return entity.Player{}, err
 	}
 
 	game := teamByID.Game
@@ -91,10 +92,5 @@ func (s playersService) DeletePlayer(id int, sub string) error {
 		return apperror.ErrNotOwner
 	}
 
-	err = s.playersRepo.DeletePlayer(id)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.playersRepo.DeletePlayer(id)
 }

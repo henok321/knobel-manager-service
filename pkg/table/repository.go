@@ -15,10 +15,10 @@ type tablesRepository struct {
 }
 
 func NewTablesRepository(db *gorm.DB) TablesRepository {
-	return tablesRepository{db}
+	return &tablesRepository{db}
 }
 
-func (t tablesRepository) FindTable(sub string, gameID, roundNumber, tableNumber int) (entity.GameTable, error) {
+func (t *tablesRepository) FindTable(sub string, gameID, roundNumber, tableNumber int) (entity.GameTable, error) {
 	tableEntity := entity.GameTable{}
 
 	err := t.db.
@@ -38,7 +38,7 @@ func (t tablesRepository) FindTable(sub string, gameID, roundNumber, tableNumber
 	return tableEntity, nil
 }
 
-func (t tablesRepository) UpdateTable(table *entity.GameTable) (entity.GameTable, error) {
+func (t *tablesRepository) UpdateTable(table *entity.GameTable) (entity.GameTable, error) {
 	for _, score := range table.Scores {
 		err := t.db.Save(score).Error
 		if err != nil {

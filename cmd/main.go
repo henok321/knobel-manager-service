@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -84,6 +85,32 @@ func main() {
 		exitCode = 1
 		return
 	}
+
+	// Configure database connection pool
+	sqlDB, err := database.DB()
+	if err != nil {
+		slog.Error("Starting application failed, cannot get database instance", "error", err)
+		exitCode = 1
+		return
+	}
+
+	// Set connection pool parameters with defaults
+	maxOpenConns := getEnvAsInt("DB_MAX_OPEN_CONNS", 25)
+	maxIdleConns := getEnvAsInt("DB_MAX_IDLE_CONNS", 5)
+	connMaxLifetime := getEnvAsDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute)
+	connMaxIdleTime := getEnvAsDuration("DB_CONN_MAX_IDLE_TIME", 10*time.Minute)
+
+	sqlDB.SetMaxOpenConns(maxOpenConns)
+	sqlDB.SetMaxIdleConns(maxIdleConns)
+	sqlDB.SetConnMaxLifetime(connMaxLifetime)
+	sqlDB.SetConnMaxIdleTime(connMaxIdleTime)
+
+	slog.Info("Database connection pool configured",
+		"maxOpenConns", maxOpenConns,
+		"maxIdleConns", maxIdleConns,
+		"connMaxLifetime", connMaxLifetime,
+		"connMaxIdleTime", connMaxIdleTime,
+	)
 
 	dbChecker := healthpkg.NewDatabaseChecker(database, 500*time.Millisecond)
 	firebaseChecker := healthpkg.NewFirebaseChecker(authClient, 500*time.Millisecond)
@@ -164,4 +191,22 @@ func main() {
 	}
 
 	slog.Info("Servers exited")
+}
+
+func getEnvAsInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
+		}
+	}
+	return defaultValue
+}
+
+func getEnvAsDuration(key string, defaultValue time.Duration) time.Duration {
+	if value := os.Getenv(key); value != "" {
+		if duration, err := time.ParseDuration(value); err == nil {
+			return duration
+		}
+	}
+	return defaultValue
 }
