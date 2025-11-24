@@ -2,18 +2,21 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"errors"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
 
 	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/logging"
+	"github.com/pressly/goose/v3"
 	"github.com/rs/cors"
 
 	firebase "firebase.google.com/go/v4"
@@ -39,6 +42,20 @@ func init() {
 		slog.SetDefault(slog.New(&logging.ContextHandler{Handler: logHandler}))
 		slog.Info("Logging initialized", "logLevel", "info")
 	}
+}
+
+func databaseMigration(db *sql.DB, migrationDir string) error {
+	slog.Info("Running database migration")
+	if err := goose.SetDialect("postgres"); err != nil { // "mysql" | "sqlite3" | "sqlserver"
+		slog.Error("Failed to set database dialect", "error", err)
+		return err
+	}
+
+	if err := goose.Up(db, migrationDir); err != nil {
+		slog.Error("Failed to run database migrations", "error", err)
+		return err
+	}
+	return nil
 }
 
 func main() {
@@ -86,7 +103,6 @@ func main() {
 		return
 	}
 
-	// Configure database connection pool
 	sqlDB, err := database.DB()
 	if err != nil {
 		slog.Error("Starting application failed, cannot get database instance", "error", err)
@@ -94,7 +110,6 @@ func main() {
 		return
 	}
 
-	// Set connection pool parameters with defaults
 	maxOpenConns := getEnvAsInt("DB_MAX_OPEN_CONNS", 25)
 	maxIdleConns := getEnvAsInt("DB_MAX_IDLE_CONNS", 5)
 	connMaxLifetime := getEnvAsDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute)
@@ -105,12 +120,18 @@ func main() {
 	sqlDB.SetConnMaxLifetime(connMaxLifetime)
 	sqlDB.SetConnMaxIdleTime(connMaxIdleTime)
 
-	slog.Info("Database connection pool configured",
-		"maxOpenConns", maxOpenConns,
-		"maxIdleConns", maxIdleConns,
-		"connMaxLifetime", connMaxLifetime,
-		"connMaxIdleTime", connMaxIdleTime,
-	)
+	slog.Info("Database connection pool configured", "maxOpenConns", maxOpenConns, "maxIdleConns", maxIdleConns, "connMaxLifetime", connMaxLifetime, "connMaxIdleTime", connMaxIdleTime)
+
+	slog.Info("Running database migrations")
+	migrationsDir := filepath.Join("..", "db_migration")
+
+	if err := databaseMigration(sqlDB, migrationsDir); err != nil {
+		slog.Error("Starting application failed, cannot run database migrations", "error", err)
+		exitCode = 1
+		return
+	}
+
+	slog.Info("Database migrations completed successfully")
 
 	dbChecker := healthpkg.NewDatabaseChecker(database, 500*time.Millisecond)
 	firebaseChecker := healthpkg.NewFirebaseChecker(authClient, 500*time.Millisecond)

@@ -42,6 +42,8 @@ EXPOSE 8080
 
 ENV ENVIRONMENT=production
 
+ENV DATABASE_URL=postgres://postgres:9bf03fd6a98b09de30746849f32ce6cb@dokku-postgres-knobel-manager-db:5432/knobel_manager_db
+
 USER appuser
 
 CMD ["/home/appuser/knobel-manager-service"]
