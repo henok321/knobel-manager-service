@@ -32,7 +32,7 @@ jobs:
         uses: superfly/flyctl-actions/setup-flyctl@1.5
 
       - name: Start Fly Proxy to Database
-        run: flyctl proxy 5432 -a database-postgres &
+        run: flyctl proxy 5432 -a knobel-manager-db &
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_DB_TOKEN }}
 
