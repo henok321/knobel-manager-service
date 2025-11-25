@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
@@ -51,9 +50,10 @@ func runDatabaseMigrations(db *sql.DB) error {
 		return err
 	}
 
-	migrationsDir := "/home/appuser/db_migration"
-	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
-		migrationsDir = filepath.Join(".", "db_migration")
+	migrationsDir := os.Getenv("DB_MIGRATION_DIR")
+	if migrationsDir == "" {
+		slog.Error("Migrations directory is not set")
+		return errors.New("migrations directory is not set")
 	}
 
 	slog.Info("Using migrations directory", "path", migrationsDir)
@@ -104,6 +104,12 @@ func main() {
 	}
 
 	databaseURL := os.Getenv("DATABASE_URL")
+
+	if databaseURL == "" {
+		slog.Error("Starting application failed, DATABASE_URL is not set")
+		exitCode = 1
+		return
+	}
 
 	database, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {

@@ -62,8 +62,9 @@ Required variables (set by `make setup` in `.env` for local development):
 | Variable          | Description                                                        |
 |-------------------|--------------------------------------------------------------------|
 | `FIREBASE_SECRET` | Base64-encoded Firebase service account JSON                       |
-| `DATABASE_URL`    | PostgreSQL connection string                                       |
 | `ENVIRONMENT`     | Environment name (`local` for debug logging, otherwise info level) |
+| `DATABASE_URL`    | PostgreSQL connection string                                       |
+| `DB_MIGRATION_DIR`| Directory for database migrations                                  |
 
 Optional variables (with defaults):
 
