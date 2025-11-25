@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/base64"
 	"errors"
 	"log/slog"
@@ -18,6 +19,7 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 
+	"github.com/pressly/goose/v3"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"google.golang.org/api/option"
@@ -39,6 +41,29 @@ func init() {
 		slog.SetDefault(slog.New(&logging.ContextHandler{Handler: logHandler}))
 		slog.Info("Logging initialized", "logLevel", "info")
 	}
+}
+
+func runDatabaseMigrations(db *sql.DB) error {
+	slog.Info("Running database migrations")
+
+	if err := goose.SetDialect("postgres"); err != nil {
+		return err
+	}
+
+	migrationsDir := os.Getenv("DB_MIGRATION_DIR")
+	if migrationsDir == "" {
+		slog.Error("Migrations directory is not set")
+		return errors.New("migrations directory is not set")
+	}
+
+	slog.Info("Using migrations directory", "path", migrationsDir)
+
+	if err := goose.Up(db, migrationsDir); err != nil {
+		return err
+	}
+
+	slog.Info("Database migrations completed successfully")
+	return nil
 }
 
 func main() {
@@ -79,6 +104,13 @@ func main() {
 	}
 
 	databaseURL := os.Getenv("DATABASE_URL")
+
+	if databaseURL == "" {
+		slog.Error("Starting application failed, DATABASE_URL is not set")
+		exitCode = 1
+		return
+	}
+
 	database, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
 		slog.Error("Starting application failed, cannot open database", "error", err)
@@ -86,7 +118,6 @@ func main() {
 		return
 	}
 
-	// Configure database connection pool
 	sqlDB, err := database.DB()
 	if err != nil {
 		slog.Error("Starting application failed, cannot get database instance", "error", err)
@@ -94,7 +125,12 @@ func main() {
 		return
 	}
 
-	// Set connection pool parameters with defaults
+	if err := runDatabaseMigrations(sqlDB); err != nil {
+		slog.Error("Starting application failed, database migrations failed", "error", err)
+		exitCode = 1
+		return
+	}
+
 	maxOpenConns := getEnvAsInt("DB_MAX_OPEN_CONNS", 25)
 	maxIdleConns := getEnvAsInt("DB_MAX_IDLE_CONNS", 5)
 	connMaxLifetime := getEnvAsDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute)
