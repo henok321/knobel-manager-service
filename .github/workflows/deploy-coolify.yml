@@ -54,28 +54,3 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-
-  deploy-coolify:
-    name: Deploy to Coolify
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Trigger Coolify Deployment
-        env:
-          COOLIFY_WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
-          COOLIFY_TOKEN: ${{ secrets.COOLIFY_TOKEN }}
-        run: |
-          curl --request GET "$COOLIFY_WEBHOOK_URL" \
-            --header "Authorization: Bearer ${COOLIFY_TOKEN}" \
-            --fail-with-body
-
-      - name: Wait for Deployment
-        run: |
-          echo "Deployment triggered. Monitor progress at: https://coolify.henok.eu"
-          echo "Coolify will:"
-          echo "  1. Pull the new Docker image: ${{ needs.build-and-push.outputs.image_tag }}"
-          echo "  2. Start new container with health checks"
-          echo "  3. Run database migrations on startup"
-          echo "  4. Switch traffic only if health checks pass"
-          echo ""
-          echo "If migrations fail, the old container will continue running (zero downtime)."
