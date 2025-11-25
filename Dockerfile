@@ -24,12 +24,10 @@ COPY ./internal ./internal
 COPY ./pkg ./pkg
 
 RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod tidy && go mod vendor
-
-RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
-    go build -mod=vendor -o knobel-manager-service \
-    -a -ldflags="-s -w -extldflags '-static'" ./cmd/
+    go build -o knobel-manager-service \
+    -ldflags="-s -w -extldflags '-static'" ./cmd/
 
 FROM debian:trixie-slim
 
