@@ -44,14 +44,8 @@ func init() {
 	}
 }
 
-func runDatabaseMigrations(databaseURL string) error {
+func runDatabaseMigrations(db *sql.DB) error {
 	slog.Info("Running database migrations")
-
-	db, err := sql.Open("postgres", databaseURL)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
 
 	if err := goose.SetDialect("postgres"); err != nil {
 		return err
@@ -111,12 +105,6 @@ func main() {
 
 	databaseURL := os.Getenv("DATABASE_URL")
 
-	if err := runDatabaseMigrations(databaseURL); err != nil {
-		slog.Error("Starting application failed, database migrations failed", "error", err)
-		exitCode = 1
-		return
-	}
-
 	database, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
 		slog.Error("Starting application failed, cannot open database", "error", err)
@@ -127,6 +115,12 @@ func main() {
 	sqlDB, err := database.DB()
 	if err != nil {
 		slog.Error("Starting application failed, cannot get database instance", "error", err)
+		exitCode = 1
+		return
+	}
+
+	if err := runDatabaseMigrations(sqlDB); err != nil {
+		slog.Error("Starting application failed, database migrations failed", "error", err)
 		exitCode = 1
 		return
 	}
