@@ -3,14 +3,12 @@ FROM golang:1.25.4-trixie AS builder
 WORKDIR /app
 
 COPY go.mod go.sum ./
-RUN go mod download
+RUN go env -w GOPROXY=direct && go env -w GOSUMDB=off && go mod download
 
 COPY ./spec ./spec
 COPY ./Makefile ./Makefile
-RUN make openapi
 
-COPY go.mod go.sum ./
-RUN go mod download
+RUN make openapi
 
 COPY ./api ./api
 COPY ./cmd ./cmd
