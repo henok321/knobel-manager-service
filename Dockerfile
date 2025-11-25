@@ -36,7 +36,8 @@ WORKDIR /home/appuser
 
 COPY --from=builder /app/knobel-manager-service /home/appuser/knobel-manager-service
 COPY --from=builder /app/spec /home/appuser/spec
-RUN chown -R appuser:appgroup /home/appuser/knobel-manager-service /home/appuser/spec
+COPY ./db_migration /home/appuser/db_migration
+RUN chown -R appuser:appgroup /home/appuser/knobel-manager-service /home/appuser/spec /home/appuser/db_migration
 
 EXPOSE 8080
 
