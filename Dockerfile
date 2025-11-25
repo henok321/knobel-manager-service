@@ -7,17 +7,18 @@ RUN go env -w GOPROXY=direct && go env -w GOSUMDB=off && go mod download
 
 COPY ./spec ./spec
 COPY ./Makefile ./Makefile
-
 RUN make openapi
 
 COPY ./api ./api
 COPY ./cmd ./cmd
 COPY ./internal ./internal
 COPY ./pkg ./pkg
-COPY ./spec ./spec
+
+RUN go mod tidy
+RUN go mod vendor
 
 RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
-    go build -o knobel-manager-service \
+    go build -mod=vendor -o knobel-manager-service \
     -a -ldflags="-s -w -extldflags '-static'" ./cmd/
 
 FROM debian:trixie-slim
@@ -35,6 +36,7 @@ WORKDIR /home/appuser
 COPY --from=builder /app/knobel-manager-service /home/appuser/knobel-manager-service
 COPY --from=builder /app/spec /home/appuser/spec
 COPY ./db_migration /home/appuser/db_migration
+
 RUN chown -R appuser:appgroup /home/appuser/knobel-manager-service /home/appuser/spec /home/appuser/db_migration
 
 EXPOSE 8080
