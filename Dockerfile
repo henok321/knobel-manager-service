@@ -1,23 +1,33 @@
 FROM golang:1.25.4-trixie AS builder
 
+
 WORKDIR /app
 
 COPY go.mod go.sum ./
-RUN go env -w GOPROXY=direct && go env -w GOSUMDB=off && go mod download
+
+ENV GO111MODULE=on \
+    GOPROXY=https://proxy.golang.org,direct \
+    GOSUMDB=sum.golang.org \
+    CGO_ENABLED=0
+
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 COPY ./spec ./spec
 COPY ./Makefile ./Makefile
-RUN make openapi
+RUN --mount=type=cache,target=/go/pkg/mod \
+    make openapi
 
 COPY ./api ./api
 COPY ./cmd ./cmd
 COPY ./internal ./internal
 COPY ./pkg ./pkg
 
-RUN go mod tidy
-RUN go mod vendor
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod tidy && go mod vendor
 
-RUN CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
     go build -mod=vendor -o knobel-manager-service \
     -a -ldflags="-s -w -extldflags '-static'" ./cmd/
 
