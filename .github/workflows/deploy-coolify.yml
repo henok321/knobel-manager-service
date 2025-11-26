@@ -66,4 +66,4 @@ jobs:
         run: |
           curl -X GET \
             -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
-            "${{ secrets.COOLIFY_DEPLOYMENT_URL }}"
+            ${{ secrets.COOLIFY_DEPLOYMENT_URL }}
