@@ -3,13 +3,13 @@ name: Build and Deploy Docker Image
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: ["CI"]
+    workflows: [ "CI" ]
     branches:
       - main
     types:
       - completed
   release:
-    types: [published]
+    types: [ published ]
 
 env:
   REGISTRY: ghcr.io
@@ -61,3 +61,9 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
+      - name: Trigger Coolify Deployment
+        if: success()
+        run: |
+          curl -X GET \
+            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
+            "https://coolify.henok.eu/api/v1/deploy?uuid=sk0o0cw4wss040k4swosokos&force=false"
