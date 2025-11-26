@@ -66,4 +66,4 @@ jobs:
         run: |
           curl -X GET \
             -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
-            "https://coolify.henok.eu/api/v1/deploy?uuid=sk0o0cw4wss040k4swosokos&force=false"
+            "${{ secrets.COOLIFY_DEPLOYMENT_URL }}"
