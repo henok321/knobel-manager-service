@@ -1,4 +1,4 @@
-name: Deploy
+name: Fly.io Deployment
 
 on:
   workflow_dispatch:

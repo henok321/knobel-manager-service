@@ -1,4 +1,4 @@
-name: Build and Deploy Docker Image
+name: Docker build and Coolify Deployment
 
 on:
   workflow_dispatch:
