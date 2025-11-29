@@ -2,7 +2,6 @@
 
 [![CI](https://github.com/henok321/knobel-manager-service/actions/workflows/CI.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/CI.yml)
 [![Deploy Coolify](https://github.com/henok321/knobel-manager-service/actions/workflows/deploy-coolify.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/deploy-coolify.yml)
-[![Deploy Fly.io](https://github.com/henok321/knobel-manager-service/actions/workflows/deploy-flyio.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/deploy-flyio.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=henok321_knobel-manager-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=henok321_knobel-manager-service)
 
 ## Overview
@@ -33,7 +32,7 @@ The system uses a client-server model:
 - **OpenAPI-First**: Server interfaces generated from `spec/openapi.yaml` using `oapi-codegen`
 - **Database**: PostgreSQL with GORM, migrations via `goose`
 - **Authentication**: Firebase JWT tokens validated on each request
-- **Deployment**: GitHub Actions CI/CD pipeline deploying to Fly.io
+- **Deployment**: GitHub Actions CI/CD pipeline
 - **Monitoring**: Prometheus metrics at `:9090/metrics`, health endpoints at `:8080/health/live` (liveness) and
   `:8080/health/ready` (readiness)
 
@@ -60,12 +59,12 @@ The system uses a client-server model:
 
 Required variables (set by `make setup` in `.env` for local development):
 
-| Variable          | Description                                                        |
-|-------------------|--------------------------------------------------------------------|
-| `FIREBASE_SECRET` | Base64-encoded Firebase service account JSON                       |
-| `ENVIRONMENT`     | Environment name (`local` for debug logging, otherwise info level) |
-| `DATABASE_URL`    | PostgreSQL connection string                                       |
-| `DB_MIGRATION_DIR`| Directory for database migrations                                  |
+| Variable           | Description                                                        |
+|--------------------|--------------------------------------------------------------------|
+| `FIREBASE_SECRET`  | Base64-encoded Firebase service account JSON                       |
+| `ENVIRONMENT`      | Environment name (`local` for debug logging, otherwise info level) |
+| `DATABASE_URL`     | PostgreSQL connection string                                       |
+| `DB_MIGRATION_DIR` | Directory for database migrations                                  |
 
 Optional variables (with defaults):
 
@@ -103,7 +102,7 @@ make build                  # Build binary
 ./knobel-manager-service    # Run binary (requires sourced .env)
 ```
 
-Deployment to Fly.io happens automatically via GitHub Actions on push to main.
+Deployment onhappens automatically via GitHub Actions on push to main.
 
 ## Maintenance
 
