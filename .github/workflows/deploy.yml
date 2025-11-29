@@ -1,85 +1,32 @@
-name: Docker build and Deployment
+name: Deploy to Production
 
 on:
-  workflow_dispatch:
   workflow_run:
-    workflows: [ "CI" ]
-    branches:
-      - main
-    types:
-      - completed
-  release:
-    types: [ published ]
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+    workflows: ["Build Docker Image"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy (leave empty for latest)'
+        required: false
+        default: 'latest'
 
 concurrency:
-  group: deploy-${{ github.ref }}
+  group: deploy-production
   cancel-in-progress: false
 
 jobs:
-  build-and-push:
-    name: Build and Push Docker Image
+  deploy:
+    name: Deploy to Production
     runs-on: ubuntu-latest
-    # Only deploy if CI succeeded or manually triggered
     if: |
       github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'release' ||
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.conclusion == 'success')
-    permissions:
-      contents: read
-      packages: write
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: all
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata (tags, labels)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
-
       - name: Trigger Coolify Deployment
         id: trigger
-        if: success()
         env:
           API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
           DEPLOYMENT_URL: ${{ vars.COOLIFY_DEPLOYMENT_URL }}
@@ -97,7 +44,6 @@ jobs:
           echo "✅ Deployment triggered successfully"
 
       - name: Wait for Deployment Completion
-        if: success()
         env:
           API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
           BASE_URL: ${{ vars.COOLIFY_BASE_URL }}
@@ -132,10 +78,11 @@ jobs:
           echo "Note: Skipping extended polling, will verify via smoke tests instead"
 
       - name: Run Smoke Tests
-        if: success()
+        env:
+          APP_URL: ${{ vars.APP_URL }}
         run: |
           echo "Running smoke tests against production..."
-          echo "Target: https://api.knobel-manager.de/health/ready"
+          echo "Target: ${APP_URL}/health/ready"
           echo ""
 
           MAX_RETRIES=24
@@ -146,13 +93,13 @@ jobs:
             echo "[$RETRY/$MAX_RETRIES] Testing readiness endpoint..."
 
             # Try to hit the ready endpoint with verbose output
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://api.knobel-manager.de/health/ready)
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "${APP_URL}/health/ready")
 
             if [ "$HTTP_CODE" -eq 200 ]; then
               echo "✅ Service returned HTTP $HTTP_CODE"
 
               # Verify the response body
-              RESPONSE=$(curl -s https://api.knobel-manager.de/health/ready)
+              RESPONSE=$(curl -s "${APP_URL}/health/ready")
               echo "Response: $RESPONSE"
               echo ""
               echo "✅ Deployment successful - service is ready!"
@@ -170,5 +117,5 @@ jobs:
 
           echo ""
           echo "❌ Smoke tests failed after $((MAX_RETRIES * 10)) seconds"
-          echo "Service did not become ready at https://api.knobel-manager.de/health/ready"
+          echo "Service did not become ready at ${APP_URL}/health/ready"
           exit 1
