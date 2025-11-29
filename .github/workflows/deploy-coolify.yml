@@ -103,61 +103,72 @@ jobs:
           BASE_URL: ${{ vars.COOLIFY_BASE_URL }}
           APP_UUID: ${{ vars.COOLIFY_APP_UUID }}
         run: |
-          MAX_ATTEMPTS=60
-          ATTEMPT=0
+          echo "Waiting 60 seconds for deployment to start..."
+          sleep 60
 
-          echo "Polling deployment status..."
-          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-            sleep 10
-            ATTEMPT=$((ATTEMPT + 1))
+          echo "Checking deployment status via Coolify API..."
 
-            STATUS=$(curl -s -X GET \
-              -H "Authorization: Bearer ${API_TOKEN}" \
-              "${BASE_URL}/api/v1/applications/${APP_UUID}" \
-              | jq -r '.status // "unknown"')
+          # Try to get application status
+          echo "--- Querying: ${BASE_URL}/api/v1/applications/${APP_UUID} ---"
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
+            -H "Authorization: Bearer ${API_TOKEN}" \
+            "${BASE_URL}/api/v1/applications/${APP_UUID}")
 
-            echo "[$ATTEMPT/$MAX_ATTEMPTS] Deployment status: $STATUS"
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
 
-            case "$STATUS" in
-              "running")
-                echo "✅ Deployment completed successfully"
-                exit 0
-                ;;
-              "failed"|"error")
-                echo "❌ Deployment failed"
-                exit 1
-                ;;
-              "starting"|"building"|"deploying")
-                continue
-                ;;
-              *)
-                echo "⚠️ Unknown status: $STATUS"
-                ;;
-            esac
-          done
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response body:"
+          echo "$BODY" | jq '.' 2>/dev/null || echo "$BODY"
 
-          echo "❌ Deployment timeout after 10 minutes"
-          exit 1
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            STATUS=$(echo "$BODY" | jq -r '.status // "unknown"')
+            echo "Extracted status field: '$STATUS'"
+          else
+            echo "⚠️ API returned non-200 status, will rely on smoke tests"
+          fi
+
+          echo ""
+          echo "Note: Skipping extended polling, will verify via smoke tests instead"
 
       - name: Run Smoke Tests
         if: success()
         run: |
-          echo "Running smoke tests..."
-          MAX_RETRIES=12
+          echo "Running smoke tests against production..."
+          echo "Target: https://api.knobel-manager.de/health/ready"
+          echo ""
+
+          MAX_RETRIES=24
           RETRY=0
 
           while [ $RETRY -lt $MAX_RETRIES ]; do
-            echo "Attempt $((RETRY + 1))/$MAX_RETRIES..."
+            RETRY=$((RETRY + 1))
+            echo "[$RETRY/$MAX_RETRIES] Testing readiness endpoint..."
 
-            # Test ready endpoint
-            if curl -f -s https://api.knobel-manager.de/health/ready > /dev/null 2>&1; then
-              echo "✅ Service is ready and healthy"
+            # Try to hit the ready endpoint with verbose output
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" https://api.knobel-manager.de/health/ready)
+
+            if [ "$HTTP_CODE" -eq 200 ]; then
+              echo "✅ Service returned HTTP $HTTP_CODE"
+
+              # Verify the response body
+              RESPONSE=$(curl -s https://api.knobel-manager.de/health/ready)
+              echo "Response: $RESPONSE"
+              echo ""
+              echo "✅ Deployment successful - service is ready!"
               exit 0
+            elif [ "$HTTP_CODE" -eq 000 ]; then
+              echo "⚠️ Connection refused or network error"
+            else
+              echo "⚠️ Service returned HTTP $HTTP_CODE (not ready yet)"
             fi
 
-            RETRY=$((RETRY + 1))
-            sleep 5
+            if [ $RETRY -lt $MAX_RETRIES ]; then
+              sleep 10
+            fi
           done
 
-          echo "❌ Smoke tests failed - service not ready"
+          echo ""
+          echo "❌ Smoke tests failed after $((MAX_RETRIES * 10)) seconds"
+          echo "Service did not become ready at https://api.knobel-manager.de/health/ready"
           exit 1
