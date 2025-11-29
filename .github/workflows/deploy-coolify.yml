@@ -69,7 +69,10 @@ jobs:
 
       - name: Trigger Coolify Deployment
         if: success()
+        env:
+          API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          DEPLOYMENT_URL: ${{ vars.COOLIFY_DEPLOYMENT_URL }}
         run: |
-          curl -X GET \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
-            ${{ vars.COOLIFY_DEPLOYMENT_URL }}
+          "curl -X GET \
+            -H 'Authorization: Bearer $API_TOKEN' \
+            $DEPLOYMENT_URL"
