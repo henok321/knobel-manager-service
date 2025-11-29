@@ -102,7 +102,7 @@ make build                  # Build binary
 ./knobel-manager-service    # Run binary (requires sourced .env)
 ```
 
-Deployment onhappens automatically via GitHub Actions on push to main.
+Deployment happens automatically via GitHub Actions on push to main.
 
 ## Maintenance
 
