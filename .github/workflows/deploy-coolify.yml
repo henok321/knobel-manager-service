@@ -73,6 +73,6 @@ jobs:
           API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
           DEPLOYMENT_URL: ${{ vars.COOLIFY_DEPLOYMENT_URL }}
         run: |
-          "curl -X GET \
-            -H 'Authorization: Bearer $API_TOKEN' \
-            $DEPLOYMENT_URL"
+          curl -X GET \
+            -H "Authorization: Bearer ${API_TOKEN}" \
+            "${DEPLOYMENT_URL}"
