@@ -1,5 +1,7 @@
-FROM golang:1.25.4-trixie AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25-trixie AS builder
 
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /app
 
@@ -27,7 +29,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go mod tidy && go mod vendor
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
     go build -mod=vendor -o knobel-manager-service \
     -a -ldflags="-s -w -extldflags '-static'" ./cmd/
 
@@ -35,6 +37,7 @@ FROM debian:trixie-slim
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# hadolint ignore=DL3008
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates curl && \
     apt-get clean && rm -rf /var/lib/apt/lists/* &&  \
