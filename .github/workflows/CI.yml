@@ -6,16 +6,26 @@ on:
     branches:
       - main
     paths-ignore:
-      - "README.md"
+      - "**.md"
+      - "!CLAUDE.md"
       - "LICENSE"
       - ".vscode/**"
+      - ".idea/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".gitignore"
+      - ".editorconfig"
   pull_request:
-    paths-ignore:
-      - "README.md"
-      - "LICENSE"
-      - ".vscode/**"
     branches:
       - main
+    paths-ignore:
+      - "**.md"
+      - "!CLAUDE.md"
+      - "LICENSE"
+      - ".vscode/**"
+      - ".idea/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".gitignore"
+      - ".editorconfig"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

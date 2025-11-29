@@ -6,14 +6,24 @@ on:
     branches:
       - main
     paths-ignore:
-      - "README.md"
+      - "**.md"
+      - "!CLAUDE.md"
       - "LICENSE"
-      - ".pre-commit-config.yaml"
+      - ".vscode/**"
+      - ".idea/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".gitignore"
+      - ".editorconfig"
   pull_request:
     paths-ignore:
-      - "README.md"
+      - "**.md"
+      - "!CLAUDE.md"
       - "LICENSE"
-      - ".pre-commit-config.yaml"
+      - ".vscode/**"
+      - ".idea/**"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".gitignore"
+      - ".editorconfig"
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

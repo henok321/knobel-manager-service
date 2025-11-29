@@ -15,10 +15,20 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
+    # Only deploy if CI succeeded or manually triggered
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success')
     permissions:
       contents: read
       packages: write
@@ -68,11 +78,86 @@ jobs:
           platforms: linux/amd64,linux/arm64
 
       - name: Trigger Coolify Deployment
+        id: trigger
         if: success()
         env:
           API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
           DEPLOYMENT_URL: ${{ vars.COOLIFY_DEPLOYMENT_URL }}
         run: |
-          curl -X GET \
+          echo "Triggering deployment..."
+          response=$(curl -s -w "\n%{http_code}" -X GET \
             -H "Authorization: Bearer ${API_TOKEN}" \
-            "${DEPLOYMENT_URL}"
+            "${DEPLOYMENT_URL}")
+
+          http_code=$(echo "$response" | tail -1)
+          if [ "$http_code" -ne 200 ]; then
+            echo "❌ Failed to trigger deployment: HTTP $http_code"
+            exit 1
+          fi
+          echo "✅ Deployment triggered successfully"
+
+      - name: Wait for Deployment Completion
+        if: success()
+        env:
+          API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          BASE_URL: ${{ vars.COOLIFY_BASE_URL }}
+          APP_UUID: ${{ vars.COOLIFY_APP_UUID }}
+        run: |
+          MAX_ATTEMPTS=60
+          ATTEMPT=0
+
+          echo "Polling deployment status..."
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            sleep 10
+            ATTEMPT=$((ATTEMPT + 1))
+
+            STATUS=$(curl -s -X GET \
+              -H "Authorization: Bearer ${API_TOKEN}" \
+              "${BASE_URL}/api/v1/applications/${APP_UUID}" \
+              | jq -r '.status // "unknown"')
+
+            echo "[$ATTEMPT/$MAX_ATTEMPTS] Deployment status: $STATUS"
+
+            case "$STATUS" in
+              "running")
+                echo "✅ Deployment completed successfully"
+                exit 0
+                ;;
+              "failed"|"error")
+                echo "❌ Deployment failed"
+                exit 1
+                ;;
+              "starting"|"building"|"deploying")
+                continue
+                ;;
+              *)
+                echo "⚠️ Unknown status: $STATUS"
+                ;;
+            esac
+          done
+
+          echo "❌ Deployment timeout after 10 minutes"
+          exit 1
+
+      - name: Run Smoke Tests
+        if: success()
+        run: |
+          echo "Running smoke tests..."
+          MAX_RETRIES=12
+          RETRY=0
+
+          while [ $RETRY -lt $MAX_RETRIES ]; do
+            echo "Attempt $((RETRY + 1))/$MAX_RETRIES..."
+
+            # Test ready endpoint
+            if curl -f -s https://api.knobel-manager.de/health/ready > /dev/null 2>&1; then
+              echo "✅ Service is ready and healthy"
+              exit 0
+            fi
+
+            RETRY=$((RETRY + 1))
+            sleep 5
+          done
+
+          echo "❌ Smoke tests failed - service not ready"
+          exit 1
