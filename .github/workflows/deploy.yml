@@ -49,33 +49,64 @@ jobs:
           BASE_URL: ${{ vars.COOLIFY_BASE_URL }}
           APP_UUID: ${{ vars.COOLIFY_APP_UUID }}
         run: |
-          echo "Waiting 60 seconds for deployment to start..."
-          sleep 60
+          echo "Polling deployment status via Coolify API..."
+          echo "Endpoint: ${BASE_URL}/api/v1/applications/${APP_UUID}"
+          echo ""
 
-          echo "Checking deployment status via Coolify API..."
+          MAX_ATTEMPTS=30
+          ATTEMPT=0
+          SLEEP_INTERVAL=10
 
-          # Try to get application status
-          echo "--- Querying: ${BASE_URL}/api/v1/applications/${APP_UUID} ---"
-          RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
-            -H "Authorization: Bearer ${API_TOKEN}" \
-            "${BASE_URL}/api/v1/applications/${APP_UUID}")
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            ATTEMPT=$((ATTEMPT + 1))
+            echo "[$ATTEMPT/$MAX_ATTEMPTS] Checking deployment status..."
 
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          BODY=$(echo "$RESPONSE" | head -n -1)
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X GET \
+              -H "Authorization: Bearer ${API_TOKEN}" \
+              "${BASE_URL}/api/v1/applications/${APP_UUID}")
 
-          echo "HTTP Status: $HTTP_CODE"
-          echo "Response body:"
-          echo "$BODY" | jq '.' 2>/dev/null || echo "$BODY"
+            HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+            BODY=$(echo "$RESPONSE" | head -n -1)
 
-          if [ "$HTTP_CODE" -eq 200 ]; then
-            STATUS=$(echo "$BODY" | jq -r '.status // "unknown"')
-            echo "Extracted status field: '$STATUS'"
-          else
-            echo "⚠️ API returned non-200 status, will rely on smoke tests"
-          fi
+            if [ "$HTTP_CODE" -ne 200 ]; then
+              echo "⚠️ API returned HTTP $HTTP_CODE"
+              echo "Response: $BODY"
+              echo "Continuing to poll..."
+            else
+              STATUS=$(echo "$BODY" | jq -r '.status // "unknown"')
+              echo "Current status: $STATUS"
+
+              # Check if deployment succeeded
+              if echo "$STATUS" | grep -q "running"; then
+                echo ""
+                echo "✅ Deployment completed successfully!"
+                echo "Status: $STATUS"
+                exit 0
+              fi
+
+              # Check if deployment failed
+              if echo "$STATUS" | grep -qE "failed|error|exited"; then
+                echo ""
+                echo "❌ Deployment failed!"
+                echo "Status: $STATUS"
+                echo ""
+                echo "Full response:"
+                echo "$BODY" | jq '.' 2>/dev/null || echo "$BODY"
+                exit 1
+              fi
+
+              echo "Deployment still in progress..."
+            fi
+
+            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+              sleep $SLEEP_INTERVAL
+            fi
+          done
 
           echo ""
-          echo "Note: Skipping extended polling, will verify via smoke tests instead"
+          echo "⚠️ Polling timed out after $((MAX_ATTEMPTS * SLEEP_INTERVAL)) seconds"
+          echo "Deployment status could not be confirmed via API"
+          echo "Proceeding to smoke tests for verification..."
 
       - name: Run Smoke Tests
         env:
