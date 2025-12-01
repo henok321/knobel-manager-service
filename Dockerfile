@@ -54,7 +54,6 @@ RUN chown -R appuser:appgroup /home/appuser/knobel-manager-service /home/appuser
 
 EXPOSE 8080
 
-ENV ENVIRONMENT=production
 ENV DB_MIGRATION_DIR=/home/appuser/db_migration
 
 USER appuser
