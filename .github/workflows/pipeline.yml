@@ -149,7 +149,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: production
-      url: https://knobel-manager.com
+      url: https://api.knobel-manager.com/docs
 
     steps:
       - name: Trigger Coolify deployment
