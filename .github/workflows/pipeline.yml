@@ -2,6 +2,12 @@ name: CI/CD Pipeline
 
 on:
   workflow_dispatch:
+    inputs:
+      skipChecks:
+        description: 'Skip lint, test, and SonarCloud checks (⚠️ use with caution!) '
+        required: false
+        type: boolean
+        default: false
   push:
     branches:
       - main
@@ -39,6 +45,7 @@ jobs:
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.skipChecks != 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -76,6 +83,7 @@ jobs:
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.skipChecks != 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -97,6 +105,7 @@ jobs:
   sonarcloud:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.skipChecks != 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -131,7 +140,10 @@ jobs:
   build:
     name: Build Docker Image
     needs: [ lint, test, sonarcloud ]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: |
+      always() &&
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.skipChecks == 'true') ||
+      (github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.lint.result == 'success' && needs.test.result == 'success' && needs.sonarcloud.result == 'success')
     runs-on: ubuntu-latest
     permissions:
       contents: read
