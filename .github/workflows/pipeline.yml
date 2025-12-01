@@ -94,9 +94,43 @@ jobs:
           TESTCONTAINERS_RYUK_DISABLED: true
         run: go test -v ./...
 
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+          check-latest: true
+
+      - name: Generate openapi spec
+        run: make openapi
+
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Run tests, generate coverage and report files
+        run: go test ./... -coverpkg=./... -coverprofile=coverage.out --json > test-report.out
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.4
+          args: "--timeout 5m --output.checkstyle.path golangci-lint-report.xml"
+
+      - name: Analyze project and upload coverage
+        uses: sonarsource/sonarqube-scan-action@v6.0.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
   build:
     name: Build Docker Image
-    needs: [lint, test]
+    needs: [ lint, test, sonarcloud ]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
