@@ -47,9 +47,9 @@ repos:
     hooks:
       - id: swagger-validate
         name: validate openapi spec
-        entry: npx --yes @redocly/cli lint spec/openapi.yaml
+        entry: npx --yes @redocly/cli lint openapi/openapi.yaml
         language: system
-        files: ^spec/.*\.ya?ml$
+        files: ^openapi/.*\.ya?ml$
         pass_filenames: false
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1

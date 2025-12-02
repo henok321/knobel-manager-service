@@ -28,7 +28,7 @@ graph TB
 
 The system uses a client-server model:
 
-- **OpenAPI-First**: Server interfaces generated from `spec/openapi.yaml` using `oapi-codegen`
+- **OpenAPI-First**: Server interfaces generated from `openapi/openapi.yaml` using `oapi-codegen`
 - **Database**: PostgreSQL with GORM, migrations via `goose`
 - **Authentication**: Firebase JWT tokens validated on each request
 - **Deployment**: GitHub Actions CI/CD pipeline

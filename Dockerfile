@@ -15,7 +15,7 @@ ENV GO111MODULE=on \
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-COPY ./spec ./spec
+COPY openapi ./spec
 COPY ./Makefile ./Makefile
 RUN --mount=type=cache,target=/go/pkg/mod \
     make openapi
@@ -29,7 +29,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go mod tidy && go mod vendor
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    CGO_ENABLED=0 GOOS="$TARGETOS" GOARCH="$TARGETARCH" \
     go build -mod=vendor -o knobel-manager-service \
     -a -ldflags="-s -w -extldflags '-static'" ./cmd/
 
