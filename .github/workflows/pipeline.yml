@@ -142,8 +142,8 @@ jobs:
     needs: [ lint, test, sonarcloud ]
     if: |
       always() &&
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.skipChecks == 'true') ||
-      (github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.lint.result == 'success' && needs.test.result == 'success' && needs.sonarcloud.result == 'success')
+      (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
+      (github.event.inputs.skipChecks == 'true' || (needs.lint.result == 'success' && needs.test.result == 'success' && needs.sonarcloud.result == 'success'))
     runs-on: ubuntu-latest
     permissions:
       contents: read
