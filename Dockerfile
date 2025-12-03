@@ -15,7 +15,7 @@ ENV GO111MODULE=on \
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-COPY openapi ./spec
+COPY openapi ./openapi
 COPY ./Makefile ./Makefile
 RUN --mount=type=cache,target=/go/pkg/mod \
     make openapi
