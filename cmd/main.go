@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"firebase.google.com/go/v4/auth"
 	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/logging"
 	"github.com/rs/cors"
@@ -31,6 +32,24 @@ import (
 	"gorm.io/gorm"
 )
 
+func getEnvAsInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			return intValue
+		}
+	}
+	return defaultValue
+}
+
+func getEnvAsDuration(key string, defaultValue time.Duration) time.Duration {
+	if value := os.Getenv(key); value != "" {
+		if duration, err := time.ParseDuration(value); err == nil {
+			return duration
+		}
+	}
+	return defaultValue
+}
+
 func init() {
 	switch os.Getenv("ENVIRONMENT") {
 	case "local":
@@ -42,6 +61,63 @@ func init() {
 		slog.SetDefault(slog.New(&logging.ContextHandler{Handler: logHandler}))
 		slog.Info("Logging initialized", "logLevel", "info")
 	}
+}
+
+func setupAuthClient() (*auth.Client, error) {
+	firebaseSecret, err := base64.RawStdEncoding.DecodeString(os.Getenv("FIREBASE_SECRET"))
+	if err != nil {
+		slog.Error("Starting application failed, cannot decode FIREBASE_SECRET", "error", err)
+		return nil, err
+	}
+
+	if len(firebaseSecret) == 0 {
+		slog.Error("Starting application failed, FIREBASE_SECRET is undefined or empty")
+		return nil, errors.New("FIREBASE_SECRET is undefined or empty")
+	}
+
+	firebaseOption := option.WithCredentialsJSON(firebaseSecret)
+	firebaseApp, err := firebase.NewApp(context.Background(), nil, firebaseOption)
+	if err != nil {
+		slog.Error("Starting application failed, cannot initialize firebase client. Check if the environment FIREBASE_SECRET is set correctly", "error", err)
+		return nil, err
+	}
+
+	return firebaseApp.Auth(context.Background())
+}
+
+func setupDatabase() (*gorm.DB, *sql.DB, error) {
+	databaseURL := os.Getenv("DATABASE_URL")
+
+	if databaseURL == "" {
+		slog.Error("Starting application failed, DATABASE_URL is not set")
+		return nil, nil, errors.New("DATABASE_URL is not set")
+	}
+
+	gormDB, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
+	if err != nil {
+		slog.Error("Starting application failed, cannot open gormDB", "error", err)
+		return nil, nil, err
+	}
+
+	sqlDB, err := gormDB.DB()
+	if err != nil {
+		slog.Error("Starting application failed, cannot get gormDB instance", "error", err)
+		return nil, nil, err
+	}
+
+	maxOpenConns := getEnvAsInt("DB_MAX_OPEN_CONNS", 25)
+	maxIdleConns := getEnvAsInt("DB_MAX_IDLE_CONNS", 5)
+	connMaxLifetime := getEnvAsDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute)
+	connMaxIdleTime := getEnvAsDuration("DB_CONN_MAX_IDLE_TIME", 10*time.Minute)
+
+	sqlDB.SetMaxOpenConns(maxOpenConns)
+	sqlDB.SetMaxIdleConns(maxIdleConns)
+	sqlDB.SetConnMaxLifetime(connMaxLifetime)
+	sqlDB.SetConnMaxIdleTime(connMaxIdleTime)
+
+	slog.Info("Database connection pool configured", "maxOpenConns", maxOpenConns, "maxIdleConns", maxIdleConns, "connMaxLifetime", connMaxLifetime, "connMaxIdleTime", connMaxIdleTime)
+
+	return gormDB, sqlDB, nil
 }
 
 func runDatabaseMigrations(db *sql.DB) error {
@@ -67,6 +143,22 @@ func runDatabaseMigrations(db *sql.DB) error {
 	return nil
 }
 
+func setupOpenAPIConfig() (openAPIConfig, swaggerDocs []byte, err error) {
+	openAPIConfig, err = os.ReadFile(filepath.Join("openapi", "openapi.yaml"))
+	if err != nil {
+		slog.Error("Could not read openapi.yaml", "error", err)
+		return nil, nil, err
+	}
+
+	swaggerDocs, err = os.ReadFile(filepath.Join("openapi", "swagger.html"))
+	if err != nil {
+		slog.Error("Could not read swagger.html", "error", err)
+		return nil, nil, err
+	}
+
+	return openAPIConfig, swaggerDocs, nil
+}
+
 func main() {
 	exitCode := 0
 
@@ -76,93 +168,38 @@ func main() {
 
 	slog.Info("Initialize application")
 
-	firebaseSecret, err := base64.RawStdEncoding.DecodeString(os.Getenv("FIREBASE_SECRET"))
-	if err != nil {
-		slog.Error("Starting application failed, cannot decode FIREBASE_SECRET", "error", err)
-		exitCode = 1
-		return
-	}
-
-	if len(firebaseSecret) == 0 {
-		slog.Error("Starting application failed, FIREBASE_SECRET is undefined or empty")
-		exitCode = 1
-		return
-	}
-
-	firebaseOption := option.WithCredentialsJSON(firebaseSecret)
-	firebaseApp, err := firebase.NewApp(context.Background(), nil, firebaseOption)
-	if err != nil {
-		slog.Error("Starting application failed, cannot initialize firebase client. Check if the environment FIREBASE_SECRET is set correctly", "error", err)
-		exitCode = 1
-		return
-	}
-
-	authClient, err := firebaseApp.Auth(context.Background())
+	authClient, err := setupAuthClient()
 	if err != nil {
 		slog.Error("Starting application failed, cannot initialize auth client", "error", err)
 		exitCode = 1
 		return
 	}
 
-	databaseURL := os.Getenv("DATABASE_URL")
-
-	if databaseURL == "" {
-		slog.Error("Starting application failed, DATABASE_URL is not set")
-		exitCode = 1
-		return
-	}
-
-	database, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
+	gormDB, sqlDB, err := setupDatabase()
 	if err != nil {
-		slog.Error("Starting application failed, cannot open database", "error", err)
-		exitCode = 1
-		return
-	}
-
-	sqlDB, err := database.DB()
-	if err != nil {
-		slog.Error("Starting application failed, cannot get database instance", "error", err)
+		slog.Error("Starting application failed, cannot initialize gormDB", "error", err)
 		exitCode = 1
 		return
 	}
 
 	if err := runDatabaseMigrations(sqlDB); err != nil {
-		slog.Error("Starting application failed, database migrations failed", "error", err)
+		slog.Error("Starting application failed, gormDB migrations failed", "error", err)
 		exitCode = 1
 		return
 	}
 
-	maxOpenConns := getEnvAsInt("DB_MAX_OPEN_CONNS", 25)
-	maxIdleConns := getEnvAsInt("DB_MAX_IDLE_CONNS", 5)
-	connMaxLifetime := getEnvAsDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute)
-	connMaxIdleTime := getEnvAsDuration("DB_CONN_MAX_IDLE_TIME", 10*time.Minute)
-
-	sqlDB.SetMaxOpenConns(maxOpenConns)
-	sqlDB.SetMaxIdleConns(maxIdleConns)
-	sqlDB.SetConnMaxLifetime(connMaxLifetime)
-	sqlDB.SetConnMaxIdleTime(connMaxIdleTime)
-
-	slog.Info("Database connection pool configured", "maxOpenConns", maxOpenConns, "maxIdleConns", maxIdleConns, "connMaxLifetime", connMaxLifetime, "connMaxIdleTime", connMaxIdleTime)
-
-	dbChecker := healthpkg.NewDatabaseChecker(database, 500*time.Millisecond)
+	dbChecker := healthpkg.NewDatabaseChecker(gormDB, 500*time.Millisecond)
 	firebaseChecker := healthpkg.NewFirebaseChecker(authClient, 500*time.Millisecond)
 	healthService := healthpkg.NewService(dbChecker, firebaseChecker)
 
-	openAPIConfig, err := os.ReadFile(filepath.Join("openapi", "openapi.yaml"))
+	openAPIConfig, swaggerDocs, err := setupOpenAPIConfig()
 	if err != nil {
-		slog.Error("Could not read openapi.yaml", "error", err)
+		slog.Error("Starting application failed, cannot read openapi config", "error", err)
 		exitCode = 1
 		return
 	}
 
-	swaggerDocs, err := os.ReadFile(filepath.Join("openapi", "swagger.html"))
-	if err != nil {
-		slog.Error("Could not read swagger.html", "error", err)
-		exitCode = 1
-		return
-	}
-
-	router := routes.SetupRouter(database, authClient, healthService, openAPIConfig, swaggerDocs)
+	router := routes.SetupRouter(gormDB, authClient, healthService, openAPIConfig, swaggerDocs)
 
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
@@ -238,22 +275,4 @@ func main() {
 	}
 
 	slog.Info("Servers exited")
-}
-
-func getEnvAsInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
-	}
-	return defaultValue
-}
-
-func getEnvAsDuration(key string, defaultValue time.Duration) time.Duration {
-	if value := os.Getenv(key); value != "" {
-		if duration, err := time.ParseDuration(value); err == nil {
-			return duration
-		}
-	}
-	return defaultValue
 }
