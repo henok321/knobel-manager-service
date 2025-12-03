@@ -195,7 +195,7 @@ paths:
       security:
         - bearerAuth: [ ]
       responses:
-        '201':
+        '200':
           description: Tables assigned successfully
           headers:
             Location:
@@ -636,9 +636,7 @@ components:
           type: integer
           example: 2
         status:
-          type: string
-          enum: [ setup, in_progress,completed ]
-          example: setup
+          $ref: '#/components/schemas/GameStatus'
         owners:
           type: array
           items:
@@ -683,8 +681,7 @@ components:
         tableSize:
           type: integer
         status:
-          type: string
-          enum: [ setup, in_progress,completed ]
+          $ref: '#/components/schemas/GameStatus'
       required: [ name, numberOfRounds, teamSize, tableSize, status ]
     PlayersRequest:
       type: object
@@ -785,6 +782,10 @@ components:
         table:
           $ref: '#/components/schemas/Table'
       required: [ table ]
+    GameStatus:
+      type: string
+      enum: [ setup, in_progress, completed ]
+      example: setup
     RoundStatus:
       type: string
       enum: [ setup, in_progress, completed ]

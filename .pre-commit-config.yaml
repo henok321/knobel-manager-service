@@ -43,14 +43,11 @@ repos:
     rev: 3.5.0
     hooks:
       - id: sqlfluff-fix
-  - repo: local
+  - repo: https://github.com/python-openapi/openapi-spec-validator
+    rev: 0.7.2
     hooks:
-      - id: swagger-validate
-        name: validate openapi spec
-        entry: npx --yes @redocly/cli lint openapi/openapi.yaml
-        language: system
-        files: ^openapi/.*\.ya?ml$
-        pass_filenames: false
+      - id: openapi-spec-validator
+        files: ^openapi/openapi\.ya?ml$
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1
     hooks:
