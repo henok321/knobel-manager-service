@@ -23,34 +23,34 @@ func TestGames(t *testing.T) {
 			method:   http.MethodGet,
 			endpoint: "/games",
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup.sql")
 			}, expectedStatusCode: http.StatusOK,
-			expectedBody:   readContentFromFile(t, "./test_data/games_setup.json"),
+			expectedBody:   readContentFromFile(t, "./integrationtests/test_data/games_setup.json"),
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
 		"Find game by id ok": {
 			method:   http.MethodGet,
 			endpoint: "/games/1",
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup.sql")
 			}, expectedStatusCode: http.StatusOK,
-			expectedBody:   readContentFromFile(t, "./test_data/games_setup_by_id.json"),
+			expectedBody:   readContentFromFile(t, "./integrationtests/test_data/games_setup_by_id.json"),
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
 		"Find game by id with tables and scores": {
 			method:   http.MethodGet,
 			endpoint: "/games/1",
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_assigned_with_scores.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_assigned_with_scores.sql")
 			}, expectedStatusCode: http.StatusOK,
-			expectedBody:   readContentFromFile(t, "./test_data/games_setup_by_id_tables_scores.json"),
+			expectedBody:   readContentFromFile(t, "./integrationtests/test_data/games_setup_by_id_tables_scores.json"),
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
 		"Find game by id not found": {
 			method:   http.MethodGet,
 			endpoint: "/games/2",
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup.sql")
 			}, expectedStatusCode: http.StatusNotFound,
 			expectedBody:   `{"error":"Game not found"}`,
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
@@ -59,7 +59,7 @@ func TestGames(t *testing.T) {
 			method:   http.MethodGet,
 			endpoint: "/games/invalid",
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup.sql")
 			}, expectedStatusCode: http.StatusBadRequest,
 			expectedBody:   `{"error":"Invalid gameID"}`,
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
@@ -68,7 +68,7 @@ func TestGames(t *testing.T) {
 			method:   http.MethodGet,
 			endpoint: "/games/1",
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup.sql")
 			},
 			expectedStatusCode: http.StatusForbidden,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
@@ -97,7 +97,7 @@ func TestGames(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `{"game":{"id":1,"name":"Game 1 updated","teamSize":4,"tableSize":4,"numberOfRounds":3,"status":"setup","owners":[{"gameID":1,"ownerSub":"sub-1"}]}}`,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup.sql")
 			},
 		},
 		"Update game status to in_progress": {
@@ -108,7 +108,7 @@ func TestGames(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"in_progress","owners":[{"gameID":1,"ownerSub":"sub-1"}]}}`,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_assignable.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_assignable.sql")
 			},
 		},
 		"Update game status to in_progress with invalid setup": {
@@ -118,7 +118,7 @@ func TestGames(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusConflict,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_not_assignable.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_not_assignable.sql")
 			},
 			assertions: func(t *testing.T, db *sql.DB) {
 				var gameStatus *string
@@ -151,7 +151,7 @@ func TestGames(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			expectedStatusCode: http.StatusForbidden,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup.sql")
 			},
 		},
 		"Delete an existing game": {
@@ -160,7 +160,7 @@ func TestGames(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNoContent,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup.sql")
 			},
 		},
 		"Delete an existing Game not found": {
@@ -175,7 +175,7 @@ func TestGames(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			expectedStatusCode: http.StatusForbidden,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup.sql")
 			},
 		},
 	}
@@ -201,7 +201,7 @@ func TestGames(t *testing.T) {
 				tc.setup(db)
 			}
 
-			defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+			defer executeSQLFile(t, db, "./integrationtests/test_data/cleanup.sql")
 			newTestRequest(t, tc, server, db)
 		})
 	}

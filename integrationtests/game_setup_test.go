@@ -17,7 +17,7 @@ func TestGameSetup(t *testing.T) {
 			expectedHeaders:    map[string]string{"Location": "/games/1"},
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_ready.sql")
 			},
 		},
 		"Try to setup game tables with out permissions": {
@@ -26,7 +26,7 @@ func TestGameSetup(t *testing.T) {
 			expectedStatusCode: http.StatusForbidden,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_ready.sql")
 			},
 		},
 		"Try to setup game not in setup state": {
@@ -36,7 +36,7 @@ func TestGameSetup(t *testing.T) {
 			expectedBody:       `{"error":"Game is not in setup state"}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_ready.sql")
 				_, err := db.Exec("UPDATE games SET status = 'in_progress' WHERE id = 1")
 				if err != nil {
 					t.Fatalf("Failed to update game status: %v", err)
@@ -66,7 +66,7 @@ func TestGameSetup(t *testing.T) {
 				tc.setup(db)
 			}
 
-			defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+			defer executeSQLFile(t, db, "./integrationtests/test_data/cleanup.sql")
 			newTestRequest(t, tc, server, db)
 		})
 	}
@@ -88,8 +88,8 @@ func TestGameSetupMultipleTimes(t *testing.T) {
 	defer teardown(server)
 
 	// Setup test data
-	executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
-	defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+	executeSQLFile(t, db, "./integrationtests/test_data/games_setup_ready.sql")
+	defer executeSQLFile(t, db, "./integrationtests/test_data/cleanup.sql")
 
 	tc := testCase{
 		method:             "POST",

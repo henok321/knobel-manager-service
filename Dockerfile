@@ -47,10 +47,10 @@ RUN apt-get update && \
 WORKDIR /home/appuser
 
 COPY --from=builder /app/knobel-manager-service /home/appuser/knobel-manager-service
-COPY --from=builder /app/spec /home/appuser/spec
+COPY --from=builder /app/openapi /home/appuser/openapi
 COPY ./db_migration /home/appuser/db_migration
 
-RUN chown -R appuser:appgroup /home/appuser/knobel-manager-service /home/appuser/spec /home/appuser/db_migration
+RUN chown -R appuser:appgroup /home/appuser/knobel-manager-service /home/appuser/openapi /home/appuser/db_migration
 
 EXPOSE 8080
 

@@ -18,7 +18,7 @@ func TestPlayers(t *testing.T) {
 			expectedStatusCode: http.StatusCreated,
 			expectedBody:       `{"player": {"id":1,"name":"Player 1", "teamID":1}}`,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_team.sql")
 			},
 		},
 		"Create player invalid body": {
@@ -28,7 +28,7 @@ func TestPlayers(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusBadRequest,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_team.sql")
 			},
 		},
 		"Create player not found": {
@@ -38,7 +38,7 @@ func TestPlayers(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNotFound,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup.sql")
 			},
 		},
 		"Create player not the owner": {
@@ -48,7 +48,7 @@ func TestPlayers(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			expectedStatusCode: http.StatusForbidden,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_team.sql")
 			},
 		},
 		"Update player": {
@@ -59,7 +59,7 @@ func TestPlayers(t *testing.T) {
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `{"player": {"id":1,"name":"Player 1 Updated","teamID": 1}}`,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_with_team_player.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_team_player.sql")
 			},
 		},
 		"Update player not found": {
@@ -69,7 +69,7 @@ func TestPlayers(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNotFound,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_team.sql")
 			},
 		},
 		"Update player forbidden": {
@@ -79,7 +79,7 @@ func TestPlayers(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			expectedStatusCode: http.StatusNotFound,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_team.sql")
 			},
 		},
 		"Delete player": {
@@ -88,7 +88,7 @@ func TestPlayers(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNoContent,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_with_team_player.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_team_player.sql")
 			},
 		},
 		"Delete player not found": {
@@ -97,7 +97,7 @@ func TestPlayers(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNotFound,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
+				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_team.sql")
 			},
 		},
 	}
@@ -123,7 +123,7 @@ func TestPlayers(t *testing.T) {
 				tc.setup(db)
 			}
 
-			defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+			defer executeSQLFile(t, db, "./integrationtests/test_data/cleanup.sql")
 			newTestRequest(t, tc, server, db)
 		})
 	}

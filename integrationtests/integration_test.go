@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -37,6 +36,13 @@ type testCase struct {
 	expectedBody       string
 	expectedHeaders    map[string]string
 	assertions         func(t *testing.T, db *sql.DB)
+}
+
+func TestMain(m *testing.M) {
+	if err := os.Chdir(".."); err != nil {
+		log.Fatalf("failed to change base dir: %v", err)
+	}
+	os.Exit(m.Run())
 }
 
 func newTestRequest(t *testing.T, tc testCase, server *httptest.Server, db *sql.DB) {
@@ -103,7 +109,7 @@ func executeSQLFile(t *testing.T, db *sql.DB, filepath string) {
 }
 
 func runGooseUp(t *testing.T, db *sql.DB) {
-	migrationsDir := filepath.Join("..", "db_migration")
+	migrationsDir := "db_migration"
 
 	if err := goose.SetDialect("postgres"); err != nil {
 		t.Fatalf("goose failed to set dialect: %v", err)

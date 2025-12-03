@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -19,29 +19,29 @@ func NewOpenAPIHandler() OpenAPIHandler {
 }
 
 func (h *openAPIHandler) GetOpenAPIConfig(writer http.ResponseWriter, _ *http.Request) {
-	openapiYAML, err := os.ReadFile(filepath.Join("spec", "openapi.yaml"))
+	openapiYAML, err := os.ReadFile(filepath.Join("openapi", "openapi.yaml"))
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Could not read openapi.yaml", "error", err)
 	}
 
 	writer.Header().Set("Content-Type", "text/yaml; charset=utf-8")
 	writer.Header().Set("Content-Disposition", "inline")
 	_, err = writer.Write(openapiYAML)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Could not write openapi.yaml", "error", err)
 	}
 }
 
 func (h *openAPIHandler) GetSwaggerDocs(writer http.ResponseWriter, _ *http.Request) {
-	swaggerHTML, err := os.ReadFile(filepath.Join("spec", "swagger.html"))
+	swaggerHTML, err := os.ReadFile(filepath.Join("openapi", "swagger.html"))
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Could not read swagger.html", "error", err)
 	}
 
 	writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 	writer.Header()
 	_, err = writer.Write(swaggerHTML)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("Could not write swagger.html", "error", err)
 	}
 }
