@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"net/http"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,7 @@ func TestRateLimitNotExceededWithDefaults(t *testing.T) {
 
 	runGooseUp(t, db)
 
-	server, teardown := setupTestServer()
+	server, teardown := setupTestServer(t)
 	defer teardown(server)
 
 	t.Run("IP rate limit not exceeded with multiple requests", func(t *testing.T) {
@@ -72,30 +73,38 @@ func TestRateLimitExceededWithEnv(t *testing.T) {
 
 	runGooseUp(t, db)
 
-	server, teardown := setupTestServer()
+	server, teardown := setupTestServer(t)
 	defer teardown(server)
 
 	t.Run("IP rate limit exceeded with multiple requests", func(t *testing.T) {
 		client := &http.Client{}
 
+		wg := sync.WaitGroup{}
+
 		for i := range 11 {
-			req, err := http.NewRequest(http.MethodGet, server.URL+"/health/live", nil)
-			if err != nil {
-				t.Fatalf("Failed to create request: %v", err)
-			}
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				req, err := http.NewRequest(http.MethodGet, server.URL+"/health/live", nil)
+				if err != nil {
+					t.Error("Failed to create request", err)
+					return
+				}
 
-			resp, err := client.Do(req)
-			if err != nil {
-				t.Fatalf("Request %d failed: %v", i+1, err)
-			}
-			defer resp.Body.Close()
+				resp, err := client.Do(req)
+				if err != nil {
+					t.Errorf("Request %d failed: %v", i+1, err)
+					return
+				}
+				defer resp.Body.Close()
 
-			if i < 11 {
-				assert.Equal(t, http.StatusOK, resp.StatusCode, "Request %d should succeed", i+1)
-			} else {
-				assert.Equal(t, http.StatusTooManyRequests, resp.StatusCode, "Request %d should fail", i+1)
-			}
-
+				if i < 11 {
+					assert.Equal(t, http.StatusOK, resp.StatusCode, "Request %d should succeed", i+1)
+				} else {
+					assert.Equal(t, http.StatusTooManyRequests, resp.StatusCode, "Request %d should fail", i+1)
+				}
+			}()
 		}
+		wg.Wait()
 	})
 }

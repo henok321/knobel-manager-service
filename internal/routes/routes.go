@@ -63,14 +63,18 @@ type RouteSetup struct {
 	authClient    middleware.FirebaseAuth
 	router        *http.ServeMux
 	healthService *healthpkg.Service
+	openAPIConfig []byte
+	swaggerDocs   []byte
 }
 
-func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthClient *healthpkg.Service) *http.ServeMux {
+func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthClient *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
 	instance := RouteSetup{
 		database:      database,
 		authClient:    authClient,
 		router:        http.NewServeMux(),
 		healthService: healthClient,
+		openAPIConfig: openAPIConfig,
+		swaggerDocs:   swaggerDocs,
 	}
 	instance.setup()
 
@@ -96,7 +100,7 @@ func (app *RouteSetup) setup() {
 	teamService := team.InitializeTeamsModule(app.database)
 
 	healthHandler := handlers.NewHealthHandler(app.healthService)
-	openAPIHandler := handlers.NewOpenAPIHandler()
+	openAPIHandler := handlers.NewOpenAPIHandler(app.openAPIConfig, app.swaggerDocs)
 	gamesHandler := handlers.NewGamesHandler(gameService)
 	playersHandler := handlers.NewPlayersHandler(playerService)
 	tablesHandler := handlers.NewTablesHandler(gameService, tableService)

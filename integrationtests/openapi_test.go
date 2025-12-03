@@ -29,7 +29,7 @@ func TestOpenAPI(t *testing.T) {
 
 		runGooseUp(t, db)
 
-		server, teardown := setupTestServer()
+		server, teardown := setupTestServer(t)
 		defer teardown(server)
 
 		resp, err := http.Get(server.URL + "/openapi.yaml")
@@ -40,7 +40,7 @@ func TestOpenAPI(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected status code 200")
 
-		openapiFile, err := os.ReadFile(filepath.Join("openapi", "openapi.yaml"))
+		openapiFile, err := os.ReadFile(filepath.Join("..", "openapi", "openapi.yaml"))
 
 		require.NoError(t, err)
 
@@ -73,7 +73,7 @@ func TestOpenAPI(t *testing.T) {
 
 		runGooseUp(t, db)
 
-		server, teardown := setupTestServer()
+		server, teardown := setupTestServer(t)
 		defer teardown(server)
 
 		resp, err := http.Get(server.URL + "/docs")

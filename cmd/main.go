@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"syscall"
 	"time"
@@ -141,17 +142,27 @@ func main() {
 	sqlDB.SetConnMaxLifetime(connMaxLifetime)
 	sqlDB.SetConnMaxIdleTime(connMaxIdleTime)
 
-	slog.Info("Database connection pool configured",
-		"maxOpenConns", maxOpenConns,
-		"maxIdleConns", maxIdleConns,
-		"connMaxLifetime", connMaxLifetime,
-		"connMaxIdleTime", connMaxIdleTime,
-	)
+	slog.Info("Database connection pool configured", "maxOpenConns", maxOpenConns, "maxIdleConns", maxIdleConns, "connMaxLifetime", connMaxLifetime, "connMaxIdleTime", connMaxIdleTime)
 
 	dbChecker := healthpkg.NewDatabaseChecker(database, 500*time.Millisecond)
 	firebaseChecker := healthpkg.NewFirebaseChecker(authClient, 500*time.Millisecond)
 	healthService := healthpkg.NewService(dbChecker, firebaseChecker)
-	router := routes.SetupRouter(database, authClient, healthService)
+
+	openAPIConfig, err := os.ReadFile(filepath.Join("openapi", "openapi.yaml"))
+	if err != nil {
+		slog.Error("Could not read openapi.yaml", "error", err)
+		exitCode = 1
+		return
+	}
+
+	swaggerDocs, err := os.ReadFile(filepath.Join("openapi", "swagger.html"))
+	if err != nil {
+		slog.Error("Could not read swagger.html", "error", err)
+		exitCode = 1
+		return
+	}
+
+	router := routes.SetupRouter(database, authClient, healthService, openAPIConfig, swaggerDocs)
 
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},

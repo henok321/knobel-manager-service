@@ -14,32 +14,32 @@ func TestTables(t *testing.T) {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/1/tables",
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       readContentFromFile(t, "./integrationtests/test_data/round_1_tables.json"),
+			expectedBody:       readContentFromFile(t, "./test_data/round_1_tables.json"),
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get tables for gameID 1 and round number 1 with scores": {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/1/tables",
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       readContentFromFile(t, "./integrationtests/test_data/round_1_tables_scores.json"),
+			expectedBody:       readContentFromFile(t, "./test_data/round_1_tables_scores.json"),
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_assigned_with_scores.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_assigned_with_scores.sql")
 			},
 		},
 		"get tables for gameID 1 and round number 2": {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/2/tables",
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       readContentFromFile(t, "./integrationtests/test_data/round_2_tables.json"),
+			expectedBody:       readContentFromFile(t, "./test_data/round_2_tables.json"),
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get tables for game 1 and round number 1 forbidden": {
@@ -49,7 +49,7 @@ func TestTables(t *testing.T) {
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-2"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get tables game not found": {
@@ -58,7 +58,7 @@ func TestTables(t *testing.T) {
 			expectedStatusCode: http.StatusNotFound,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get tables round not found": {
@@ -68,7 +68,7 @@ func TestTables(t *testing.T) {
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get tables invalid round number": {
@@ -78,7 +78,7 @@ func TestTables(t *testing.T) {
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get tables invalid game id": {
@@ -88,17 +88,17 @@ func TestTables(t *testing.T) {
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get table for gameID 1 and round number 2 by number 1": {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/1/tables/1",
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       readContentFromFile(t, "./integrationtests/test_data/round_1_tables_1.json"),
+			expectedBody:       readContentFromFile(t, "./test_data/round_1_tables_1.json"),
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get table by number game forbidden": {
@@ -108,7 +108,7 @@ func TestTables(t *testing.T) {
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-2"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get table by number game not found": {
@@ -118,7 +118,7 @@ func TestTables(t *testing.T) {
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get table by id round not found": {
@@ -128,7 +128,7 @@ func TestTables(t *testing.T) {
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get table by number table not found": {
@@ -138,7 +138,7 @@ func TestTables(t *testing.T) {
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get table by number with invalid game id": {
@@ -148,7 +148,7 @@ func TestTables(t *testing.T) {
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get table by number with invalid round number": {
@@ -158,7 +158,7 @@ func TestTables(t *testing.T) {
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 		"get table by number with invalid table number": {
@@ -168,7 +168,7 @@ func TestTables(t *testing.T) {
 
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./integrationtests/test_data/games_setup_with_tables.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
 	}
@@ -185,7 +185,7 @@ func TestTables(t *testing.T) {
 
 	runGooseUp(t, db)
 
-	server, teardown := setupTestServer()
+	server, teardown := setupTestServer(t)
 	defer teardown(server)
 
 	for name, tc := range tests {
@@ -194,7 +194,7 @@ func TestTables(t *testing.T) {
 				tc.setup(db)
 			}
 
-			defer executeSQLFile(t, db, "./integrationtests/test_data/cleanup.sql")
+			defer executeSQLFile(t, db, "./test_data/cleanup.sql")
 			newTestRequest(t, tc, server, db)
 		})
 	}

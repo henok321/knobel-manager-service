@@ -25,7 +25,7 @@ func TestHealthCheck(t *testing.T) {
 
 		runGooseUp(t, db)
 
-		server, teardown := setupTestServer()
+		server, teardown := setupTestServer(t)
 		defer teardown(server)
 
 		resp, err := http.Get(server.URL + "/health/live")
@@ -55,7 +55,7 @@ func TestHealthCheck(t *testing.T) {
 
 		runGooseUp(t, db)
 
-		server, teardown := setupTestServer()
+		server, teardown := setupTestServer(t)
 		defer teardown(server)
 
 		resp, err := http.Get(server.URL + "/health/ready")

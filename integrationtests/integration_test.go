@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -36,13 +37,6 @@ type testCase struct {
 	expectedBody       string
 	expectedHeaders    map[string]string
 	assertions         func(t *testing.T, db *sql.DB)
-}
-
-func TestMain(m *testing.M) {
-	if err := os.Chdir(".."); err != nil {
-		log.Fatalf("failed to change base dir: %v", err)
-	}
-	os.Exit(m.Run())
 }
 
 func newTestRequest(t *testing.T, tc testCase, server *httptest.Server, db *sql.DB) {
@@ -109,7 +103,7 @@ func executeSQLFile(t *testing.T, db *sql.DB, filepath string) {
 }
 
 func runGooseUp(t *testing.T, db *sql.DB) {
-	migrationsDir := "db_migration"
+	migrationsDir := filepath.Join("..", "db_migration")
 
 	if err := goose.SetDialect("postgres"); err != nil {
 		t.Fatalf("goose failed to set dialect: %v", err)
@@ -120,7 +114,7 @@ func runGooseUp(t *testing.T, db *sql.DB) {
 	}
 }
 
-func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
+func setupTestServer(t *testing.T) (*httptest.Server, func(*httptest.Server)) {
 	url := os.Getenv("DATABASE_URL")
 	database, err := gorm.Open(pg.Open(url), &gorm.Config{})
 	if err != nil {
@@ -130,7 +124,17 @@ func setupTestServer() (*httptest.Server, func(*httptest.Server)) {
 	dbChecker := healthpkg.NewDatabaseChecker(database, 500*time.Millisecond)
 	firebaseChecker := healthpkg.NewFirebaseChecker(mock.FirebaseAuthMock{}, 500*time.Millisecond)
 	healthService := healthpkg.NewService(dbChecker, firebaseChecker)
-	router := routes.SetupRouter(database, mock.FirebaseAuthMock{}, healthService)
+
+	openAPIConfig, err := os.ReadFile(filepath.Join("..", "openapi", "openapi.yaml"))
+	if err != nil {
+		t.Fatal("Could not read openapi.yaml", err)
+	}
+	swaggerDocs, err := os.ReadFile(filepath.Join("..", "openapi", "swagger.html"))
+	if err != nil {
+		t.Fatal("Could not read swagger.html", err)
+	}
+
+	router := routes.SetupRouter(database, mock.FirebaseAuthMock{}, healthService, openAPIConfig, swaggerDocs)
 
 	server := httptest.NewServer(router)
 	teardown := func(*httptest.Server) {
