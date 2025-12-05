@@ -1,23 +1,12 @@
 package middleware
 
 import (
-	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers"
 )
-
-type validationErrorResponse struct {
-	Error string `json:"error"`
-}
-
-func writeJSONError(w http.ResponseWriter, errorMessage string, statusCode int) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(statusCode)
-	_ = json.NewEncoder(w).Encode(&validationErrorResponse{Error: errorMessage})
-}
 
 func RequestValidation(router routers.Router, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
@@ -39,7 +28,8 @@ func RequestValidation(router routers.Router, next http.Handler) http.Handler {
 
 		err = openapi3filter.ValidateRequest(ctx, reqInput)
 		if err != nil {
-			writeJSONError(writer, err.Error(), http.StatusBadRequest)
+			slog.DebugContext(ctx, "Request validation failed", "error", err)
+			http.Error(writer, err.Error(), http.StatusBadRequest)
 			return
 		}
 
