@@ -58,42 +58,38 @@ func rateLimitConfig() middleware.RateConfig {
 	}
 }
 
-type RouteSetup struct {
+type routeSetup struct {
 	database      *gorm.DB
 	authClient    middleware.FirebaseAuth
-	router        *http.ServeMux
 	healthService *healthpkg.Service
 	openAPIConfig []byte
 	swaggerDocs   []byte
 }
 
 func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthClient *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
-	instance := RouteSetup{
+	instance := routeSetup{
 		database:      database,
 		authClient:    authClient,
-		router:        http.NewServeMux(),
 		healthService: healthClient,
 		openAPIConfig: openAPIConfig,
 		swaggerDocs:   swaggerDocs,
 	}
-	instance.setup()
-
-	return instance.router
+	return instance.setup()
 }
 
-func (app *RouteSetup) publicEndpoint(handler http.Handler) http.Handler {
+func (app *routeSetup) publicEndpoint(handler http.Handler) http.Handler {
 	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders("default-src 'self'", middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
 }
 
-func (app *RouteSetup) publicOpenAPIEndpoint(handler http.Handler) http.Handler {
+func (app *routeSetup) publicOpenAPIEndpoint(handler http.Handler) http.Handler {
 	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:", middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
 }
 
-func (app *RouteSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
+func (app *routeSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
 	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders("default-src 'self'", middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, handler)))))
 }
 
-func (app *RouteSetup) setup() {
+func (app *routeSetup) setup() *http.ServeMux {
 	gameService := game.InitializeGameModule(app.database)
 	playerService := player.InitializePlayerModule(app.database)
 	tableService := table.InitializeTablesModule(app.database)
@@ -106,39 +102,45 @@ func (app *RouteSetup) setup() {
 	tablesHandler := handlers.NewTablesHandler(gameService, tableService)
 	teamsHandler := handlers.NewTeamsHandler(teamService)
 
-	app.router.Handle("/openapi.yaml", app.publicEndpoint(http.HandlerFunc(openAPIHandler.GetOpenAPIConfig)))
-	app.router.Handle("/docs", app.publicOpenAPIEndpoint(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
+	router := http.NewServeMux()
 
-	healthRoutes := health.Handler(healthHandler)
-	app.router.Handle("/health", app.publicEndpoint(healthRoutes))
-	app.router.Handle("/health/", app.publicEndpoint(healthRoutes))
+	router.Handle("/openapi.yaml", app.publicEndpoint(http.HandlerFunc(openAPIHandler.GetOpenAPIConfig)))
+	router.Handle("/docs", app.publicOpenAPIEndpoint(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
 
-	gamesRoutes := games.HandlerWithOptions(gamesHandler, games.StdHTTPServerOptions{
+	health.HandlerWithOptions(healthHandler, health.StdHTTPServerOptions{
+		BaseRouter:  router,
+		Middlewares: []health.MiddlewareFunc{app.publicEndpoint},
+	})
+
+	games.HandlerWithOptions(gamesHandler, games.StdHTTPServerOptions{
+		BaseRouter:       router,
 		ErrorHandlerFunc: gamesHandler.HandleValidationError,
+		Middlewares:      []games.MiddlewareFunc{app.authenticatedEndpoint},
 	})
-	app.router.Handle("/games", app.authenticatedEndpoint(gamesRoutes))
-	app.router.Handle("/games/", app.authenticatedEndpoint(gamesRoutes))
 
-	teamsRoutes := teams.HandlerWithOptions(teamsHandler, teams.StdHTTPServerOptions{
+	teams.HandlerWithOptions(teamsHandler, teams.StdHTTPServerOptions{
+		BaseRouter:       router,
 		ErrorHandlerFunc: teamsHandler.HandleValidationError,
+		Middlewares:      []teams.MiddlewareFunc{app.authenticatedEndpoint},
 	})
-	app.router.Handle("/games/{gameId}/teams", app.authenticatedEndpoint(teamsRoutes))
-	app.router.Handle("/games/{gameId}/teams/", app.authenticatedEndpoint(teamsRoutes))
 
-	playersRoutes := players.HandlerWithOptions(playersHandler, players.StdHTTPServerOptions{
+	players.HandlerWithOptions(playersHandler, players.StdHTTPServerOptions{
+		BaseRouter:       router,
 		ErrorHandlerFunc: playersHandler.HandleValidationError,
+		Middlewares:      []players.MiddlewareFunc{app.authenticatedEndpoint},
 	})
-	app.router.Handle("/games/{gameId}/teams/{teamId}/players", app.authenticatedEndpoint(playersRoutes))
-	app.router.Handle("/games/{gameId}/teams/{teamId}/players/", app.authenticatedEndpoint(playersRoutes))
 
-	tablesRoutes := tables.HandlerWithOptions(tablesHandler, tables.StdHTTPServerOptions{
+	tables.HandlerWithOptions(tablesHandler, tables.StdHTTPServerOptions{
+		BaseRouter:       router,
 		ErrorHandlerFunc: tablesHandler.HandleValidationError,
+		Middlewares:      []tables.MiddlewareFunc{app.authenticatedEndpoint},
 	})
-	app.router.Handle("/games/{gameId}/rounds/{roundNumber}/tables", app.authenticatedEndpoint(tablesRoutes))
-	app.router.Handle("/games/{gameId}/rounds/{roundNumber}/tables/", app.authenticatedEndpoint(tablesRoutes))
 
-	scoresRoutes := scores.HandlerWithOptions(tablesHandler, scores.StdHTTPServerOptions{
+	scores.HandlerWithOptions(tablesHandler, scores.StdHTTPServerOptions{
+		BaseRouter:       router,
 		ErrorHandlerFunc: tablesHandler.HandleValidationError,
+		Middlewares:      []scores.MiddlewareFunc{app.authenticatedEndpoint},
 	})
-	app.router.Handle("/games/{gameId}/rounds/{roundNumber}/tables/{tableNumber}/scores", app.authenticatedEndpoint(scoresRoutes))
+
+	return router
 }
