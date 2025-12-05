@@ -61,6 +61,7 @@ func TestGames(t *testing.T) {
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			}, expectedStatusCode: http.StatusBadRequest,
+			expectedBody:   `{"error":"Invalid gameID"}`,
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
 		"Find game by id not owner": {
@@ -91,7 +92,7 @@ func TestGames(t *testing.T) {
 		"Update an existing game": {
 			method:             http.MethodPut,
 			endpoint:           "/games/1",
-			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4, "status":"setup"}`,
+			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusOK,
 			expectedBody:       `{"game":{"id":1,"name":"Game 1 updated","teamSize":4,"tableSize":4,"numberOfRounds":3,"status":"setup","owners":[{"gameID":1,"ownerSub":"sub-1"}]}}`,
@@ -139,14 +140,14 @@ func TestGames(t *testing.T) {
 		"Update an existing Game not found": {
 			method:             http.MethodPut,
 			endpoint:           "/games/1",
-			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4,"status":"in_progress"}`,
+			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNotFound,
 		},
 		"Update an existing game not owner": {
 			method:             http.MethodPut,
 			endpoint:           "/games/1",
-			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4, "status":"in_progress"}`,
+			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			expectedStatusCode: http.StatusForbidden,
 			setup: func(db *sql.DB) {

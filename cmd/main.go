@@ -199,12 +199,6 @@ func main() {
 		return
 	}
 
-	if err != nil {
-		slog.Error("Starting application failed, cannot load openapi config", "error", err)
-		exitCode = 1
-		return
-	}
-
 	router := routes.SetupRouter(gormDB, authClient, healthService, openAPIConfig, swaggerDocs)
 
 	corsHandler := cors.New(cors.Options{
