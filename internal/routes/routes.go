@@ -7,6 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/routers"
+	"github.com/getkin/kin-openapi/routers/legacy"
 	"github.com/henok321/knobel-manager-service/gen/games"
 	"github.com/henok321/knobel-manager-service/gen/health"
 	"github.com/henok321/knobel-manager-service/gen/players"
@@ -59,22 +62,37 @@ func rateLimitConfig() middleware.RateConfig {
 }
 
 type RouteSetup struct {
-	database      *gorm.DB
-	authClient    middleware.FirebaseAuth
-	router        *http.ServeMux
-	healthService *healthpkg.Service
-	openAPIConfig []byte
-	swaggerDocs   []byte
+	database         *gorm.DB
+	authClient       middleware.FirebaseAuth
+	router           *http.ServeMux
+	healthService    *healthpkg.Service
+	openAPIConfig    []byte
+	swaggerDocs      []byte
+	validationRouter routers.Router
 }
 
 func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthClient *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
+	loader := openapi3.NewLoader()
+	doc, err := loader.LoadFromData(openAPIConfig)
+	if err != nil {
+		slog.Error("Failed to load OpenAPI spec", "error", err)
+		panic(err)
+	}
+
+	validationRouter, err := legacy.NewRouter(doc)
+	if err != nil {
+		slog.Error("Failed to create OpenAPI router", "error", err)
+		panic(err)
+	}
+
 	instance := RouteSetup{
-		database:      database,
-		authClient:    authClient,
-		router:        http.NewServeMux(),
-		healthService: healthClient,
-		openAPIConfig: openAPIConfig,
-		swaggerDocs:   swaggerDocs,
+		database:         database,
+		authClient:       authClient,
+		router:           http.NewServeMux(),
+		healthService:    healthClient,
+		openAPIConfig:    openAPIConfig,
+		swaggerDocs:      swaggerDocs,
+		validationRouter: validationRouter,
 	}
 	instance.setup()
 
@@ -90,7 +108,18 @@ func (app *RouteSetup) publicOpenAPIEndpoint(handler http.Handler) http.Handler 
 }
 
 func (app *RouteSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
-	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders("default-src 'self'", middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, handler)))))
+	return middleware.RateLimit(
+		rateLimitConfig(),
+		middleware.SecurityHeaders(
+			"default-src 'self'",
+			middleware.Metrics(
+				middleware.RequestLogging(
+					slog.LevelInfo,
+					middleware.RequestValidation(
+						app.validationRouter,
+						middleware.Authentication(
+							app.authClient,
+							handler))))))
 }
 
 func (app *RouteSetup) setup() {
