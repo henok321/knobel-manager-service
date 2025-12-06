@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"strings"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/games"
@@ -25,14 +24,6 @@ func NewGamesHandler(gamesService game.GamesService) *GamesHandler {
 }
 
 var _ games.ServerInterface = (*GamesHandler)(nil)
-
-func (h *GamesHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
-	if strings.Contains(err.Error(), "Invalid format for parameter gameID") {
-		JSONError(w, "Invalid gameID", http.StatusBadRequest)
-		return
-	}
-	JSONError(w, err.Error(), http.StatusBadRequest)
-}
 
 func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
-	"strings"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/scores"
@@ -26,25 +25,10 @@ func NewTablesHandler(gamesService game.GamesService, tablesService table.Tables
 	return &TablesHandler{gamesService: gamesService, tablesService: tablesService}
 }
 
-// Verify that TablesHandler implements both generated OpenAPI interfaces
 var (
 	_ tables.ServerInterface = (*TablesHandler)(nil)
 	_ scores.ServerInterface = (*TablesHandler)(nil)
 )
-
-func (t *TablesHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
-	errorMsg := err.Error()
-	switch {
-	case strings.Contains(errorMsg, "Invalid format for parameter gameID"):
-		JSONError(w, "Invalid gameID", http.StatusBadRequest)
-	case strings.Contains(errorMsg, "Invalid format for parameter roundNumber"):
-		JSONError(w, "Invalid roundNumber", http.StatusBadRequest)
-	case strings.Contains(errorMsg, "Invalid format for parameter tableNumber"):
-		JSONError(w, "Invalid tableNumber", http.StatusBadRequest)
-	default:
-		JSONError(w, errorMsg, http.StatusBadRequest)
-	}
-}
 
 func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request, gameID, roundNumber int) {
 	ctx := request.Context()

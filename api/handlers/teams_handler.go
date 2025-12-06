@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/teams"
@@ -24,20 +23,7 @@ func NewTeamsHandler(service team.TeamsService) *TeamsHandler {
 	return &TeamsHandler{service}
 }
 
-// Verify that TeamsHandler implements the generated OpenAPI interface
 var _ teams.ServerInterface = (*TeamsHandler)(nil)
-
-func (t *TeamsHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
-	errorMsg := err.Error()
-	switch {
-	case strings.Contains(errorMsg, "Invalid format for parameter gameID"):
-		JSONError(w, "Invalid gameID", http.StatusBadRequest)
-	case strings.Contains(errorMsg, "Invalid format for parameter teamID"):
-		JSONError(w, "Invalid teamID", http.StatusBadRequest)
-	default:
-		JSONError(w, errorMsg, http.StatusBadRequest)
-	}
-}
 
 func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Request, gameID int) {
 	ctx := request.Context()

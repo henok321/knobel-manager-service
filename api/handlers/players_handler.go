@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"strings"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/players"
@@ -25,22 +24,7 @@ func NewPlayersHandler(service player.PlayersService) *PlayersHandler {
 	}
 }
 
-// Verify that PlayersHandler implements the generated OpenAPI interface
 var _ players.ServerInterface = (*PlayersHandler)(nil)
-
-func (h *PlayersHandler) HandleValidationError(w http.ResponseWriter, _ *http.Request, err error) {
-	errorMsg := err.Error()
-	switch {
-	case strings.Contains(errorMsg, "Invalid format for parameter gameID"):
-		JSONError(w, "Invalid gameID", http.StatusBadRequest)
-	case strings.Contains(errorMsg, "Invalid format for parameter teamID"):
-		JSONError(w, "Invalid teamID", http.StatusBadRequest)
-	case strings.Contains(errorMsg, "Invalid format for parameter playerID"):
-		JSONError(w, "Invalid playerID", http.StatusBadRequest)
-	default:
-		JSONError(w, errorMsg, http.StatusBadRequest)
-	}
-}
 
 func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
 	ctx := request.Context()

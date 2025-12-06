@@ -61,7 +61,7 @@ func TestGames(t *testing.T) {
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			}, expectedStatusCode: http.StatusBadRequest,
-			expectedBody:   `{"error":"Invalid gameID"}`,
+			expectedBody:   `{"error":"Invalid format for parameter gameID: error binding string parameter: strconv.ParseInt: parsing \"invalid\": invalid syntax"}`,
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
 		"Find game by id not owner": {

@@ -107,6 +107,10 @@ func (app *routeSetup) setup() *http.ServeMux {
 	router.Handle("/openapi.yaml", app.publicEndpoint(http.HandlerFunc(openAPIHandler.GetOpenAPIConfig)))
 	router.Handle("/docs", app.publicOpenAPIEndpoint(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
 
+	handleValidationErrors := func(w http.ResponseWriter, _ *http.Request, err error) {
+		handlers.JSONError(w, err.Error(), http.StatusBadRequest)
+	}
+
 	health.HandlerWithOptions(healthHandler, health.StdHTTPServerOptions{
 		BaseRouter:  router,
 		Middlewares: []health.MiddlewareFunc{app.publicEndpoint},
@@ -114,31 +118,31 @@ func (app *routeSetup) setup() *http.ServeMux {
 
 	games.HandlerWithOptions(gamesHandler, games.StdHTTPServerOptions{
 		BaseRouter:       router,
-		ErrorHandlerFunc: gamesHandler.HandleValidationError,
+		ErrorHandlerFunc: handleValidationErrors,
 		Middlewares:      []games.MiddlewareFunc{app.authenticatedEndpoint},
 	})
 
 	teams.HandlerWithOptions(teamsHandler, teams.StdHTTPServerOptions{
 		BaseRouter:       router,
-		ErrorHandlerFunc: teamsHandler.HandleValidationError,
+		ErrorHandlerFunc: handleValidationErrors,
 		Middlewares:      []teams.MiddlewareFunc{app.authenticatedEndpoint},
 	})
 
 	players.HandlerWithOptions(playersHandler, players.StdHTTPServerOptions{
 		BaseRouter:       router,
-		ErrorHandlerFunc: playersHandler.HandleValidationError,
+		ErrorHandlerFunc: handleValidationErrors,
 		Middlewares:      []players.MiddlewareFunc{app.authenticatedEndpoint},
 	})
 
 	tables.HandlerWithOptions(tablesHandler, tables.StdHTTPServerOptions{
 		BaseRouter:       router,
-		ErrorHandlerFunc: tablesHandler.HandleValidationError,
+		ErrorHandlerFunc: handleValidationErrors,
 		Middlewares:      []tables.MiddlewareFunc{app.authenticatedEndpoint},
 	})
 
 	scores.HandlerWithOptions(tablesHandler, scores.StdHTTPServerOptions{
 		BaseRouter:       router,
-		ErrorHandlerFunc: tablesHandler.HandleValidationError,
+		ErrorHandlerFunc: handleValidationErrors,
 		Middlewares:      []scores.MiddlewareFunc{app.authenticatedEndpoint},
 	})
 
