@@ -81,7 +81,7 @@ func (app *routeSetup) publicEndpoint(handler http.Handler) http.Handler {
 	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders("default-src 'self'", middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
 }
 
-func (app *routeSetup) publicOpenAPIEndpoint(handler http.Handler) http.Handler {
+func (app *routeSetup) publicSwaggerDocsEndpoint(handler http.Handler) http.Handler {
 	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:", middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
 }
 
@@ -105,7 +105,7 @@ func (app *routeSetup) setup() *http.ServeMux {
 	router := http.NewServeMux()
 
 	router.Handle("/openapi.yaml", app.publicEndpoint(http.HandlerFunc(openAPIHandler.GetOpenAPIConfig)))
-	router.Handle("/docs", app.publicOpenAPIEndpoint(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
+	router.Handle("/docs", app.publicSwaggerDocsEndpoint(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
 
 	handleValidationErrors := func(w http.ResponseWriter, _ *http.Request, err error) {
 		handlers.JSONError(w, err.Error(), http.StatusBadRequest)
