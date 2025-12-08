@@ -81,7 +81,7 @@ repos:
         pass_filenames: false
 
   - repo: https://github.com/golangci/golangci-lint
-    rev: v2.7.1
+    rev: v2.7.2
     hooks:
       - id: golangci-lint-config-verify
         stages: [pre-commit]
