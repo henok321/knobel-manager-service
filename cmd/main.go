@@ -17,6 +17,7 @@ import (
 	"firebase.google.com/go/v4/auth"
 	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/logging"
+	"github.com/henok321/knobel-manager-service/api/routes"
 	"github.com/rs/cors"
 
 	firebase "firebase.google.com/go/v4"
@@ -25,8 +26,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"google.golang.org/api/option"
-
-	"github.com/henok321/knobel-manager-service/internal/routes"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

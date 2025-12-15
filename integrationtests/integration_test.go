@@ -14,11 +14,11 @@ import (
 	"time"
 
 	healthpkg "github.com/henok321/knobel-manager-service/api/health"
+	"github.com/henok321/knobel-manager-service/api/routes"
 	"github.com/henok321/knobel-manager-service/integrationtests/mock"
 	pg "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"github.com/henok321/knobel-manager-service/internal/routes"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
