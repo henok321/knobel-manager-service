@@ -70,8 +70,8 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Location", request.URL.String()+"/"+strconv.FormatInt(int64(createdTeam.ID), 10))
 	writer.WriteHeader(http.StatusCreated)
 
-	response := teams.TeamResponse{
-		Team: entityTeamToTeamsAPITeam(createdTeam),
+	response := types.TeamResponse{
+		Team: entityTeamToAPITeam(createdTeam),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
@@ -120,8 +120,8 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	response := teams.TeamResponse{
-		Team: entityTeamToTeamsAPITeam(updatedGame),
+	response := types.TeamResponse{
+		Team: entityTeamToAPITeam(updatedGame),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {

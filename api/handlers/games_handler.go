@@ -45,12 +45,12 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	apiGames := make([]games.Game, len(allGames))
+	apiGames := make([]types.Game, len(allGames))
 	for i, entry := range allGames {
 		apiGames[i] = entityGameToAPIGame(entry)
 	}
 
-	response := games.GamesResponse{
+	response := types.GamesResponse{
 		Games: apiGames,
 	}
 
@@ -128,7 +128,7 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Location", fmt.Sprintf("/games/%d", createdGame.ID))
 	writer.WriteHeader(http.StatusCreated)
 
-	response := games.GameResponse{
+	response := types.GameResponse{
 		Game: entityGameToAPIGame(createdGame),
 	}
 
@@ -178,7 +178,7 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	response := games.GameResponse{
+	response := types.GameResponse{
 		Game: entityGameToAPIGame(updatedGame),
 	}
 

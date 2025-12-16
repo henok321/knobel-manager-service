@@ -59,12 +59,12 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 	for _, round := range gameByID.Rounds {
 		if round.RoundNumber == roundNumber {
 			// Convert entity tables to API tables
-			apiTables := make([]tables.Table, len(round.Tables))
+			apiTables := make([]types.Table, len(round.Tables))
 			for i, t := range round.Tables {
-				apiTables[i] = entityTableToTablesAPITable(*t)
+				apiTables[i] = entityTableToAPITable(*t)
 			}
 
-			response := tables.TablesResponse{
+			response := types.TablesResponse{
 				Tables: apiTables,
 			}
 
@@ -112,7 +112,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 		if round.RoundNumber == roundNumber {
 			for _, currentTable := range round.Tables {
 				if currentTable.TableNumber == tableNumber {
-					response := entityTableToTablesAPITable(*currentTable)
+					response := entityTableToAPITable(*currentTable)
 
 					writer.Header().Set("Content-Type", "application/json")
 					writer.WriteHeader(http.StatusOK)
@@ -182,7 +182,7 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 	}
 
 	response := types.GameResponse{
-		Game: entityGameToTypesAPIGame(updatedGame),
+		Game: entityGameToAPIGame(updatedGame),
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
