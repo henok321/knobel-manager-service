@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/henok321/knobel-manager-service/gen/types"
+	"github.com/henok321/knobel-manager-service/gen/games"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/setup"
@@ -16,8 +16,8 @@ import (
 type GamesService interface {
 	FindAllByOwner(ctx context.Context, sub string) ([]entity.Game, error)
 	FindByID(ctx context.Context, id int, sub string) (entity.Game, error)
-	CreateGame(ctx context.Context, sub string, game *types.GameCreateRequest) (entity.Game, error)
-	UpdateGame(ctx context.Context, id int, sub string, game types.GameUpdateRequest) (entity.Game, error)
+	CreateGame(ctx context.Context, sub string, game *games.GameCreateRequest) (entity.Game, error)
+	UpdateGame(ctx context.Context, id int, sub string, game games.GameUpdateRequest) (entity.Game, error)
 	DeleteGame(ctx context.Context, id int, sub string) error
 	AssignTables(ctx context.Context, game entity.Game) error
 }
@@ -51,7 +51,7 @@ func (s *gamesService) FindByID(ctx context.Context, id int, sub string) (entity
 	return gameByID, nil
 }
 
-func (s *gamesService) CreateGame(ctx context.Context, sub string, game *types.GameCreateRequest) (entity.Game, error) {
+func (s *gamesService) CreateGame(ctx context.Context, sub string, game *games.GameCreateRequest) (entity.Game, error) {
 	gameModel := entity.Game{
 		Name:           game.Name,
 		TeamSize:       game.TeamSize,
@@ -64,7 +64,7 @@ func (s *gamesService) CreateGame(ctx context.Context, sub string, game *types.G
 	return s.repo.CreateOrUpdateGame(ctx, &gameModel)
 }
 
-func (s *gamesService) UpdateGame(ctx context.Context, id int, sub string, game types.GameUpdateRequest) (entity.Game, error) {
+func (s *gamesService) UpdateGame(ctx context.Context, id int, sub string, game games.GameUpdateRequest) (entity.Game, error) {
 	gameByID, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

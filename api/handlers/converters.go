@@ -1,130 +1,206 @@
 package handlers
 
 import (
-	"github.com/henok321/knobel-manager-service/gen/types"
+	"github.com/henok321/knobel-manager-service/gen/games"
+	"github.com/henok321/knobel-manager-service/gen/players"
+	"github.com/henok321/knobel-manager-service/gen/tables"
+	"github.com/henok321/knobel-manager-service/gen/teams"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
 
-func entityGameToAPIGame(e entity.Game) types.Game {
-	g := types.Game{
-		Id:             e.ID,
-		Name:           e.Name,
-		NumberOfRounds: e.NumberOfRounds,
-		Status:         types.GameStatus(e.Status),
-		TableSize:      e.TableSize,
-		TeamSize:       e.TeamSize,
+func entityPlayerToGamesPlayer(p entity.Player) games.Player {
+	return games.Player{
+		Id:     p.ID,
+		Name:   p.Name,
+		TeamID: p.TeamID,
+	}
+}
+
+func entityPlayerToTeamsPlayer(p entity.Player) teams.Player {
+	return teams.Player{
+		Id:     p.ID,
+		Name:   p.Name,
+		TeamID: p.TeamID,
+	}
+}
+
+func entityPlayerToPlayersPlayer(p entity.Player) players.Player {
+	return players.Player{
+		Id:     p.ID,
+		Name:   p.Name,
+		TeamID: p.TeamID,
+	}
+}
+
+func entityPlayerToTablesPlayer(p entity.Player) tables.Player {
+	return tables.Player{
+		Id:     p.ID,
+		Name:   p.Name,
+		TeamID: p.TeamID,
+	}
+}
+
+func entityScoreToGamesScore(s entity.Score) games.Score {
+	return games.Score{
+		Id:       s.ID,
+		PlayerID: s.PlayerID,
+		Score:    s.Score,
+		TableID:  s.TableID,
+	}
+}
+
+func entityScoreToTablesScore(s entity.Score) tables.Score {
+	return tables.Score{
+		Id:       s.ID,
+		PlayerID: s.PlayerID,
+		Score:    s.Score,
+		TableID:  s.TableID,
+	}
+}
+
+func entityGameToGamesGame(gameEntity entity.Game) games.Game {
+	apiGame := games.Game{
+		Id:             gameEntity.ID,
+		Name:           gameEntity.Name,
+		NumberOfRounds: gameEntity.NumberOfRounds,
+		Status:         games.GameStatus(gameEntity.Status),
+		TableSize:      gameEntity.TableSize,
+		TeamSize:       gameEntity.TeamSize,
 	}
 
-	if len(e.Owners) > 0 {
-		owners := make([]types.GameOwner, len(e.Owners))
-		for i, owner := range e.Owners {
-			owners[i] = types.GameOwner{
+	if len(gameEntity.Owners) > 0 {
+		owners := make([]games.GameOwner, len(gameEntity.Owners))
+		for i, owner := range gameEntity.Owners {
+			owners[i] = games.GameOwner{
 				GameID:   owner.GameID,
 				OwnerSub: owner.OwnerSub,
 			}
 		}
-		g.Owners = owners
+		apiGame.Owners = owners
 	}
 
-	if len(e.Teams) > 0 {
-		teamsSlice := make([]types.Team, len(e.Teams))
-		for i, team := range e.Teams {
-			teamsSlice[i] = entityTeamToAPITeam(*team)
+	if len(gameEntity.Teams) > 0 {
+		teamsSlice := make([]games.Team, len(gameEntity.Teams))
+		for i, team := range gameEntity.Teams {
+			teamsSlice[i] = entityTeamToGamesTeam(*team)
 		}
-		g.Teams = &teamsSlice
+		apiGame.Teams = &teamsSlice
 	}
 
-	if len(e.Rounds) > 0 {
-		rounds := make([]types.GameRound, len(e.Rounds))
-		for i, round := range e.Rounds {
-			rounds[i] = entityRoundToAPIRound(*round)
+	if len(gameEntity.Rounds) > 0 {
+		rounds := make([]games.GameRound, len(gameEntity.Rounds))
+		for i, round := range gameEntity.Rounds {
+			rounds[i] = entityRoundToGamesRound(*round)
 		}
-		g.Rounds = &rounds
+		apiGame.Rounds = &rounds
 	}
 
-	return g
+	return apiGame
 }
 
-func entityTeamToAPITeam(e entity.Team) types.Team {
-	t := types.Team{
-		GameID: e.GameID,
-		Id:     e.ID,
-		Name:   e.Name,
+func entityTeamToGamesTeam(teamEntity entity.Team) games.Team {
+	apiTeam := games.Team{
+		GameID: teamEntity.GameID,
+		Id:     teamEntity.ID,
+		Name:   teamEntity.Name,
 	}
 
-	if len(e.Players) > 0 {
-		players := make([]types.Player, len(e.Players))
-		for i, player := range e.Players {
-			players[i] = types.Player{
-				Id:     player.ID,
-				Name:   player.Name,
-				TeamID: player.TeamID,
-			}
+	if len(teamEntity.Players) > 0 {
+		apiPlayers := make([]games.Player, len(teamEntity.Players))
+		for i, player := range teamEntity.Players {
+			apiPlayers[i] = entityPlayerToGamesPlayer(*player)
 		}
-		t.Players = &players
+		apiTeam.Players = &apiPlayers
 	}
 
-	return t
+	return apiTeam
 }
 
-func entityRoundToAPIRound(e entity.Round) types.GameRound {
-	r := types.GameRound{
-		GameID:      e.GameID,
-		Id:          e.ID,
-		RoundNumber: e.RoundNumber,
-		Status:      types.RoundStatus(e.Status),
+func entityTeamToTeamsTeam(teamEntity entity.Team) teams.Team {
+	apiTeam := teams.Team{
+		GameID: teamEntity.GameID,
+		Id:     teamEntity.ID,
+		Name:   teamEntity.Name,
 	}
 
-	if len(e.Tables) > 0 {
-		tablesSlice := make([]types.Table, len(e.Tables))
-		for i, table := range e.Tables {
-			tablesSlice[i] = entityTableToAPITable(*table)
+	if len(teamEntity.Players) > 0 {
+		players := make([]teams.Player, len(teamEntity.Players))
+		for i, player := range teamEntity.Players {
+			players[i] = entityPlayerToTeamsPlayer(*player)
 		}
-		r.Tables = &tablesSlice
+		apiTeam.Players = &players
 	}
 
-	return r
+	return apiTeam
 }
 
-func entityTableToAPITable(e entity.GameTable) types.Table {
-	t := types.Table{
-		Id:          e.ID,
-		RoundID:     e.RoundID,
-		TableNumber: e.TableNumber,
+func entityRoundToGamesRound(roundEntity entity.Round) games.GameRound {
+	apiRound := games.GameRound{
+		GameID:      roundEntity.GameID,
+		Id:          roundEntity.ID,
+		RoundNumber: roundEntity.RoundNumber,
+		Status:      games.RoundStatus(roundEntity.Status),
 	}
 
-	if len(e.Players) > 0 {
-		players := make([]types.Player, len(e.Players))
-		for i, player := range e.Players {
-			players[i] = types.Player{
-				Id:     player.ID,
-				Name:   player.Name,
-				TeamID: player.TeamID,
-			}
+	if len(roundEntity.Tables) > 0 {
+		tablesSlice := make([]games.Table, len(roundEntity.Tables))
+		for i, table := range roundEntity.Tables {
+			tablesSlice[i] = entityTableToGamesTable(*table)
 		}
-		t.Players = &players
+		apiRound.Tables = &tablesSlice
 	}
 
-	if len(e.Scores) > 0 {
-		scores := make([]types.Score, len(e.Scores))
-		for i, score := range e.Scores {
-			scores[i] = types.Score{
-				Id:       score.ID,
-				PlayerID: score.PlayerID,
-				Score:    score.Score,
-				TableID:  score.TableID,
-			}
-		}
-		t.Scores = &scores
-	}
-
-	return t
+	return apiRound
 }
 
-func entityPlayerToAPIPlayer(e entity.Player) types.Player {
-	return types.Player{
-		Id:     e.ID,
-		Name:   e.Name,
-		TeamID: e.TeamID,
+func entityTableToGamesTable(tableEntity entity.GameTable) games.Table {
+	apiTable := games.Table{
+		Id:          tableEntity.ID,
+		RoundID:     tableEntity.RoundID,
+		TableNumber: tableEntity.TableNumber,
 	}
+
+	if len(tableEntity.Players) > 0 {
+		apiPlayers := make([]games.Player, len(tableEntity.Players))
+		for i, player := range tableEntity.Players {
+			apiPlayers[i] = entityPlayerToGamesPlayer(*player)
+		}
+		apiTable.Players = &apiPlayers
+	}
+
+	if len(tableEntity.Scores) > 0 {
+		scores := make([]games.Score, len(tableEntity.Scores))
+		for i, score := range tableEntity.Scores {
+			scores[i] = entityScoreToGamesScore(*score)
+		}
+		apiTable.Scores = &scores
+	}
+
+	return apiTable
+}
+
+func entityTableToTablesTable(tableEntity entity.GameTable) tables.Table {
+	apiTable := tables.Table{
+		Id:          tableEntity.ID,
+		RoundID:     tableEntity.RoundID,
+		TableNumber: tableEntity.TableNumber,
+	}
+
+	if len(tableEntity.Players) > 0 {
+		apiPlayers := make([]tables.Player, len(tableEntity.Players))
+		for i, player := range tableEntity.Players {
+			apiPlayers[i] = entityPlayerToTablesPlayer(*player)
+		}
+		apiTable.Players = &apiPlayers
+	}
+
+	if len(tableEntity.Scores) > 0 {
+		scores := make([]tables.Score, len(tableEntity.Scores))
+		for i, score := range tableEntity.Scores {
+			scores[i] = entityScoreToTablesScore(*score)
+		}
+		apiTable.Scores = &scores
+	}
+
+	return apiTable
 }

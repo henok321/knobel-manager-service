@@ -9,7 +9,6 @@ import (
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/players"
-	"github.com/henok321/knobel-manager-service/gen/types"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 )
@@ -37,7 +36,7 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 
 	sub := userContext.Sub
 
-	playersRequest := types.PlayersRequest{}
+	playersRequest := players.PlayersRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -67,8 +66,8 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)
 
-	response := types.PlayersResponse{
-		Player: entityPlayerToAPIPlayer(createPlayer),
+	response := players.PlayersResponse{
+		Player: entityPlayerToPlayersPlayer(createPlayer),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
@@ -87,7 +86,7 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 
 	sub := userContext.Sub
 
-	playersRequest := types.PlayersRequest{}
+	playersRequest := players.PlayersRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -116,8 +115,8 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	response := types.PlayersResponse{
-		Player: entityPlayerToAPIPlayer(updatePlayer),
+	response := players.PlayersResponse{
+		Player: entityPlayerToPlayersPlayer(updatePlayer),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {

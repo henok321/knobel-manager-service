@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/henok321/knobel-manager-service/gen/types"
+	"github.com/henok321/knobel-manager-service/gen/teams"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/game"
@@ -12,8 +12,8 @@ import (
 )
 
 type TeamsService interface {
-	CreateTeam(ctx context.Context, gameID int, sub string, request types.TeamsRequest) (entity.Team, error)
-	UpdateTeam(ctx context.Context, gameID int, sub string, teamID int, request types.TeamsRequest) (entity.Team, error)
+	CreateTeam(ctx context.Context, gameID int, sub string, request teams.TeamsRequest) (entity.Team, error)
+	UpdateTeam(ctx context.Context, gameID int, sub string, teamID int, request teams.TeamsRequest) (entity.Team, error)
 	DeleteTeam(ctx context.Context, gameID int, sub string, teamID int) error
 }
 
@@ -29,7 +29,7 @@ func NewTeamsService(teamRepo TeamsRepository, gameRepo game.GamesRepository) Te
 	}
 }
 
-func (s *teamsService) CreateTeam(ctx context.Context, gameID int, sub string, request types.TeamsRequest) (entity.Team, error) {
+func (s *teamsService) CreateTeam(ctx context.Context, gameID int, sub string, request teams.TeamsRequest) (entity.Team, error) {
 	gameByID, err := s.gamesRepo.FindByID(ctx, gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -69,7 +69,7 @@ func (s *teamsService) CreateTeam(ctx context.Context, gameID int, sub string, r
 	return s.teamRepo.CreateOrUpdateTeam(ctx, &team)
 }
 
-func (s *teamsService) UpdateTeam(ctx context.Context, gameID int, sub string, teamID int, request types.TeamsRequest) (entity.Team, error) {
+func (s *teamsService) UpdateTeam(ctx context.Context, gameID int, sub string, teamID int, request teams.TeamsRequest) (entity.Team, error) {
 	gameByID, err := s.gamesRepo.FindByID(ctx, gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
