@@ -155,24 +155,24 @@ func entityRoundToGamesRound(roundEntity entity.Round) games.GameRound {
 
 // === Table Converters ===
 
-func entityTableToGamesTable(tablesEntity entity.GameTable) games.Table {
+func entityTableToGamesTable(tableEntity entity.GameTable) games.Table {
 	apiTable := games.Table{
-		Id:          tablesEntity.ID,
-		RoundID:     tablesEntity.RoundID,
-		TableNumber: tablesEntity.TableNumber,
+		Id:          tableEntity.ID,
+		RoundID:     tableEntity.RoundID,
+		TableNumber: tableEntity.TableNumber,
 	}
 
-	if len(tablesEntity.Players) > 0 {
-		apiPlayers := make([]games.Player, len(tablesEntity.Players))
-		for i, player := range tablesEntity.Players {
+	if len(tableEntity.Players) > 0 {
+		apiPlayers := make([]games.Player, len(tableEntity.Players))
+		for i, player := range tableEntity.Players {
 			apiPlayers[i] = entityPlayerToGamesPlayer(*player)
 		}
 		apiTable.Players = &apiPlayers
 	}
 
-	if len(tablesEntity.Scores) > 0 {
-		scores := make([]games.Score, len(tablesEntity.Scores))
-		for i, score := range tablesEntity.Scores {
+	if len(tableEntity.Scores) > 0 {
+		scores := make([]games.Score, len(tableEntity.Scores))
+		for i, score := range tableEntity.Scores {
 			scores[i] = entityScoreToGamesScore(*score)
 		}
 		apiTable.Scores = &scores
@@ -181,24 +181,24 @@ func entityTableToGamesTable(tablesEntity entity.GameTable) games.Table {
 	return apiTable
 }
 
-func entityTableToTablesTable(gameEntity entity.GameTable) tables.Table {
+func entityTableToTablesTable(tableEntity entity.GameTable) tables.Table {
 	apiTable := tables.Table{
-		Id:          gameEntity.ID,
-		RoundID:     gameEntity.RoundID,
-		TableNumber: gameEntity.TableNumber,
+		Id:          tableEntity.ID,
+		RoundID:     tableEntity.RoundID,
+		TableNumber: tableEntity.TableNumber,
 	}
 
-	if len(gameEntity.Players) > 0 {
-		apiPlayers := make([]tables.Player, len(gameEntity.Players))
-		for i, player := range gameEntity.Players {
+	if len(tableEntity.Players) > 0 {
+		apiPlayers := make([]tables.Player, len(tableEntity.Players))
+		for i, player := range tableEntity.Players {
 			apiPlayers[i] = entityPlayerToTablesPlayer(*player)
 		}
 		apiTable.Players = &apiPlayers
 	}
 
-	if len(gameEntity.Scores) > 0 {
-		scores := make([]tables.Score, len(gameEntity.Scores))
-		for i, score := range gameEntity.Scores {
+	if len(tableEntity.Scores) > 0 {
+		scores := make([]tables.Score, len(tableEntity.Scores))
+		for i, score := range tableEntity.Scores {
 			scores[i] = entityScoreToTablesScore(*score)
 		}
 		apiTable.Scores = &scores
