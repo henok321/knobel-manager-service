@@ -46,7 +46,7 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 
 	apiGames := make([]games.Game, len(allGames))
 	for i, entry := range allGames {
-		apiGames[i] = entityGameToAPIGame(entry)
+		apiGames[i] = entityGameToGamesGame(entry)
 	}
 
 	response := games.GamesResponse{
@@ -86,7 +86,7 @@ func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	response := entityGameToAPIGame(gameByID)
+	response := entityGameToGamesGame(gameByID)
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.ErrorContext(ctx, "Could not write body", "error", err)
@@ -128,7 +128,7 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	writer.WriteHeader(http.StatusCreated)
 
 	response := games.GameResponse{
-		Game: entityGameToAPIGame(createdGame),
+		Game: entityGameToGamesGame(createdGame),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
@@ -178,7 +178,7 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 	}
 
 	response := games.GameResponse{
-		Game: entityGameToAPIGame(updatedGame),
+		Game: entityGameToGamesGame(updatedGame),
 	}
 
 	writer.Header().Set("Content-Type", "application/json")

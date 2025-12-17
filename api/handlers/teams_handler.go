@@ -70,7 +70,7 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 	writer.WriteHeader(http.StatusCreated)
 
 	response := teams.TeamResponse{
-		Team: entityTeamToTeamsAPITeam(createdTeam),
+		Team: entityTeamToTeamsTeam(createdTeam),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
@@ -120,7 +120,7 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 	writer.WriteHeader(http.StatusOK)
 
 	response := teams.TeamResponse{
-		Team: entityTeamToTeamsAPITeam(updatedGame),
+		Team: entityTeamToTeamsTeam(updatedGame),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {

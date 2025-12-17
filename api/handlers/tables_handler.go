@@ -60,7 +60,7 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 		if round.RoundNumber == roundNumber {
 			apiTables := make([]tables.Table, len(round.Tables))
 			for i, t := range round.Tables {
-				apiTables[i] = entityTableToTablesAPITable(*t)
+				apiTables[i] = entityTableToTablesTable(*t)
 			}
 
 			response := tables.TablesResponse{
@@ -111,7 +111,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 		if round.RoundNumber == roundNumber {
 			for _, currentTable := range round.Tables {
 				if currentTable.TableNumber == tableNumber {
-					response := entityTableToAPITable(*currentTable)
+					response := entityTableToGamesTable(*currentTable)
 
 					writer.Header().Set("Content-Type", "application/json")
 					writer.WriteHeader(http.StatusOK)
@@ -181,7 +181,7 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 	}
 
 	response := games.GameResponse{
-		Game: entityGameToAPIGame(updatedGame),
+		Game: entityGameToGamesGame(updatedGame),
 	}
 
 	writer.Header().Set("Content-Type", "application/json")

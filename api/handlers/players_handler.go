@@ -67,7 +67,7 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 	writer.WriteHeader(http.StatusCreated)
 
 	response := players.PlayersResponse{
-		Player: entityPlayerToAPIPlayer(createPlayer),
+		Player: entityPlayerToPlayersPlayer(createPlayer),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
@@ -116,7 +116,7 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 	writer.WriteHeader(http.StatusOK)
 
 	response := players.PlayersResponse{
-		Player: entityPlayerToAPIPlayer(updatePlayer),
+		Player: entityPlayerToPlayersPlayer(updatePlayer),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
