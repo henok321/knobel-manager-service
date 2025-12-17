@@ -153,8 +153,6 @@ func entityRoundToGamesRound(roundEntity entity.Round) games.GameRound {
 	return apiRound
 }
 
-// === Table Converters ===
-
 func entityTableToGamesTable(tableEntity entity.GameTable) games.Table {
 	apiTable := games.Table{
 		Id:          tableEntity.ID,
