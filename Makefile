@@ -36,8 +36,6 @@ openapi:
 	@echo "Cleanup generated files..."
 	@command rm -rf ./gen
 	@echo "Generate openapi code from spec..."
-	@echo "Generating shared types..."
-	@cd openapi/config && go tool oapi-codegen --config=types.yaml ../openapi.yaml
 	@echo "Generating Health handler..."
 	@cd openapi/config && go tool oapi-codegen --config=health.yaml ../openapi.yaml
 	@echo "Generating Games handler..."

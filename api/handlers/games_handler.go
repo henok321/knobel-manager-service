@@ -9,7 +9,6 @@ import (
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/games"
-	"github.com/henok321/knobel-manager-service/gen/types"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/game"
@@ -45,12 +44,12 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	apiGames := make([]types.Game, len(allGames))
+	apiGames := make([]games.Game, len(allGames))
 	for i, entry := range allGames {
 		apiGames[i] = entityGameToAPIGame(entry)
 	}
 
-	response := types.GamesResponse{
+	response := games.GamesResponse{
 		Games: apiGames,
 	}
 
@@ -105,7 +104,7 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	gameCreateRequest := types.GameCreateRequest{}
+	gameCreateRequest := games.GameCreateRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameCreateRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -128,7 +127,7 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Location", fmt.Sprintf("/games/%d", createdGame.ID))
 	writer.WriteHeader(http.StatusCreated)
 
-	response := types.GameResponse{
+	response := games.GameResponse{
 		Game: entityGameToAPIGame(createdGame),
 	}
 
@@ -148,7 +147,7 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	gameUpdateRequest := types.GameUpdateRequest{}
+	gameUpdateRequest := games.GameUpdateRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameUpdateRequest); err != nil {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
@@ -178,7 +177,7 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	response := types.GameResponse{
+	response := games.GameResponse{
 		Game: entityGameToAPIGame(updatedGame),
 	}
 

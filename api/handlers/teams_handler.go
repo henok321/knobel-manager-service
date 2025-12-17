@@ -9,7 +9,6 @@ import (
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/teams"
-	"github.com/henok321/knobel-manager-service/gen/types"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/team"
@@ -36,7 +35,7 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	teamsRequest := types.TeamsRequest{}
+	teamsRequest := teams.TeamsRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&teamsRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -70,8 +69,8 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Location", request.URL.String()+"/"+strconv.FormatInt(int64(createdTeam.ID), 10))
 	writer.WriteHeader(http.StatusCreated)
 
-	response := types.TeamResponse{
-		Team: entityTeamToAPITeam(createdTeam),
+	response := teams.TeamResponse{
+		Team: entityTeamToTeamsAPITeam(createdTeam),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
@@ -90,7 +89,7 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	teamsRequest := types.TeamsRequest{}
+	teamsRequest := teams.TeamsRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&teamsRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -120,8 +119,8 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	response := types.TeamResponse{
-		Team: entityTeamToAPITeam(updatedGame),
+	response := teams.TeamResponse{
+		Team: entityTeamToTeamsAPITeam(updatedGame),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {

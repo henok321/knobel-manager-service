@@ -7,9 +7,9 @@ import (
 	"net/http"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
+	"github.com/henok321/knobel-manager-service/gen/games"
 	"github.com/henok321/knobel-manager-service/gen/scores"
 	"github.com/henok321/knobel-manager-service/gen/tables"
-	"github.com/henok321/knobel-manager-service/gen/types"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/game"
@@ -58,13 +58,12 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 
 	for _, round := range gameByID.Rounds {
 		if round.RoundNumber == roundNumber {
-			// Convert entity tables to API tables
-			apiTables := make([]types.Table, len(round.Tables))
+			apiTables := make([]tables.Table, len(round.Tables))
 			for i, t := range round.Tables {
-				apiTables[i] = entityTableToAPITable(*t)
+				apiTables[i] = entityTableToTablesAPITable(*t)
 			}
 
-			response := types.TablesResponse{
+			response := tables.TablesResponse{
 				Tables: apiTables,
 			}
 
@@ -141,7 +140,7 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 
 	sub := userContext.Sub
 
-	scoresRequest := types.ScoresRequest{}
+	scoresRequest := scores.ScoresRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&scoresRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -181,7 +180,7 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	response := types.GameResponse{
+	response := games.GameResponse{
 		Game: entityGameToAPIGame(updatedGame),
 	}
 
