@@ -1,0 +1,17 @@
+name: "CodeQL Config"
+
+paths-ignore:
+  - gen/**
+  - vendor/**
+  - integrationtests/**
+  - db_migration/**
+  - '**/*_test.go'
+
+queries:
+  - uses: security-and-quality
+
+paths:
+  - api/**
+  - cmd/**
+  - pkg/**
+  - internal/**
