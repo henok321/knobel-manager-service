@@ -198,6 +198,7 @@ jobs:
     name: Deploy to Production
     needs: build
     runs-on: ubuntu-latest
+    permissions: {}
     environment:
       name: production
 
