@@ -14,7 +14,7 @@ func SecurityHeaders(contentSecurityPolicy string, next http.Handler) http.Handl
 	maxSize := DefaultMaxRequestSize
 
 	if maxSizeEnv := os.Getenv("MAX_REQUEST_SIZE"); maxSizeEnv != "" {
-		if size, err := strconv.ParseInt(maxSizeEnv, 10, 64); err == nil && size > 0 {
+		if size, err := strconv.ParseInt(maxSizeEnv, 10, strconv.IntSize); err == nil && size > 0 {
 			maxSize = int(size)
 		}
 	}
