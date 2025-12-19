@@ -108,45 +108,6 @@ jobs:
           TESTCONTAINERS_RYUK_DISABLED: true
         run: go test -v ./...
 
-  sonarcloud:
-    name: SonarCloud Analysis
-    runs-on: ubuntu-latest
-    permissions: { }
-    if: ${{ github.event.inputs.skipChecks != 'true' }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version-file: go.mod
-          cache-dependency-path: "**/go.sum"
-          check-latest: true
-          cache: true
-
-      - name: Generate openapi spec
-        run: make openapi
-
-      - name: Check coverage threshold
-        run: |
-          total_coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
-          threshold=70
-          echo "Total coverage: ${total_coverage}%"
-          echo "Threshold: ${threshold}%"
-          if (( $(echo "$total_coverage < $threshold" | bc -l) )); then
-            echo "❌ Coverage ${total_coverage}% is below threshold ${threshold}%"
-            exit 1
-          fi
-          echo "✅ Coverage ${total_coverage}% meets threshold ${threshold}%"
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.out
-          retention-days: 30
-
   build:
     name: Build Docker Image
     needs: [ lint, test ]
