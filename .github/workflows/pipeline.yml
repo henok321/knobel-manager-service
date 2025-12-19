@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       skipChecks:
-        description: 'Skip lint, test, and SonarCloud checks (⚠️ use with caution!) '
+        description: 'Skip lint and test checks (⚠️ use with caution!)'
         required: false
         type: boolean
         default: false
@@ -128,30 +128,32 @@ jobs:
       - name: Generate openapi spec
         run: make openapi
 
-      - name: Install dependencies
-        run: go mod tidy
+      - name: Check coverage threshold
+        run: |
+          total_coverage=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          threshold=70
+          echo "Total coverage: ${total_coverage}%"
+          echo "Threshold: ${threshold}%"
+          if (( $(echo "$total_coverage < $threshold" | bc -l) )); then
+            echo "❌ Coverage ${total_coverage}% is below threshold ${threshold}%"
+            exit 1
+          fi
+          echo "✅ Coverage ${total_coverage}% meets threshold ${threshold}%"
 
-      - name: Run tests, generate coverage and report files
-        run: go test ./... -coverpkg=./... -coverprofile=coverage.out --json > test-report.out
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v9
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
         with:
-          version: v2.4
-          args: "--timeout 5m --output.checkstyle.path golangci-lint-report.xml"
-
-      - name: Analyze project and upload coverage
-        uses: sonarsource/sonarqube-scan-action@v7.0.0
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          name: coverage-report
+          path: coverage.out
+          retention-days: 30
 
   build:
     name: Build Docker Image
-    needs: [ lint, test, sonarcloud ]
+    needs: [ lint, test ]
     if: |
       always() &&
       (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
-      (github.event.inputs.skipChecks == 'true' || (needs.lint.result == 'success' && needs.test.result == 'success' && needs.sonarcloud.result == 'success'))
+      (github.event.inputs.skipChecks == 'true' || (needs.lint.result == 'success' && needs.test.result == 'success'))
     runs-on: ubuntu-latest
     permissions:
       contents: read

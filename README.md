@@ -1,7 +1,7 @@
 # Knobel Manager Service
 
 [![CI/CD Pipeline](https://github.com/henok321/knobel-manager-service/actions/workflows/pipeline.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/pipeline.yml)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=henok321_knobel-manager-service&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=henok321_knobel-manager-service)
+[![CodeQL Advanced](https://github.com/henok321/knobel-manager-service/actions/workflows/codeql.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/codeql.yml)
 
 ## Overview
 
