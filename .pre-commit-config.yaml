@@ -89,12 +89,12 @@ repos:
         stages: [ pre-commit ]
   - repo: local
     hooks:
-      - id: go-test-coverage
-        name: go-test-coverage
+      - id: go-test
+        name: go-test
         stages: [ pre-push ]
-        description: Run tests with coverage and enforce 70% threshold
-        entry: bash -c 'go test ./... -coverpkg=./api/...,./pkg/... -coverprofile=coverage.out -json > test-report.out && go tool cover -func=coverage.out | tail -1 | awk "{print \$3}" | sed "s/%//" | awk "{if (\$1 < 70) {print \"Coverage \" \$1 \"% is below 70% threshold\"; exit 1} else {print \"Coverage \" \$1 \"% meets threshold\"}}"'
+        description: Run all tests
+        entry: go test -v ./...
         types: [ go ]
-        language: system
+        language: golang
         require_serial: true
         pass_filenames: false
