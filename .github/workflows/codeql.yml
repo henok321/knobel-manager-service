@@ -60,7 +60,7 @@ jobs:
 
     - name: Upload vulnerability report
       if: matrix.language == 'go'
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: govulncheck-report
         path: govulncheck-report.json
