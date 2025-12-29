@@ -74,7 +74,7 @@ func setupAuthClient() (*auth.Client, error) {
 		return nil, errors.New("FIREBASE_SECRET is undefined or empty")
 	}
 
-	firebaseOption := option.WithAuthCredentialsJSON(option.ServiceAccount, firebaseSecret)
+	firebaseOption := option.WithCredentialsJSON(firebaseSecret)
 	firebaseApp, err := firebase.NewApp(context.Background(), nil, firebaseOption)
 	if err != nil {
 		slog.Error("Starting application failed, cannot initialize firebase client. Check if the environment FIREBASE_SECRET is set correctly", "error", err)
