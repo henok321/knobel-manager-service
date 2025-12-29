@@ -18,11 +18,11 @@ import (
 	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/logging"
 	"github.com/henok321/knobel-manager-service/api/routes"
+	"github.com/pressly/goose"
 	"github.com/rs/cors"
 
 	firebase "firebase.google.com/go/v4"
 
-	"github.com/pressly/goose/v3"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"google.golang.org/api/option"
@@ -74,7 +74,7 @@ func setupAuthClient() (*auth.Client, error) {
 		return nil, errors.New("FIREBASE_SECRET is undefined or empty")
 	}
 
-	firebaseOption := option.WithCredentialsJSON(firebaseSecret)
+	firebaseOption := option.WithCredentialsJSON(firebaseSecret) //nolint:staticcheck
 	firebaseApp, err := firebase.NewApp(context.Background(), nil, firebaseOption)
 	if err != nil {
 		slog.Error("Starting application failed, cannot initialize firebase client. Check if the environment FIREBASE_SECRET is set correctly", "error", err)
