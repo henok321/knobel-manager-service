@@ -20,9 +20,9 @@ COPY ./Makefile ./Makefile
 RUN --mount=type=cache,target=/go/pkg/mod \
     make openapi
 
-COPY ./api ./api
-COPY ./cmd ./cmd
-COPY ./pkg ./pkg
+COPY './api' './api'
+COPY './cmd' './cmd'
+COPY './pkg' './pkg'
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod tidy
