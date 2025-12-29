@@ -1,4 +1,3 @@
-.PHONY: all build check-deps clean help lint lint-all lint-go openapi reset setup test test-coverage update
 
 .DEFAULT_GOAL := all
 
@@ -7,6 +6,8 @@ GOOS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 OUTPUT := knobel-manager-service
 BUILD_FLAGS := -a -ldflags="-s -w -extldflags '-static'"
 CMD_DIR := ./cmd
+
+.PHONY: all help check-deps setup reset openapi lint lint-all update test test-coverage build clean lint-go
 
 all: help
 
