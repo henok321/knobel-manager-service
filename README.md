@@ -2,6 +2,7 @@
 
 [![CI/CD Pipeline](https://github.com/henok321/knobel-manager-service/actions/workflows/pipeline.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/pipeline.yml)
 [![CodeQL Advanced](https://github.com/henok321/knobel-manager-service/actions/workflows/codeql.yml/badge.svg)](https://github.com/henok321/knobel-manager-service/actions/workflows/codeql.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/henok321/knobel-manager-service)](https://goreportcard.com/report/github.com/henok321/knobel-manager-service)
 
 ## Overview
 
