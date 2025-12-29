@@ -118,7 +118,7 @@ jobs:
           curl -i -X POST https://goreportcard.com/checks \
             -H 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8' \
             -H 'Accept: application/json, text/javascript, */*; q=0.01' \
-            --data 'repo=github.com/henok321/knobel-manager-service'
+            --data "repo=github.com/${{ github.repository }}"
 
   build:
     name: Build Docker Image
