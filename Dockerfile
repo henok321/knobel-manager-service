@@ -9,8 +9,7 @@ COPY go.mod go.sum ./
 
 ENV GO111MODULE=on \
     GOPROXY=https://proxy.golang.org,direct \
-    GOSUMDB=sum.golang.org \
-    CGO_ENABLED=0
+    GOSUMDB=sum.golang.org
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
@@ -28,9 +27,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
     go mod tidy
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS="$TARGETOS" GOARCH="$TARGETARCH" \
-    go build -o knobel-manager-service \
-    -a -ldflags="-s -w -extldflags '-static'" ./cmd/
+     GOOS="$TARGETOS" GOARCH="$TARGETARCH" make build
 
 FROM debian:trixie-slim
 

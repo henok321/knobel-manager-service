@@ -106,7 +106,7 @@ jobs:
       - name: Run tests
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
-        run: go test -v ./...
+        run: make test
 
   go-report:
     name: Go Report
@@ -118,7 +118,7 @@ jobs:
           curl -i -X POST https://goreportcard.com/checks \
             -H 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8' \
             -H 'Accept: application/json, text/javascript, */*; q=0.01' \
-            --data "repo=github.com/${{ github.repository }}"
+          --data "repo=github.com/${{ github.repository }}"
 
   build:
     name: Build Docker Image

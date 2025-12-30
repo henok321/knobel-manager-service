@@ -54,18 +54,6 @@ jobs:
       if: matrix.language == 'go'
       run: make openapi
 
-    - name: Run Go vulnerability check
-      if: matrix.language == 'go'
-      run: go tool govulncheck -json ./... > govulncheck-report.json || true
-
-    - name: Upload vulnerability report
-      if: matrix.language == 'go'
-      uses: actions/upload-artifact@v6
-      with:
-        name: govulncheck-report
-        path: govulncheck-report.json
-        retention-days: 30
-
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v4
       with:

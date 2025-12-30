@@ -1,13 +1,13 @@
 
 .DEFAULT_GOAL := all
 
-GOARCH := $(shell uname -m)
-GOOS := $(shell uname -s | tr '[:upper:]' '[:lower:]')
+GOARCH ?= $(shell uname -m)
+GOOS ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
 OUTPUT := knobel-manager-service
 BUILD_FLAGS := -a -ldflags="-s -w -extldflags '-static'"
 CMD_DIR := ./cmd
 
-.PHONY: all help check-deps setup reset openapi lint lint-all update test test-coverage build clean lint-go
+.PHONY: all help check-deps setup reset openapi lint lint-all update test build clean lint-go
 
 all: help
 
@@ -20,6 +20,7 @@ check-deps:
 	@command -v go >/dev/null 2>&1 || { echo >&2 "Go is not installed."; exit 1; }
 	@command -v pre-commit >/dev/null 2>&1 || { echo >&2 "pre-commit is not installed."; exit 1; }
 	@command -v docker >/dev/null 2>&1 || { echo >&2 "Docker is not installed."; exit 1; }
+	@echo "Dependencies fulfilled!"
 
 setup: check-deps
 	@echo "Setting up commit hooks and local database..."
@@ -69,10 +70,6 @@ update:
 test:
 	@echo "Running tests..."
 	go test -v ./...
-
-test-coverage:
-	@echo "Running tests with coverage..."
-	go test ./... -coverpkg=./... -coverprofile=coverage.out --json > test-report.out
 
 build: openapi
 	@echo "Building the service..."

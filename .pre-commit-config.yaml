@@ -93,8 +93,9 @@ repos:
         name: go-test
         stages: [ pre-push ]
         description: Run all tests
-        entry: go test -v ./...
+        entry: make
+        args: [ "test" ]
+        language: system
         types: [ go ]
-        language: golang
         require_serial: true
         pass_filenames: false
