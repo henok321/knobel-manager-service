@@ -33,10 +33,6 @@ on:
       - ".gitignore"
       - ".editorconfig"
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
@@ -181,6 +177,9 @@ jobs:
     permissions: { }
     environment:
       name: production
+    concurrency:
+      group: production-deployment
+      cancel-in-progress: false
 
     steps:
       - name: Trigger Coolify deployment
