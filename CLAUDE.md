@@ -63,6 +63,11 @@ make test                        # Runs all tests
 go test -v ./...                # Run tests directly (same as make test)
 go test -v ./pkg/game/...       # Run specific package tests
 go test -v -run TestName ./...  # Run specific test
+
+# Coverage (manual)
+go test ./... -coverpkg=./... -coverprofile=coverage.out  # Generate coverage
+go tool cover -html=coverage.out                           # View HTML report
+go tool cover -func=coverage.out                           # View text report
 ```
 
 ### Building
@@ -107,6 +112,31 @@ make help    # Display all available Makefile targets
 ```
 
 ## Architecture
+
+### System Overview
+
+```mermaid
+graph TB
+   Client[Client App<br/>React Frontend]
+   API[Knobel Manager Service<br/>Go REST Service<br/>:8080]
+   DB[(PostgreSQL<br/>Database)]
+   Firebase[Firebase Auth<br/>JWT Validation]
+   Metrics[Prometheus<br/>Metrics<br/>:9090]
+   Client -->|HTTP + JWT Bearer Token| API
+   Client -.->|Authenticate| Firebase
+   API -->|Validate JWT| Firebase
+   API -->|SQL Queries| DB
+   API -->|Export Metrics| Metrics
+```
+
+The system uses:
+
+- **OpenAPI-First**: Server interfaces generated from `openapi/openapi.yaml` using `oapi-codegen`
+- **Database**: PostgreSQL with GORM, migrations via `goose`
+- **Authentication**: Firebase JWT tokens validated on each request
+- **Deployment**: GitHub Actions CI/CD pipeline
+- **Monitoring**: Prometheus metrics at `:9090/metrics`, health endpoints at `:8080/health/live` (liveness) and
+  `:8080/health/ready` (readiness)
 
 ### Code Organization
 
@@ -289,6 +319,14 @@ Required in `.env`:
 - `FIREBASE_SECRET` - Base64-encoded Firebase service account JSON
 - `DATABASE_URL` - PostgreSQL connection string
 
+Optional (with defaults):
+
+- `RATE_LIMIT_REQUESTS_PER_SECOND` - Default: `20`
+- `RATE_LIMIT_BURST_SIZE` - Default: `40`
+- `RATE_LIMIT_CACHE_DEFAULT_DURATION` - Default: `5m` (e.g., `5m`, `1h`)
+- `RATE_LIMIT_CACHE_CLEANUP_PERIOD` - Default: `1m`
+- `MAX_REQUEST_SIZE` - Default: `1048576` (1MB in bytes)
+
 Firebase credentials must be obtained from Firebase Console and saved as `firebase-credentials.json` in project root
 before running setup.
 
@@ -445,6 +483,61 @@ For supplementary deployment notifications:
 Trigger pipeline manually from GitHub:
 
 - Go to Actions → CI/CD Pipeline → Run workflow
+
+---
+
+## Code Review Standards
+
+When reviewing code changes, apply these standards with appropriate severity:
+
+### Critical Issues (Block merge)
+
+- Security vulnerabilities (SQL injection, command injection, exposed secrets)
+- Data corruption risks
+- Unhandled errors that could crash the service
+- Breaking API changes without version bump
+- Race conditions or deadlocks
+
+### High Priority Issues (Should fix before merge)
+
+- Incorrect business logic
+- Missing authorization checks (verify game ownership in services)
+- Inefficient database queries (N+1 queries, missing preloading)
+- Missing tests for critical paths
+- Violation of project architecture patterns (business logic in handlers, bypassing OpenAPI workflow)
+
+### Medium Priority Issues (Fix or document decision)
+
+- Code duplication
+- Missing error context (use fmt.Errorf with %w)
+- Unclear variable names
+- Suboptimal performance
+- Missing edge case handling
+
+### Common Anti-Patterns to Avoid
+
+- Business logic in HTTP handlers (should be in services)
+- Direct database access from handlers (use repositories)
+- Skipping authorization checks in service layer
+- Editing generated code in `gen/` directory
+- Using `interface{}` when specific types could be used
+- Ignoring errors with `_`
+- Not closing resources (missing `defer` for files/connections)
+- Hardcoding configuration values
+- Creating new error types instead of using `pkg/apperror`
+
+### Project Best Practices to Encourage
+
+- Following domain module pattern (init.go, model.go, repository.go, service.go)
+- Clear separation: handler → service → repository
+- Using `pkg/apperror` types (NotFoundError, ValidationError, UnauthorizedError)
+- Comprehensive error handling with context
+- Proper transaction handling for multi-step database operations
+- Using middleware for cross-cutting concerns
+- Structured logging with request context
+- Integration tests that verify full request flow
+- Pass context through function calls
+- Table-driven tests with t.Run for subtests
 
 ---
 

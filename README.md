@@ -92,7 +92,6 @@ set +o allexport             # Disable exporting variables
 make lint                   # Run golangci-lint only (fast)
 make lint-all               # Run all pre-commit hooks
 make test                   # Run tests
-make test-coverage          # Generate coverage reports
 ```
 
 ## Build & Deploy
