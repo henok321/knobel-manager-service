@@ -40,6 +40,8 @@ concurrency:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  GOPROXY: https://proxy.golang.org,direct
+  GOSUMDB: sum.golang.org
 
 jobs:
   lint:
