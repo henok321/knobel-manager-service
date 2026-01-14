@@ -169,7 +169,8 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 			JSONError(writer, "Game not found", http.StatusNotFound)
 		case errors.Is(err, apperror.ErrInvalidGameSetup):
 			JSONError(writer, "Invalid game setup", http.StatusConflict)
-
+		case errors.Is(err, apperror.ErrGameIncomplete):
+			JSONError(writer, "Game is complete", http.StatusConflict)
 		default:
 			JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		}

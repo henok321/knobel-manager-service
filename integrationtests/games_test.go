@@ -120,15 +120,34 @@ func TestGames(t *testing.T) {
 				assert.Equal(t, entity.StatusInProgress, entity.GameStatus(*gameStatus))
 			},
 		},
+		"Should fail to update game status to completed if scores incomplete": {
+			method:             http.MethodPut,
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1","numberOfRounds":1, "teamSize":4, "tableSize":4, "status":"completed"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				var gameStatus *string
+
+				if err := db.QueryRow("SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
+					t.Fatalf("Failed to query game status: %v", err)
+				}
+
+				assert.Equal(t, entity.StatusInProgress, entity.GameStatus(*gameStatus))
+			},
+		},
 		"Update game status to completed": {
 			method:             http.MethodPut,
 			endpoint:           "/games/1",
-			requestBody:        `{"name":"Game 1","numberOfRounds":2, "teamSize":4, "tableSize":4, "status":"completed"}`,
+			requestBody:        `{"name":"Game 1","numberOfRounds":1, "teamSize":4, "tableSize":4, "status":"completed"}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"completed","owners":[{"gameID":1,"ownerSub":"sub-1"}]}}`,
+			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":1,"status":"completed","owners":[{"gameID":1,"ownerSub":"sub-1"}]}}`,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_assignable.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_assigned_scores_entered.sql")
 			},
 			assertions: func(t *testing.T, db *sql.DB) {
 				var gameStatus *string

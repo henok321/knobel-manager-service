@@ -103,6 +103,16 @@ func (s *gamesService) UpdateGame(ctx context.Context, id int, sub string, game 
 		}
 	}
 
+	if game.Status == "completed" {
+		for _, team := range gameByID.Teams {
+			for _, player := range team.Players {
+				scores := len(player.Scores)
+				if scores < gameByID.NumberOfRounds {
+					return entity.Game{}, apperror.ErrGameIncomplete
+				}
+			}
+		}
+	}
 	return s.repo.CreateOrUpdateGame(ctx, &gameByID)
 }
 
