@@ -104,16 +104,23 @@ func (s *gamesService) UpdateGame(ctx context.Context, id int, sub string, game 
 	}
 
 	if game.Status == "completed" {
-		for _, team := range gameByID.Teams {
-			for _, player := range team.Players {
-				scores := len(player.Scores)
-				if scores < gameByID.NumberOfRounds {
-					return entity.Game{}, apperror.ErrGameIncomplete
-				}
-			}
+		if gameIncompleteScoresMissing(gameByID) {
+			return entity.Game{}, apperror.ErrGameIncomplete
 		}
 	}
 	return s.repo.CreateOrUpdateGame(ctx, &gameByID)
+}
+
+func gameIncompleteScoresMissing(game entity.Game) bool {
+	for _, team := range game.Teams {
+		for _, player := range team.Players {
+			scores := len(player.Scores)
+			if scores < game.NumberOfRounds {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (s *gamesService) DeleteGame(ctx context.Context, id int, sub string) error {
