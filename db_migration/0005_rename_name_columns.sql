@@ -1,7 +1,5 @@
 -- +goose Up
 
--- Rename name columns to avoid PostgreSQL reserved keyword conflicts
-
 ALTER TABLE games
 RENAME COLUMN name TO game_name;
 

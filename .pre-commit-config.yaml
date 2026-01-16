@@ -40,7 +40,7 @@ repos:
         name: "Lint GitHub Workflows"
         files: \.github/workflows/.*\.(yml|yaml)$
   - repo: https://github.com/sqlfluff/sqlfluff
-    rev: 3.5.0
+    rev: 4.0.0
     hooks:
       - id: sqlfluff-fix
   - repo: https://github.com/python-openapi/openapi-spec-validator

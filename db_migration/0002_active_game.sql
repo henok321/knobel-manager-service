@@ -1,6 +1,5 @@
 -- +goose Up
 
--- each user can select one game which will be the active game
 CREATE TABLE active_games
 (
     owner_sub VARCHAR(255) NOT NULL PRIMARY KEY,
