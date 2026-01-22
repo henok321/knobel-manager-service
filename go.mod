@@ -10,7 +10,7 @@ tool (
 )
 
 require (
-	firebase.google.com/go/v4 v4.18.0
+	firebase.google.com/go/v4 v4.19.0
 	github.com/PuerkitoBio/goquery v1.11.0
 	github.com/getkin/kin-openapi v0.133.0
 	github.com/google/uuid v1.6.0
