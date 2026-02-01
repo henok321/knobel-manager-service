@@ -129,11 +129,14 @@ practices, Go-specific standards, and project-specific patterns.
 ### OpenAPI-First Development
 
 - [ ] API changes start with openapi/openapi.yaml updates
-- [ ] `make openapi` run after spec changes to regenerate code
-- [ ] Generated code in gen/ directory never edited manually
+- [ ] `make openapi-generate` run after spec changes to regenerate code
+- [ ] Generated code in gen/ directory checked into git (never edited manually)
+- [ ] Review generated code changes with `git diff gen/` before committing
+- [ ] Commit both spec and generated code together
 - [ ] New endpoints implement generated interfaces from gen/
 - [ ] Request/response types match OpenAPI spec exactly
 - [ ] Routes wired in internal/routes/routes.go
+- [ ] CI validates generated code matches spec with `make openapi-validate`
 
 ### Domain Module Pattern
 
