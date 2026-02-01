@@ -63,6 +63,7 @@ make test                        # Runs all tests
 go test -v ./...                # Run tests directly (same as make test)
 go test -v ./pkg/game/...       # Run specific package tests
 go test -v -run TestName ./...  # Run specific test
+go test -race ./...             # Run tests with race detector
 
 # Coverage (manual)
 go test ./... -coverpkg=./... -coverprofile=coverage.out  # Generate coverage
@@ -117,16 +118,16 @@ make help    # Display all available Makefile targets
 
 ```mermaid
 graph TB
-   Client[Client App<br/>React Frontend]
-   API[Knobel Manager Service<br/>Go REST Service<br/>:8080]
-   DB[(PostgreSQL<br/>Database)]
-   Firebase[Firebase Auth<br/>JWT Validation]
-   Metrics[Prometheus<br/>Metrics<br/>:9090]
-   Client -->|HTTP + JWT Bearer Token| API
-   Client -.->|Authenticate| Firebase
-   API -->|Validate JWT| Firebase
-   API -->|SQL Queries| DB
-   API -->|Export Metrics| Metrics
+    Client[Client App<br/>React Frontend]
+    API[Knobel Manager Service<br/>Go REST Service<br/>:8080]
+    DB[(PostgreSQL<br/>Database)]
+    Firebase[Firebase Auth<br/>JWT Validation]
+    Metrics[Prometheus<br/>Metrics<br/>:9090]
+    Client -->|HTTP + JWT Bearer Token| API
+    Client -.->|Authenticate| Firebase
+    API -->|Validate JWT| Firebase
+    API -->|SQL Queries| DB
+    API -->|Export Metrics| Metrics
 ```
 
 The system uses:
@@ -488,6 +489,16 @@ Trigger pipeline manually from GitHub:
 
 ## Code Review Standards
 
+### Review Philosophy
+
+- Be direct and honest in feedback - focus on quality and fact
+- Identify security vulnerabilities and bugs as the highest priority
+- Focus on code quality and correctness over style preferences
+- Suggest improvements that enhance maintainability, but avoid major refactoring unless it significantly improves
+  quality
+- Follow the boyscout rule: "Leave the campground cleaner than you found it"
+- Acknowledge well-implemented patterns and good practices
+
 When reviewing code changes, apply these standards with appropriate severity:
 
 ### Critical Issues (Block merge)
@@ -536,6 +547,8 @@ When reviewing code changes, apply these standards with appropriate severity:
 - Using middleware for cross-cutting concerns
 - Structured logging with request context
 - Integration tests that verify full request flow
+- Prefer integration tests over unit tests unless testing algorithmic complexity
+- Tests should test behavior, not implementation details
 - Pass context through function calls
 - Table-driven tests with t.Run for subtests
 
