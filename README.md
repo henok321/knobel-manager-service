@@ -81,9 +81,11 @@ Optional variables (with defaults):
 ```sh
 set -o allexport             # Export all variables
 source .env                  # Load environment variables
-make openapi                 # Generate server code from OpenAPI spec
 go run cmd/main.go           # Start API server (localhost:8080)
 set +o allexport             # Disable exporting variables
+
+# Only needed when OpenAPI spec changes:
+make openapi-generate        # Regenerate server code from spec
 ```
 
 ## Code Quality

@@ -7,13 +7,13 @@ OUTPUT := knobel-manager-service
 BUILD_FLAGS := -a -ldflags="-s -w -extldflags '-static'"
 CMD_DIR := ./cmd
 
-.PHONY: all help check-deps setup reset openapi lint lint-all update test build clean lint-go
+.PHONY: all help check-deps setup reset openapi-generate openapi-validate lint lint-all update test build clean lint-go
 
 all: help
 
 help:
 	@echo "Usage: make [target]"
-	@echo "Targets: help, setup, reset, openapi, lint, update, test, build, clean"
+	@echo "Targets: help, setup, reset, openapi-generate, openapi-validate, lint, update, test, build, clean"
 
 check-deps:
 	@echo "Checking dependencies..."
@@ -34,7 +34,7 @@ reset:
 	@echo "Cleanup local docker database..."
 	docker compose down --volumes --remove-orphans
 
-openapi:
+openapi-generate:
 	@echo "Cleanup generated files..."
 	@command rm -rf ./gen
 	@echo "Generate openapi code from spec..."
@@ -51,6 +51,11 @@ openapi:
 	@echo "Generating Scores handler..."
 	@cd openapi/config && go tool oapi-codegen --config=scores.yaml ../openapi.yaml
 	@go mod tidy
+	@echo "✓ Generated code updated. Review changes with 'git diff gen/' and commit if needed."
+
+openapi-validate:
+	@echo "Validating OpenAPI generated code..."
+	@./scripts/validate-openapi.sh
 
 lint:
 	@echo "Running Go linter..."
@@ -71,7 +76,7 @@ test:
 	@echo "Running tests..."
 	go test -v ./...
 
-build: openapi
+build:
 	@echo "Building the service..."
 	CGO_ENABLED=0 GOARCH=$(GOARCH) GOOS=$(GOOS) go build $(BUILD_FLAGS) -o $(OUTPUT) $(CMD_DIR)/
 

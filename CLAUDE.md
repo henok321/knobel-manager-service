@@ -40,11 +40,31 @@ Migrations are in `db_migration/` directory and use `goose`. Migrations run auto
 ### OpenAPI Code Generation
 
 ```bash
-make openapi
+make openapi-generate   # Generate code from spec (when spec changes)
+make openapi-validate   # Validate generated code matches spec (CI/CD)
 ```
 
-Generates Go server code from `openapi/openapi.yaml` using `oapi-codegen`. Generated code is placed in `gen/` directory.
-Must be run after any OpenAPI spec changes before running lint/test/build.
+Generated code is **checked into git** in the `gen/` directory. This approach:
+
+- Makes code reviews easier (see exactly what changed)
+- Speeds up CI/CD (validation instead of generation)
+- Tracks generated code changes in git history
+
+**Workflow:**
+
+1. Edit `openapi/openapi.yaml`
+2. Run `make openapi-generate`
+3. Review changes with `git diff gen/`
+4. Commit both spec and generated code together
+
+**Validation:**
+
+CI/CD runs `make openapi-validate` in parallel with lint and test jobs. The build job only proceeds if all three pass.
+This ensures:
+
+- Generated code always matches the spec
+- Fast feedback (runs in parallel, not blocking local commits)
+- Clean separation: generate locally, validate in CI
 
 ### Linting
 
@@ -74,9 +94,11 @@ go tool cover -func=coverage.out                           # View text report
 ### Building
 
 ```bash
-make build     # Builds binary (runs openapi generation first)
+make build     # Builds binary
 make clean     # Removes build artifacts
 ```
+
+The build no longer depends on code generation - generated code is checked in.
 
 ### Running the Application
 
@@ -189,9 +211,11 @@ Modules are initialized in `internal/routes/routes.go:93-96` and injected into h
 
 1. Edit `openapi/openapi.yaml` to add/modify endpoints
 2. Update relevant config files in `openapi/config/` if needed
-3. Run `make openapi` to regenerate server interfaces
-4. Implement new interfaces in `api/handlers/`
-5. Wire up routes in `internal/routes/routes.go`
+3. Run `make openapi-generate` to regenerate server interfaces
+4. Review generated code changes with `git diff gen/`
+5. Implement new interfaces in `api/handlers/`
+6. Wire up routes in `internal/routes/routes.go`
+7. Commit both spec and generated code together
 
 The generated code in `gen/` provides:
 
@@ -342,17 +366,18 @@ GitHub Actions workflows in `.github/workflows/`:
 
 Single workflow runs on push to main with dependent jobs:
 
-1. **Lint & Test** - Run in parallel
+1. **Validate, Lint & Test** - Run in parallel
+    - Validate OpenAPI: Ensures generated code matches spec (`make openapi-validate`)
     - Lint: Pre-commit hooks (golangci-lint, gitleaks, shellcheck, markdownlint, etc.)
     - Test: Full test suite (`make test`)
-2. **Build** - Triggers after successful tests:
+2. **Build** - Triggers after all validations pass:
     - Builds multi-arch Docker image (amd64/arm64)
     - Pushes to GitHub Container Registry (`ghcr.io`)
 3. **Deploy** - Triggers after successful build:
     - Triggers Coolify deployment via webhook
     - Tracked via GitHub Environments (production)
 
-**On Pull Requests:** Only lint and test jobs run (build/deploy are skipped)
+**On Pull Requests:** Only validation, lint, and test jobs run (build/deploy are skipped)
 
 ### Security and Quality Analysis (CodeQL)
 

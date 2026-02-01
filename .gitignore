@@ -28,9 +28,6 @@ firebaseServiceAccount.json
 # Air Verse tmp folder
 /tmp
 
-# generated files (openapi)
-/gen
-
 # claude config
 !CLAUDE.md
 /.claude

@@ -40,6 +40,26 @@ env:
   GOSUMDB: sum.golang.org
 
 jobs:
+  validate-openapi:
+    name: Validate OpenAPI
+    runs-on: ubuntu-latest
+    permissions: { }
+    if: ${{ github.event.inputs.skipChecks != 'true' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache-dependency-path: "**/go.sum"
+          check-latest: true
+          cache: true
+
+      - name: Validate OpenAPI generated code
+        run: make openapi-validate
+
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
@@ -73,9 +93,6 @@ jobs:
           check-latest: true
           cache: true
 
-      - name: Generate OpenAPI code
-        run: make openapi
-
       - name: Run pre-commit
         uses: pre-commit/action@v3.0.1
         with:
@@ -98,9 +115,6 @@ jobs:
           check-latest: true
           cache: true
 
-      - name: Generate OpenAPI code
-        run: make openapi
-
       - name: Run tests
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
@@ -120,11 +134,11 @@ jobs:
 
   build:
     name: Build Docker Image
-    needs: [ lint, test ]
+    needs: [ validate-openapi, lint, test ]
     if: |
       always() &&
       (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main') &&
-      (github.event.inputs.skipChecks == 'true' || (needs.lint.result == 'success' && needs.test.result == 'success'))
+      (github.event.inputs.skipChecks == 'true' || (needs.validate-openapi.result == 'success' && needs.lint.result == 'success' && needs.test.result == 'success'))
     runs-on: ubuntu-latest
     permissions:
       contents: read

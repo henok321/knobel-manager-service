@@ -26,14 +26,9 @@
       "matchManagers": [
         "gomod"
       ],
-      "postUpgradeTasks": {
-        "commands": [
-          "make openapi",
-          "go mod tidy"
-        ],
-        "fileFilters": ["go.mod", "go.sum", "gen/**/*.go"],
-        "executionMode": "branch"
-      }
+      "postUpdateOptions": [
+        "gomodTidy"
+      ]
     },
     {
       "matchDatasources": [
