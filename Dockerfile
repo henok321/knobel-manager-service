@@ -19,6 +19,7 @@ COPY './api' './api'
 COPY './cmd' './cmd'
 COPY './pkg' './pkg'
 COPY './openapi' './openapi'
+COPY ./Makefile ./Makefile
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod tidy
