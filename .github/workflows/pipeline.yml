@@ -12,8 +12,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - "**.md"
-      - "!CLAUDE.md"
+      - "*.md"
       - "LICENSE"
       - ".vscode/**"
       - ".idea/**"
@@ -24,8 +23,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - "**.md"
-      - "!CLAUDE.md"
+      - "*.md"
       - "LICENSE"
       - ".vscode/**"
       - ".idea/**"
