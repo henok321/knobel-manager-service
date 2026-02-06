@@ -18,7 +18,7 @@ func NewService(checkers ...Checker) *Service {
 
 func (s *Service) Liveness() CheckResults {
 	return CheckResults{
-		Status: StatusHealthy,
+		Status: StatusPass,
 		Checks: make(map[string]CheckResult),
 	}
 }
@@ -26,26 +26,26 @@ func (s *Service) Liveness() CheckResults {
 func (s *Service) Readiness(ctx context.Context) CheckResults {
 	if s.draining.Load() {
 		return CheckResults{
-			Status: StatusDraining,
+			Status: StatusFail,
 			Checks: make(map[string]CheckResult),
 		}
 	}
 
 	results := CheckResults{
-		Status: StatusHealthy,
+		Status: StatusPass,
 		Checks: make(map[string]CheckResult),
 	}
 
 	for _, checker := range s.checkers {
 		result := CheckResult{
 			Name:   checker.Name(),
-			Status: CheckStatusPass,
+			Status: ComponentStatusPass,
 		}
 
 		if err := checker.Check(ctx); err != nil {
-			result.Status = CheckStatusFail
+			result.Status = ComponentStatusFail
 			result.Message = err.Error()
-			results.Status = StatusUnhealthy
+			results.Status = StatusFail
 		}
 
 		results.Checks[checker.Name()] = result

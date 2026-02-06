@@ -67,7 +67,7 @@ func (h *HealthHandler) ReadinessCheck(writer http.ResponseWriter, request *http
 	}
 
 	statusCode := http.StatusOK
-	if results.Status != healthpkg.StatusHealthy {
+	if results.Status != healthpkg.StatusPass {
 		statusCode = http.StatusServiceUnavailable
 		slog.WarnContext(request.Context(), "Readiness check failed",
 			"status", results.Status,

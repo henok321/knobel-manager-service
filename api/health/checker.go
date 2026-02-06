@@ -8,24 +8,25 @@ type Checker interface {
 	Check(ctx context.Context) error
 }
 
-type CheckStatus string
+type ComponentStatus string
 
 const (
-	CheckStatusPass CheckStatus = "pass"
-	CheckStatusFail CheckStatus = "fail"
+	ComponentStatusPass ComponentStatus = "pass"
+	ComponentStatusFail ComponentStatus = "fail"
+	ComponentStatusWarn ComponentStatus = "warn"
 )
 
 type Status string
 
 const (
-	StatusHealthy   Status = "healthy"
-	StatusUnhealthy Status = "unhealthy"
-	StatusDraining  Status = "draining"
+	StatusPass Status = "pass"
+	StatusFail Status = "fail"
+	StatusWarn Status = "warn"
 )
 
 type CheckResult struct {
 	Name    string
-	Status  CheckStatus
+	Status  ComponentStatus
 	Message string
 }
 

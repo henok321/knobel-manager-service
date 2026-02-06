@@ -39,7 +39,7 @@ func TestHealthCheck(t *testing.T) {
 		var response health.HealthCheckResponse
 		err = json.NewDecoder(resp.Body).Decode(&response)
 		require.NoError(t, err)
-		assert.Equal(t, "healthy", response.Status)
+		assert.Equal(t, "pass", response.Status)
 	})
 
 	t.Run("readiness check - healthy", func(t *testing.T) {
@@ -69,18 +69,15 @@ func TestHealthCheck(t *testing.T) {
 		var response health.HealthCheckDetailedResponse
 		err = json.NewDecoder(resp.Body).Decode(&response)
 		require.NoError(t, err)
-		assert.Equal(t, health.HealthCheckDetailedResponseStatus("healthy"), response.Status)
+		assert.Equal(t, health.HealthCheckDetailedResponseStatus("pass"), response.Status)
 
-		// Verify both database and firebase checks are present and passing
 		require.NotNil(t, response.Checks)
 		checks := *response.Checks
 
-		// Check database
 		dbCheck, exists := checks["database"]
 		require.True(t, exists, "Database check should be present")
 		assert.Equal(t, health.HealthCheckDetailedResponseChecksStatus("pass"), dbCheck.Status)
 
-		// Check firebase
 		firebaseCheck, exists := checks["firebase"]
 		require.True(t, exists, "Firebase check should be present")
 		assert.Equal(t, health.HealthCheckDetailedResponseChecksStatus("pass"), firebaseCheck.Status)

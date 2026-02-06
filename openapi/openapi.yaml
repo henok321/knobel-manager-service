@@ -28,17 +28,17 @@ paths:
       operationId: readinessCheck
       tags: [ Health ]
       summary: Readiness probe - checks if the service can handle requests
-      description: Returns 200 if all dependencies are healthy and service is ready to serve traffic. Returns 503 if any dependency is down or service is draining.
+      description: Returns 200 with status "pass" if all dependencies are healthy. Returns 503 with status "fail" if critical dependencies are down, or status "warn" if service is degraded but functional.
       security: [ ]
       responses:
         '200':
-          description: Service is ready to serve traffic
+          description: Service is ready to serve traffic (status "pass" or "warn")
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthCheckDetailedResponse'
         '503':
-          description: Service is not ready (dependencies down or draining)
+          description: Service is not ready (status "fail")
           content:
             application/json:
               schema:
@@ -731,8 +731,8 @@ components:
       properties:
         status:
           type: string
-          enum: [ healthy, unhealthy, draining ]
-          example: healthy
+          enum: [ pass, fail, warn ]
+          example: pass
         checks:
           type: object
           additionalProperties:
@@ -740,7 +740,7 @@ components:
             properties:
               status:
                 type: string
-                enum: [ pass, fail ]
+                enum: [ pass, fail, warn ]
               message:
                 type: string
             required: [ status ]
