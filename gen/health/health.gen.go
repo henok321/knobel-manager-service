@@ -20,15 +20,14 @@ import (
 
 // Defines values for HealthCheckDetailedResponseChecksStatus.
 const (
-	Fail HealthCheckDetailedResponseChecksStatus = "fail"
-	Pass HealthCheckDetailedResponseChecksStatus = "pass"
+	HealthCheckDetailedResponseChecksStatusFail HealthCheckDetailedResponseChecksStatus = "fail"
+	HealthCheckDetailedResponseChecksStatusPass HealthCheckDetailedResponseChecksStatus = "pass"
 )
 
 // Defines values for HealthCheckDetailedResponseStatus.
 const (
-	Draining  HealthCheckDetailedResponseStatus = "draining"
-	Healthy   HealthCheckDetailedResponseStatus = "healthy"
-	Unhealthy HealthCheckDetailedResponseStatus = "unhealthy"
+	HealthCheckDetailedResponseStatusFail HealthCheckDetailedResponseStatus = "fail"
+	HealthCheckDetailedResponseStatusPass HealthCheckDetailedResponseStatus = "pass"
 )
 
 // HealthCheckDetailedResponse defines model for HealthCheckDetailedResponse.
@@ -227,22 +226,22 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9xXT2/jthP9KsT8focWUE13073oFnTRbdruwkgC9BD4MJbGFnclkh1SaQ1D373gSLbl",
-	"WGmLoEmbnkhbM+/NP5FPOyhc450lGwPkOwhFRQ3K9nvCOlbfVlR8fkcRTU3lNQXvbKD02LPzxNGQGBfJ",
-	"THZYliYaZ7FenFic2jcUAm4EKG49QQ4hsrEb6DIIEWMrVmTbBvI78BgCZLBGU8Mye+jRZcD0S2uYymQ8",
-	"uB/t3OoTFTEh02/Y+FpYS4y4wj6VPWHPk/DOPM9jqqQ8W8igtcd9yWhsimo5YhvZPjn0UTce78IoygO3",
-	"+/x02pQ4FS2buL1Jg9GzrAiZ+LKN1fHXd44bjJDDDz/fQtaPUULqnx4jqGL00CVgY9dOGkGhYOPTyEAO",
-	"l4srtXasfrRuRbX6gBY3xOqG+N4UBBnUpqAhd4tC8eEqMbZcD/Ah19p5ssG1XNDM8UYPTkEn29ReE6U2",
-	"D1guF1eQwT1x6IP5ejafzZN9gkNvIIeL2Xz2DWTgMVZSDL3BvixdNuz1Li1X7zrpDzI2FIkD5Hc7MFam",
-	"LFaQ7cPvjWHckcgtDTXE0RtibKQNMXTd8pxMs2ttGfRO1o9tsyLudMRVPbx+zxJINok0CuFZ89I7WYc/",
-	"X02W03CjVF6waDoUjl/RhLxA7QLF1r/suxsJm/APUOpdWp71qHqkYUL7d2ehfY1bif+/lI3e9ZtX0qZp",
-	"pH0KTyhSL550be7l1t9QPJcN1xRbtkG9mc+VWatYkfLsCgpBmaAw+c7UR6dK8mRLsoWhoESzUjkDueAZ",
-	"E9ZVCTn8ZO7JUgiitiTiXnDJYL2Zz0XwOhvJSijofW0KcdefQopnN0rq/0xryOF/+ii09aCy9ZSoE3F0",
-	"mt3iQSonwgzyu2UGoW0a5O0o+FSAFamv+jTDRFm4tSJVM4i4SdM0iExYdqO6M2G5/auFx7o+rTEyqUH9",
-	"KrSlCr2QE/oErKKT/0hFxvXaFDO1h3w7vxBIuz1CbpNj6X61yvEYay+7z3t5TVial27m2ffSRFNv/qwS",
-	"SXi+nV/8C+KzLg4xfnHS3H0j9tX/8g8H89CJRyZz384CrarQljWpdFRQiGFyRIWK7/cHYf8BoKFbHowf",
-	"Dmvv29Mej6YBMR1cp+bvsSHVyLdBk6p/8Hgvkv/c4ZawmXS4lfv93GEhp+Kky2K4yiZYRMYpT6xERo1o",
-	"erX/iIsapN7B/Kb/3S273wMAAP//6YHH1QYQAAA=",
+	"H4sIAAAAAAAC/9xXUW/bNhD+K8RtDy2gmV67vugtWLHO21oYSYA9pH44S2eLrURyR8qdYei/DyRlW7aV",
+	"bQiWbNmTlOju++6+O1Gfd1CYxhpN2jvId+CKihqMtz8S1r76vqLi81vyqGoqr8lZox2Fx5aNJfaKYnAR",
+	"wuIdlqXyymis5ycRp/ENOYfrCOS3liAH51npNXQZOI++jVGk2wbyO7DoHGSwQlXDIjvP6DJg+q1VTGUI",
+	"7tOPcWb5iQofkOl3bGwdWUv0uMTUyp4w8QS8i8y/rOkAvX/w4CIHut+v96CeA7H5/HDa0CIVLSu/vQkr",
+	"kFiWhEx81frq+NcPhhv0kMNPv95ClhYmIKWnxwoq7y10AVjplYmSkytY2bAckMPVfCZWhsXP2iypFu9R",
+	"45pY3BBvVEGQQa0K6nvXGCnezwJjy3UP73IpjSXtTMsFTQyvZZ/kZIgNg1Q+anPGcjWfQQYbYpeK+XYy",
+	"nUxDfIBDqyCH15Pp5DvIwKKvohhyjUmWLuvv5S5cZm+7OB9kbMgTO8jvdqB0XAVfQbYvPwXDcCKeW+o1",
+	"xMG7oLSnNTF03eKSTLJpdenkLl4/tM2SuJMel3X/oj1KIdko0qCER+1L7uK1/+ez6XIcbtDKE4omXWH4",
+	"GW3IE2jnyLf2ad9dT9i4f4FS7sLlUY+qewYWaf/pLqStcRvr/z91I3fp5pmMaRxp38IDRKqi85G12sSv",
+	"/pr8pW24Jt+yduLVdCrUSviKhGVTkHNCOYEhdyI+GFGSJV2SLhQ5Ed0plROIH3jGgDUrIYdf1IY0ORfd",
+	"Vqw4Ga64WK+m02htjfakYyloba2KmC4/uVDPbtDU10wryOErebTUsvfTcszURXN02t38rJUTYwb53SID",
+	"1zYN8nZQfBBgSeKb1KYbkYVbrYMdzMDjOmxTbzJh0Q10Z8Jy+7eE/6J8JZKXFB+j4f0IgRbr+lR4ZBIJ",
+	"fTsRe4Q309dnCMFEJ4SClVcFjsCU5ou+HOA1YameeoIXP4dGJtn72Kh+0FV4IxzxhoRnXK1UIV6cCfgy",
+	"+M8309f/gYq18X3VL85m9PJPN/IwjXtW0vUUBWpRoS5rEuGMIOfd6G5GKt7sT8Dk/CV0i0Pw+Zam3ER7",
+	"PJN6xHBinYa/w4ZEE38UNEHvQ8a76PUvE24Jm9GE2/hhv0yYx+NwNGXef8NGWKJ/E5ZYRP80oEk2/54U",
+	"0Xu8Q/hN+rtbdH8EAAD///9ym+7pDwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

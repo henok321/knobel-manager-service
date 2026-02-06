@@ -99,3 +99,15 @@ repos:
         types: [ go ]
         require_serial: true
         pass_filenames: false
+  - repo: local
+    hooks:
+      - id: validate-openapi
+        name: validate-openapi
+        stages: [ pre-push ]
+        description: Validate OpenAPI spec
+        entry: make
+        args: [ "openapi-validate" ]
+        language: system
+        types: [ yaml ]
+        pass_filenames: false
+        require_serial: true
