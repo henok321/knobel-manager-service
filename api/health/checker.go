@@ -13,7 +13,6 @@ type ComponentStatus string
 const (
 	ComponentStatusPass ComponentStatus = "pass"
 	ComponentStatusFail ComponentStatus = "fail"
-	ComponentStatusWarn ComponentStatus = "warn"
 )
 
 type Status string
@@ -21,7 +20,6 @@ type Status string
 const (
 	StatusPass Status = "pass"
 	StatusFail Status = "fail"
-	StatusWarn Status = "warn"
 )
 
 type CheckResult struct {
