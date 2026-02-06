@@ -8,13 +8,28 @@ type Checker interface {
 	Check(ctx context.Context) error
 }
 
+type CheckStatus string
+
+const (
+	CheckStatusPass CheckStatus = "pass"
+	CheckStatusFail CheckStatus = "fail"
+)
+
+type Status string
+
+const (
+	StatusHealthy   Status = "healthy"
+	StatusUnhealthy Status = "unhealthy"
+	StatusDraining  Status = "draining"
+)
+
 type CheckResult struct {
 	Name    string
-	Status  string
+	Status  CheckStatus
 	Message string
 }
 
 type CheckResults struct {
-	Status string
+	Status Status
 	Checks map[string]CheckResult
 }

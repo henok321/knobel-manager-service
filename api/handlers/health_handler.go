@@ -27,7 +27,7 @@ func (h *HealthHandler) LivenessCheck(writer http.ResponseWriter, request *http.
 	results := h.healthService.Liveness()
 
 	response := health.HealthCheckResponse{
-		Status: results.Status,
+		Status: string(results.Status),
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -67,7 +67,7 @@ func (h *HealthHandler) ReadinessCheck(writer http.ResponseWriter, request *http
 	}
 
 	statusCode := http.StatusOK
-	if results.Status != "healthy" {
+	if results.Status != healthpkg.StatusHealthy {
 		statusCode = http.StatusServiceUnavailable
 		slog.WarnContext(request.Context(), "Readiness check failed",
 			"status", results.Status,
