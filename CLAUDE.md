@@ -302,6 +302,14 @@ Core entities in `pkg/entity/model.go`:
 - `Score` - Player score at a specific table
 - `TablePlayer` - Many-to-many join table
 
+### Enum Pattern
+
+**Prefer String Enums for readability.**
+
+Unless you are writing mission-critical financial code where a state mismatch costs millions, just use String Enums. The readability benefit outweighs the lack of strict type safety in most Go projects.
+
+String enums are simple, JSON-compatible, database-friendly, and easy to debug. They make code more maintainable by being self-documenting.
+
 ### Authentication & Authorization
 
 - Uses Firebase JWT tokens via `Authorization: Bearer <token>` header

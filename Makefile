@@ -7,7 +7,7 @@ OUTPUT := knobel-manager-service
 BUILD_FLAGS := -a -ldflags="-s -w -extldflags '-static'"
 CMD_DIR := ./cmd
 
-.PHONY: all help check-deps setup reset openapi-generate openapi-validate lint lint-all update test build clean lint-go
+.PHONY: all help check-deps setup reset openapi-generate openapi-validate lint lint-all update test build clean
 
 all: help
 
