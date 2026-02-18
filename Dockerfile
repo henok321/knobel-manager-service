@@ -2,7 +2,6 @@ FROM --platform=$BUILDPLATFORM golang:1.26-trixie AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
-ARG RAILWAY_SERVICE_ID
 
 WORKDIR /app
 
@@ -12,7 +11,7 @@ ENV GO111MODULE=on \
     GOPROXY=https://proxy.golang.org,direct \
     GOSUMDB=sum.golang.org
 
-RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-${TARGETARCH}-cache-gomod,target=/go/pkg/mod \
+RUN --mount=type=cache,id=s/0a561279-1c47-492c-98c8-f862b01d4267-/go/pkg/mod,target=/go/pkg/mod \
     go mod download
 
 COPY './gen' './gen'
@@ -22,10 +21,10 @@ COPY './pkg' './pkg'
 COPY './openapi' './openapi'
 COPY ./Makefile ./Makefile
 
-RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-${TARGETARCH}-cache-gomod,target=/go/pkg/mod \
+RUN --mount=type=cache,id=s/0a561279-1c47-492c-98c8-f862b01d4267-/go/pkg/mod,target=/go/pkg/mod \
     go mod tidy
 
-RUN --mount=type=cache,id=s/${RAILWAY_SERVICE_ID}-${TARGETARCH}-cache-gobuild,target=/root/.cache/go-build \
+RUN --mount=type=cache,id=s/0a561279-1c47-492c-98c8-f862b01d4267-/root/.cache/go-build,target=/root/.cache/go-build \
      GOOS="$TARGETOS" GOARCH="$TARGETARCH" make build
 
 FROM debian:trixie-slim
