@@ -11,7 +11,7 @@ ENV GO111MODULE=on \
     GOPROXY=https://proxy.golang.org,direct \
     GOSUMDB=sum.golang.org
 
-RUN --mount=type=cache,id=gomod-cache,target=/go/pkg/mod \
+RUN --mount=type=cache,id=cache-gomod,target=/go/pkg/mod \
     go mod download
 
 COPY './gen' './gen'
@@ -21,10 +21,10 @@ COPY './pkg' './pkg'
 COPY './openapi' './openapi'
 COPY ./Makefile ./Makefile
 
-RUN --mount=type=cache,id=gomod-cache,target=/go/pkg/mod \
+RUN --mount=type=cache,id=cache-gomod,target=/go/pkg/mod \
     go mod tidy
 
-RUN --mount=type=cache,id=gomod-cache,target=/root/.cache/go-build \
+RUN --mount=type=cache,id=cache-gomod,target=/root/.cache/go-build \
      GOOS="$TARGETOS" GOARCH="$TARGETARCH" make build
 
 FROM debian:trixie-slim
