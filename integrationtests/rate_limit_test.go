@@ -34,6 +34,7 @@ func TestRateLimitNotExceededWithDefaults(t *testing.T) {
 				t.Fatalf("Failed to create request: %v", err)
 			}
 
+			//nolint:gosec
 			resp, err := client.Do(req)
 			if err != nil {
 				t.Fatalf("Request %d failed: %v", i+1, err)
@@ -90,7 +91,7 @@ func TestRateLimitExceededWithEnv(t *testing.T) {
 					t.Error("Failed to create request", err)
 					return
 				}
-
+				//nolint:gosec
 				resp, err := client.Do(req)
 				if err != nil {
 					t.Errorf("Request %d failed: %v", i+1, err)

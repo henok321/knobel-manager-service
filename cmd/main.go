@@ -133,6 +133,7 @@ func runDatabaseMigrations(db *sql.DB) error {
 		return errors.New("migrations directory is not set")
 	}
 
+	//nolint:gosec
 	slog.Info("Using migrations directory", "path", migrationsDir)
 
 	if err := goose.Up(db, migrationsDir); err != nil {

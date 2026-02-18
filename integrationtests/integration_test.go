@@ -55,6 +55,7 @@ func newTestRequest(t *testing.T, tc testCase, server *httptest.Server, db *sql.
 		req.Header.Set("Content-Type", "application/json")
 	}
 
+	//nolint:gosec
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		t.Fatalf("Failed to perform %s request: %v", tc.method, err)
