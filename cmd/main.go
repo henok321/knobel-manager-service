@@ -74,8 +74,7 @@ func setupAuthClient() (*auth.Client, error) {
 		return nil, errors.New("FIREBASE_SECRET is undefined or empty")
 	}
 
-	// cannot replace deprecated api until firebase lib updates to latest golang api
-	firebaseOption := option.WithCredentialsJSON(firebaseSecret) //nolint:staticcheck
+	firebaseOption := option.WithAuthCredentialsJSON(option.ServiceAccount, firebaseSecret)
 	firebaseApp, err := firebase.NewApp(context.Background(), nil, firebaseOption)
 	if err != nil {
 		slog.Error("Starting application failed, cannot initialize firebase client. Check if the environment FIREBASE_SECRET is set correctly", "error", err)
