@@ -44,7 +44,7 @@ repos:
     hooks:
       - id: sqlfluff-fix
   - repo: https://github.com/python-openapi/openapi-spec-validator
-    rev: 0.8.0
+    rev: 0.8.1
     hooks:
       - id: openapi-spec-validator
         files: ^openapi/openapi\.ya?ml$
