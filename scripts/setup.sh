@@ -8,19 +8,6 @@ pre-commit install --hook-type pre-commit --hook-type pre-push
 echo "Setup database..."
 docker-compose up -d
 
-export DATABASE_URL="postgres://postgres:secret@localhost:5432/postgres?sslmode=disable"
-export GOOSE_DRIVER=postgres
-export GOOSE_MIGRATION_DIR="./db_migration"
-export GOOSE_DBSTRING="postgres://postgres:secret@localhost:5432/postgres?sslmode=disable"
-
-until docker exec knobel-manager-service-db-1 pg_isready -h localhost -p 5432; do
-	echo "Waiting for PostgreSQL to start..."
-	sleep 2
-done
-
-go tool goose validate
-go tool goose up
-
 echo "Init .env..."
 
 echo "ENVIRONMENT=local" >.env
