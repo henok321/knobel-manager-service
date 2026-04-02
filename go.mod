@@ -14,7 +14,7 @@ require (
 	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/getkin/kin-openapi v0.133.0
 	github.com/google/uuid v1.6.0
-	github.com/lib/pq v1.12.1
+	github.com/lib/pq v1.12.2
 	github.com/oapi-codegen/runtime v1.3.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pressly/goose v2.7.0+incompatible
