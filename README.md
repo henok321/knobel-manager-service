@@ -108,7 +108,7 @@ Deployment happens automatically via GitHub Actions on push to main.
 ## Maintenance
 
 ```sh
-make update                  # Update pre-commit hooks and Go modules
+make update                  # Update Go modules
 make clean                   # Remove build artifacts
 make help                    # List all Makefile targets
 ```
