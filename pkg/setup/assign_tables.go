@@ -82,7 +82,7 @@ func AssignTables(teamSetup TeamSetup, seed int64) (TeamsPlayersMapping, error) 
 		numberOfTables := numberOfPlayers / teamSetup.TableSize
 
 		tables := make(map[int][]Player, numberOfTables)
-		for i := 0; i < numberOfTables; i++ {
+		for i := range numberOfTables {
 			tables[i] = make([]Player, 0, teamSetup.TableSize)
 		}
 
