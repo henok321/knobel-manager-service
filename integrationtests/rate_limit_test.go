@@ -83,7 +83,9 @@ func TestRateLimitExceededWithEnv(t *testing.T) {
 		wg := sync.WaitGroup{}
 
 		for i := range 11 {
-			wg.Go(func() {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
 				req, err := http.NewRequest(http.MethodGet, server.URL+"/health/live", nil)
 				if err != nil {
 					t.Error("Failed to create request", err)
@@ -102,7 +104,7 @@ func TestRateLimitExceededWithEnv(t *testing.T) {
 				} else {
 					assert.Equal(t, http.StatusTooManyRequests, resp.StatusCode, "Request %d should fail", i+1)
 				}
-			})
+			}()
 		}
 		wg.Wait()
 	})
