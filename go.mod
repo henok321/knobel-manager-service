@@ -13,7 +13,7 @@ tool (
 require (
 	firebase.google.com/go/v4 v4.19.0
 	github.com/PuerkitoBio/goquery v1.12.0
-	github.com/getkin/kin-openapi v0.133.0
+	github.com/getkin/kin-openapi v0.137.0
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.3
 	github.com/oapi-codegen/runtime v1.4.0
@@ -258,8 +258,8 @@ require (
 	github.com/nishanths/predeclared v0.2.2 // indirect
 	github.com/nunnatsa/ginkgolinter v0.23.0 // indirect
 	github.com/oapi-codegen/oapi-codegen/v2 v2.6.0 // indirect
-	github.com/oasdiff/yaml v0.0.0-20250309154309-f31be36b4037 // indirect
-	github.com/oasdiff/yaml3 v0.0.0-20250309153720-d2182401db90 // indirect
+	github.com/oasdiff/yaml v0.0.9 // indirect
+	github.com/oasdiff/yaml3 v0.0.12 // indirect
 	github.com/oligot/go-mod-upgrade v0.12.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
