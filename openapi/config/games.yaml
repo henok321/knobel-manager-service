@@ -1,7 +1,7 @@
 package: games
 generate:
   std-http-server: true
-  embedded-spec: true
+  embedded-spec: false
   models: true
 output: ../../gen/games/games.gen.go
 output-options:

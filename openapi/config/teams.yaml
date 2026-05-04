@@ -1,7 +1,7 @@
 package: teams
 generate:
   std-http-server: true
-  embedded-spec: true
+  embedded-spec: false
   models: true
 output: ../../gen/teams/teams.gen.go
 output-options:
