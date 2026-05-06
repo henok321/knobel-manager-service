@@ -747,6 +747,8 @@ components:
           example:
             database:
               status: pass
+            firebase:
+              status: pass
       required: [ status ]
     GamesResponse:
       type: object
