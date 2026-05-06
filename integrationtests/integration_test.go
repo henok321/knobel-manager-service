@@ -169,9 +169,7 @@ func setupTestDatabase(t *testing.T) (string, func()) {
 		t.Fatalf("failed to get connection string: %v", err)
 	}
 
-	if err := os.Setenv("DATABASE_URL", connStr); err != nil {
-		t.Fatalf("failed to set DATABASE_URL: %v", err)
-	}
+	t.Setenv("DATABASE_URL", connStr)
 
 	teardown := func() {
 		if err := pgContainer.Terminate(ctx); err != nil {

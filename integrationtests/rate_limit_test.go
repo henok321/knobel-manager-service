@@ -45,15 +45,9 @@ func TestRateLimitNotExceededWithDefaults(t *testing.T) {
 }
 
 func TestRateLimitExceededWithEnv(t *testing.T) {
-	err := os.Setenv("RATE_LIMIT_REQUESTS_PER_SECOND", "10")
-	if err != nil {
-		t.Fatalf("Failed to set RATE_LIMIT_REQUESTS_PER_SECOND: %v", err)
-	}
+	t.Setenv("RATE_LIMIT_REQUESTS_PER_SECOND", "10")
 
-	err = os.Setenv("RATE_LIMIT_BURST_SIZE", "10")
-	if err != nil {
-		t.Fatalf("Failed to set RATE_LIMIT_BURST_SIZE: %v", err)
-	}
+	t.Setenv("RATE_LIMIT_BURST_SIZE", "10")
 
 	defer func() {
 		err := os.Unsetenv("RATE_LIMIT")

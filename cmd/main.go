@@ -123,7 +123,7 @@ func runDatabaseMigrations(db *sql.DB) error {
 		return err
 	}
 
-	migrationsDir := os.Getenv("DB_MIGRATION_DIR")
+	migrationsDir := filepath.Clean(os.Getenv("DB_MIGRATION_DIR"))
 	if migrationsDir == "" {
 		slog.Error("Migrations directory is not set")
 		return errors.New("migrations directory is not set")

@@ -12,22 +12,23 @@ linters:
     - staticcheck
     - unused
     - asciicheck
+    - bidichk
     - bodyclose
     - canonicalheader
     - errorlint
     - gocritic
     - godox
     - gosec
-    - iface
     - loggercheck
     - nilerr
-    - protogetter
     - reassign
+    - recvcheck
     - revive
     - sloglint
     - testifylint
     - unconvert
     - durationcheck
+    - errname
     - gocheckcompilerdirectives
     - makezero
     - nilnesserr
@@ -35,9 +36,9 @@ linters:
     - predeclared
     - wastedassign
     - errchkjson
-    - musttag
     - perfsprint
     - usestdlibvars
+    - usetesting
     - contextcheck
     - fatcontext
     - noctx
@@ -54,15 +55,9 @@ linters:
     - whitespace
 
   settings:
-    gocritic:
-      disable-all: false
-    gocyclo:
-      min-complexity: 15
     godox:
       keywords:
         - TODO
-    govet:
-      disable-all: false
     misspell:
       locale: US
     nakedret:
@@ -93,7 +88,6 @@ linters:
     rules:
       - path: integrationtests/
         linters:
-          - musttag
           - perfsprint
 
 issues:
