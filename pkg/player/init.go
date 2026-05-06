@@ -1,8 +1,9 @@
 package player
 
 import (
-	"github.com/henok321/knobel-manager-service/pkg/team"
 	"gorm.io/gorm"
+
+	"github.com/henok321/knobel-manager-service/pkg/team"
 )
 
 func InitializePlayerModule(db *gorm.DB) PlayersService {

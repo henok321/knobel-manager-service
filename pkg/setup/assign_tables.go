@@ -1,7 +1,7 @@
 package setup
 
 import (
-	"fmt"
+	"errors"
 	"math/rand"
 	"slices"
 	"sort"
@@ -43,7 +43,7 @@ type TeamSetup struct {
 func AssignTables(teamSetup TeamSetup, seed int64) (TeamsPlayersMapping, error) {
 	for {
 		if !IsAssignable(teamSetup.Teams, teamSetup.TeamSize, teamSetup.TableSize) {
-			return nil, fmt.Errorf("invalid input")
+			return nil, errors.New("invalid input")
 		}
 
 		numberOfTeams := len(teamSetup.Teams)
@@ -73,7 +73,7 @@ func AssignTables(teamSetup TeamSetup, seed int64) (TeamsPlayersMapping, error) 
 			playersToAssign = append(playersToAssign, teamMembers...)
 		}
 
-		rnd := rand.New(rand.NewSource(seed)) //nolint:gosec
+		rnd := rand.New(rand.NewSource(seed)) //nolint:gosec // G404: deterministic seeded shuffle for table assignment, not security-sensitive
 
 		rnd.Shuffle(numberOfPlayers, func(i, j int) {
 			playersToAssign[i], playersToAssign[j] = playersToAssign[j], playersToAssign[i]
@@ -94,7 +94,7 @@ func AssignTables(teamSetup TeamSetup, seed int64) (TeamsPlayersMapping, error) 
 
 		sort.Ints(tableIDs)
 
-		for i := 0; i < teamSetup.TableSize; i++ {
+		for range teamSetup.TableSize {
 			for tableID := range tableIDs {
 				assignedToTable := tables[tableID]
 				for i, playerToAssign := range playersToAssign {

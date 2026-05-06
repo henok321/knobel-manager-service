@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/henok321/knobel-manager-service/gen/health"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/henok321/knobel-manager-service/gen/health"
 )
 
 func TestHealthCheck(t *testing.T) {
@@ -28,7 +29,9 @@ func TestHealthCheck(t *testing.T) {
 		server, teardown := setupTestServer(t)
 		defer teardown(server)
 
-		resp, err := http.Get(server.URL + "/health/live")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, server.URL+"/health/live", nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatalf("Failed to perform GET request: %v", err)
 		}
@@ -58,7 +61,9 @@ func TestHealthCheck(t *testing.T) {
 		server, teardown := setupTestServer(t)
 		defer teardown(server)
 
-		resp, err := http.Get(server.URL + "/health/ready")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, server.URL+"/health/ready", nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatalf("Failed to perform GET request: %v", err)
 		}
@@ -101,7 +106,9 @@ func TestHealthCheck(t *testing.T) {
 		// Stop database to simulate database not available
 		teardownDatabase()
 
-		resp, err := http.Get(server.URL + "/health/ready")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, server.URL+"/health/ready", nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatalf("Failed to perform GET request: %v", err)
 		}

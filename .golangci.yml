@@ -6,29 +6,52 @@ run:
 linters:
   default: "none"
   enable:
-    # current defaults
     - errcheck
     - govet
     - ineffassign
     - staticcheck
     - unused
-    # custom
     - asciicheck
-    - errorlint
     - bodyclose
     - canonicalheader
+    - errorlint
     - gocritic
+    - godox
     - gosec
+    - iface
     - loggercheck
     - nilerr
     - protogetter
     - reassign
+    - revive
     - sloglint
     - testifylint
     - unconvert
-    - godox
-    - iface
-    - revive
+    - durationcheck
+    - gocheckcompilerdirectives
+    - makezero
+    - nilnesserr
+    - nilnil
+    - predeclared
+    - wastedassign
+    - errchkjson
+    - musttag
+    - perfsprint
+    - usestdlibvars
+    - contextcheck
+    - fatcontext
+    - noctx
+    - copyloopvar
+    - intrange
+    - modernize
+    - prealloc
+    - misspell
+    - nakedret
+    - nolintlint
+    - thelper
+    - tparallel
+    - unparam
+    - whitespace
 
   settings:
     gocritic:
@@ -38,8 +61,27 @@ linters:
     godox:
       keywords:
         - TODO
+    gosec:
+      excludes:
+        # G706: log injection — false positive for structured logging (slog) with controlled env vars
+        - G706
     govet:
       disable-all: false
+    misspell:
+      locale: US
+    nakedret:
+      max-func-lines: 30
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-no-explanation: []
+    perfsprint:
+      strconcat: false
+    revive:
+      rules:
+        - name: unused-parameter
+          disabled: true
+
   exclusions:
     generated: strict
     presets:
@@ -52,6 +94,11 @@ linters:
       - builtin$
       - examples$
       - gen$
+    rules:
+      - path: integrationtests/
+        linters:
+          - musttag
+          - perfsprint
 
 issues:
   max-issues-per-linter: 0
@@ -59,10 +106,16 @@ issues:
 
 formatters:
   enable:
+    - gci
     - gofmt
-    - goimports
     - gofumpt
+    - goimports
   settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/henok321/knobel-manager-service)
     gofmt:
       simplify: true
     gofumpt:
@@ -73,3 +126,4 @@ formatters:
       - third_party$
       - builtin$
       - examples$
+      - gen$

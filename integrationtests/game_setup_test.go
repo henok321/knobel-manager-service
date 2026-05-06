@@ -37,7 +37,7 @@ func TestGameSetup(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
-				_, err := db.Exec("UPDATE games SET status = 'in_progress' WHERE id = 1")
+				_, err := db.ExecContext(t.Context(), "UPDATE games SET status = 'in_progress' WHERE id = 1")
 				if err != nil {
 					t.Fatalf("Failed to update game status: %v", err)
 				}

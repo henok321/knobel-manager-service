@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/assert/yaml"
 	"github.com/stretchr/testify/require"
@@ -32,7 +31,9 @@ func TestOpenAPI(t *testing.T) {
 		server, teardown := setupTestServer(t)
 		defer teardown(server)
 
-		resp, err := http.Get(server.URL + "/openapi.yaml")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, server.URL+"/openapi.yaml", nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatalf("Failed to perform GET request: %v", err)
 		}
@@ -76,7 +77,9 @@ func TestOpenAPI(t *testing.T) {
 		server, teardown := setupTestServer(t)
 		defer teardown(server)
 
-		resp, err := http.Get(server.URL + "/docs")
+		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, server.URL+"/docs", nil)
+		require.NoError(t, err)
+		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatalf("Failed to perform GET request: %v", err)
 		}

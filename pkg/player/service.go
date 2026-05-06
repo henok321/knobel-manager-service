@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 
+	"gorm.io/gorm"
+
 	"github.com/henok321/knobel-manager-service/gen/players"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/team"
-	"gorm.io/gorm"
 )
 
 type PlayersService interface {
