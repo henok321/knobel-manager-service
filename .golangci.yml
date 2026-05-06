@@ -61,10 +61,6 @@ linters:
     godox:
       keywords:
         - TODO
-    gosec:
-      excludes:
-        # G706: log injection — false positive for structured logging (slog) with controlled env vars
-        - G706
     govet:
       disable-all: false
     misspell:
