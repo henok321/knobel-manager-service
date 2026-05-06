@@ -3,8 +3,9 @@ package table
 import (
 	"context"
 
-	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"gorm.io/gorm"
+
+	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
 
 type TablesRepository interface {

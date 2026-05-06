@@ -7,23 +7,22 @@ import (
 	"strconv"
 	"time"
 
+	"golang.org/x/time/rate"
+	"gorm.io/gorm"
+
+	"github.com/henok321/knobel-manager-service/api/handlers"
+	healthpkg "github.com/henok321/knobel-manager-service/api/health"
+	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/games"
 	"github.com/henok321/knobel-manager-service/gen/health"
 	"github.com/henok321/knobel-manager-service/gen/players"
 	"github.com/henok321/knobel-manager-service/gen/scores"
 	"github.com/henok321/knobel-manager-service/gen/tables"
 	"github.com/henok321/knobel-manager-service/gen/teams"
+	"github.com/henok321/knobel-manager-service/pkg/game"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 	"github.com/henok321/knobel-manager-service/pkg/table"
 	"github.com/henok321/knobel-manager-service/pkg/team"
-	"golang.org/x/time/rate"
-
-	"gorm.io/gorm"
-
-	"github.com/henok321/knobel-manager-service/api/handlers"
-	healthpkg "github.com/henok321/knobel-manager-service/api/health"
-	"github.com/henok321/knobel-manager-service/api/middleware"
-	"github.com/henok321/knobel-manager-service/pkg/game"
 )
 
 func rateLimitConfig() middleware.RateConfig {

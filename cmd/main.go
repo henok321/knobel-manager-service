@@ -14,21 +14,18 @@ import (
 	"syscall"
 	"time"
 
+	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
+	"github.com/pressly/goose"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/rs/cors"
+	"google.golang.org/api/option"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
 	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/logging"
 	"github.com/henok321/knobel-manager-service/api/routes"
-	"github.com/pressly/goose"
-	"github.com/rs/cors"
-
-	firebase "firebase.google.com/go/v4"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	"google.golang.org/api/option"
-
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 func getEnvAsInt(key string, defaultValue int) int {
@@ -126,13 +123,12 @@ func runDatabaseMigrations(db *sql.DB) error {
 		return err
 	}
 
-	migrationsDir := os.Getenv("DB_MIGRATION_DIR")
+	migrationsDir := filepath.Clean(os.Getenv("DB_MIGRATION_DIR"))
 	if migrationsDir == "" {
 		slog.Error("Migrations directory is not set")
 		return errors.New("migrations directory is not set")
 	}
 
-	//nolint:gosec
 	slog.Info("Using migrations directory", "path", migrationsDir)
 
 	if err := goose.Up(db, migrationsDir); err != nil {

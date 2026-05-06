@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/henok321/knobel-manager-service/pkg/entity"
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
 
 func TestGames(t *testing.T) {
@@ -111,9 +112,11 @@ func TestGames(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_assignable.sql")
 			},
 			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
 				var gameStatus *string
 
-				if err := db.QueryRow("SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
+				if err := db.QueryRowContext(t.Context(), "SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
 					t.Fatalf("Failed to query game status: %v", err)
 				}
 
@@ -130,9 +133,11 @@ func TestGames(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
 			},
 			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
 				var gameStatus *string
 
-				if err := db.QueryRow("SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
+				if err := db.QueryRowContext(t.Context(), "SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
 					t.Fatalf("Failed to query game status: %v", err)
 				}
 
@@ -150,9 +155,11 @@ func TestGames(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned_scores_entered.sql")
 			},
 			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
 				var gameStatus *string
 
-				if err := db.QueryRow("SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
+				if err := db.QueryRowContext(t.Context(), "SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
 					t.Fatalf("Failed to query game status: %v", err)
 				}
 
@@ -169,9 +176,11 @@ func TestGames(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_not_assignable.sql")
 			},
 			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
 				var gameStatus *string
 
-				if err := db.QueryRow("SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
+				if err := db.QueryRowContext(t.Context(), "SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
 					t.Fatalf("Failed to query game status: %v", err)
 				}
 
