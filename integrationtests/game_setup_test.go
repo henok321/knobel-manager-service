@@ -43,7 +43,7 @@ func TestGameSetup(t *testing.T) {
 				}
 			},
 		},
-		"Try to setup game with missing teams": {
+		"Try to setup game with invalid number of teams": {
 			method:             "POST",
 			endpoint:           "/games/1/setup",
 			expectedStatusCode: http.StatusConflict,

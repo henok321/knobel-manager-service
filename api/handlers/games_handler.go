@@ -247,14 +247,14 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
+	if len(gameToAssign.Teams) < gameToAssign.TableSize {
+		JSONError(writer, "Not enough teams to assign tables", http.StatusConflict)
+		return
+	}
+
 	err = h.gamesService.AssignTables(ctx, gameToAssign)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrInvalidGameSetup):
-			JSONError(writer, "Invalid game setup", http.StatusConflict)
-		default:
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-		}
+		JSONError(writer, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 

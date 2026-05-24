@@ -142,9 +142,6 @@ func (s *gamesService) DeleteGame(ctx context.Context, id int, sub string) error
 }
 
 func (s *gamesService) AssignTables(ctx context.Context, game entity.Game) error {
-	if len(game.Teams) < 1 {
-		return apperror.ErrInvalidGameSetup
-	}
 	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo GamesRepository) error {
 		if err := txRepo.ResetGameTables(ctx, game.ID); err != nil {
 			return fmt.Errorf("cannot reset game tables: %w", err)
