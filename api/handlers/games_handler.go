@@ -249,7 +249,12 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 
 	err = h.gamesService.AssignTables(ctx, gameToAssign)
 	if err != nil {
-		JSONError(writer, "Internal server error", http.StatusInternalServerError)
+		switch {
+		case errors.Is(err, apperror.ErrInvalidGameSetup):
+			JSONError(writer, "Invalid game setup", http.StatusConflict)
+		default:
+			JSONError(writer, "Internal server error", http.StatusInternalServerError)
+		}
 		return
 	}
 

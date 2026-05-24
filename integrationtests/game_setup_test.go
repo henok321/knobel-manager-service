@@ -43,6 +43,15 @@ func TestGameSetup(t *testing.T) {
 				}
 			},
 		},
+		"Try to setup game with missing teams": {
+			method:             "POST",
+			endpoint:           "/games/1/setup",
+			expectedStatusCode: http.StatusConflict,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
+			},
+		},
 	}
 
 	dbConn, teardownDatabase := setupTestDatabase(t)
