@@ -97,6 +97,10 @@ func (s *gamesService) UpdateGame(ctx context.Context, id int, sub string, game 
 			}
 		}
 
+		if len(gameByID.Rounds) != gameByID.NumberOfRounds {
+			return entity.Game{}, apperror.ErrInvalidGameSetup
+		}
+
 		validSetup := setup.IsAssignable(teams, gameByID.TeamSize, gameByID.TableSize)
 
 		if !validSetup {
