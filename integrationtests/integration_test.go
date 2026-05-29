@@ -13,12 +13,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/patrickmn/go-cache"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
+	"golang.org/x/time/rate"
 	pg "gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -144,7 +145,7 @@ func setupTestServer(t *testing.T) (*httptest.Server, func(*httptest.Server)) {
 		t.Fatal("Could not read swagger.html", err)
 	}
 
-	limiterCache := cache.New(5*time.Minute, 1*time.Minute)
+	limiterCache := expirable.NewLRU[string, *rate.Limiter](10000, nil, 5*time.Minute)
 
 	router := routes.SetupRouter(database, limiterCache, mock.FirebaseAuthMock{}, healthService, openAPIConfig, swaggerDocs)
 

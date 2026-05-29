@@ -351,8 +351,9 @@ Optional (with defaults):
 
 - `RATE_LIMIT_REQUESTS_PER_SECOND` - Default: `20`
 - `RATE_LIMIT_BURST_SIZE` - Default: `40`
-- `RATE_LIMIT_CACHE_DEFAULT_DURATION` - Default: `5m`
-- `RATE_LIMIT_CACHE_CLEANUP_PERIOD` - Default: `1m`
+- `RATE_LIMIT_CACHE_DEFAULT_DURATION` - Sliding TTL for per-IP limiter entries. Default: `5m`
+- `RATE_LIMIT_CACHE_SIZE` - Max number of cached limiters (LRU bound, DoS-resistant under IP rotation). Default: `10000`
+- `TRUST_FORWARDED_FOR` - Set to `true` only when running behind a trusted reverse proxy (Coolify/Traefik). Uses the right-most `X-Forwarded-For` entry as the client IP. Default: `false`
 - `MAX_REQUEST_SIZE` - Default: `1048576` (1MB in bytes)
 - `DB_MAX_OPEN_CONNS` - Default: `25`
 - `DB_MAX_IDLE_CONNS` - Default: `5`

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/patrickmn/go-cache"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 	"golang.org/x/time/rate"
 	"gorm.io/gorm"
 
@@ -37,22 +37,25 @@ func rateLimitConfig() middleware.RateConfig {
 		slog.Info("Rate limit burst not set, fallback to default", "defaultBurstSize", burstSize)
 	}
 
+	trustForwardedFor, _ := strconv.ParseBool(os.Getenv("TRUST_FORWARDED_FOR"))
+
 	return middleware.RateConfig{
-		Limit: rate.Limit(maxRequestsPerSecond),
-		Burst: burstSize,
+		Limit:             rate.Limit(maxRequestsPerSecond),
+		Burst:             burstSize,
+		TrustForwardedFor: trustForwardedFor,
 	}
 }
 
 type routeSetup struct {
 	database      *gorm.DB
-	limiterCache  *cache.Cache
+	limiterCache  *expirable.LRU[string, *rate.Limiter]
 	authClient    middleware.FirebaseAuth
 	healthService *healthpkg.Service
 	openAPIConfig []byte
 	swaggerDocs   []byte
 }
 
-func SetupRouter(database *gorm.DB, limiterCache *cache.Cache, authClient middleware.FirebaseAuth, healthClient *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
+func SetupRouter(database *gorm.DB, limiterCache *expirable.LRU[string, *rate.Limiter], authClient middleware.FirebaseAuth, healthClient *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
 	instance := routeSetup{
 		database:      database,
 		limiterCache:  limiterCache,
