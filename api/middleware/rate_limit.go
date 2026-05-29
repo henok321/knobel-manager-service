@@ -5,22 +5,17 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/time/rate"
 )
 
-var limiterCache *cache.Cache
-
 type RateConfig struct {
-	Limit                rate.Limit
-	Burst                int
-	CacheDefaultDuration time.Duration
-	CacheCleanupPeriod   time.Duration
+	Limit rate.Limit
+	Burst int
 }
 
-func RateLimit(config RateConfig, next http.Handler) http.Handler {
+func RateLimit(config RateConfig, limiterCache *cache.Cache, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip, err := getClientIP(r)
 		if err != nil {
@@ -28,7 +23,7 @@ func RateLimit(config RateConfig, next http.Handler) http.Handler {
 			return
 		}
 
-		limiter := cachedLimiterByKey(ip, config.Limit, config.Burst, config.CacheDefaultDuration, config.CacheCleanupPeriod)
+		limiter := cachedLimiterByKey(ip, config.Limit, config.Burst, limiterCache)
 
 		if !limiter.Allow() {
 			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
@@ -62,11 +57,7 @@ func getClientIP(r *http.Request) (string, error) {
 	return ip, nil
 }
 
-func cachedLimiterByKey(key string, limit rate.Limit, burst int, cacheDefaultDuration, cacheCleanupPeriod time.Duration) *rate.Limiter {
-	if limiterCache == nil {
-		limiterCache = cache.New(cacheDefaultDuration, cacheCleanupPeriod)
-	}
-
+func cachedLimiterByKey(key string, limit rate.Limit, burst int, limiterCache *cache.Cache) *rate.Limiter {
 	if l, found := limiterCache.Get(key); found {
 		return l.(*rate.Limiter)
 	}

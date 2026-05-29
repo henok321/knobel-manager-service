@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"time"
 
+	"github.com/patrickmn/go-cache"
 	"golang.org/x/time/rate"
 	"gorm.io/gorm"
 
@@ -37,37 +37,25 @@ func rateLimitConfig() middleware.RateConfig {
 		slog.Info("Rate limit burst not set, fallback to default", "defaultBurstSize", burstSize)
 	}
 
-	cacheDefaultDuration, err := time.ParseDuration(os.Getenv("RATE_LIMIT_CACHE_DEFAULT_DURATION"))
-	if err != nil {
-		cacheDefaultDuration = 5 * time.Minute
-		slog.Info("Rate limit cache default duration not set, fallback to default", "defaultCacheDefaultDuration", cacheDefaultDuration)
-	}
-
-	cacheCleanupPeriod, err := time.ParseDuration(os.Getenv("RATE_LIMIT_CACHE_CLEANUP_PERIOD"))
-	if err != nil {
-		slog.Info("Rate limit cache cleanup period not set, defaulting to 1 minute")
-		cacheCleanupPeriod = 1 * time.Minute
-	}
-
 	return middleware.RateConfig{
-		Limit:                rate.Limit(maxRequestsPerSecond),
-		Burst:                burstSize,
-		CacheDefaultDuration: cacheDefaultDuration,
-		CacheCleanupPeriod:   cacheCleanupPeriod,
+		Limit: rate.Limit(maxRequestsPerSecond),
+		Burst: burstSize,
 	}
 }
 
 type routeSetup struct {
 	database      *gorm.DB
+	limiterCache  *cache.Cache
 	authClient    middleware.FirebaseAuth
 	healthService *healthpkg.Service
 	openAPIConfig []byte
 	swaggerDocs   []byte
 }
 
-func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthClient *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
+func SetupRouter(database *gorm.DB, limiterCache *cache.Cache, authClient middleware.FirebaseAuth, healthClient *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
 	instance := routeSetup{
 		database:      database,
+		limiterCache:  limiterCache,
 		authClient:    authClient,
 		healthService: healthClient,
 		openAPIConfig: openAPIConfig,
@@ -77,15 +65,15 @@ func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthCl
 }
 
 func (app *routeSetup) publicEndpoint(handler http.Handler) http.Handler {
-	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders("default-src 'self'", middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
+	return middleware.RateLimit(rateLimitConfig(), app.limiterCache, middleware.SecurityHeaders("default-src 'self'", middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
 }
 
 func (app *routeSetup) publicSwaggerDocsEndpoint(handler http.Handler) http.Handler {
-	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:", middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
+	return middleware.RateLimit(rateLimitConfig(), app.limiterCache, middleware.SecurityHeaders("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:", middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
 }
 
 func (app *routeSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
-	return middleware.RateLimit(rateLimitConfig(), middleware.SecurityHeaders("default-src 'self'", middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, handler)))))
+	return middleware.RateLimit(rateLimitConfig(), app.limiterCache, middleware.SecurityHeaders("default-src 'self'", middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, handler)))))
 }
 
 func (app *routeSetup) setup() *http.ServeMux {

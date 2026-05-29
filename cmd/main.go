@@ -16,6 +16,7 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
+	"github.com/patrickmn/go-cache"
 	"github.com/pressly/goose"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
@@ -155,6 +156,22 @@ func setupOpenAPIConfig() (openAPIConfig, swaggerDocs []byte, err error) {
 	return openAPIConfig, swaggerDocs, nil
 }
 
+func setupLimiterCacher() *cache.Cache {
+	cacheDefaultDuration, err := time.ParseDuration(os.Getenv("RATE_LIMIT_CACHE_DEFAULT_DURATION"))
+	if err != nil {
+		cacheDefaultDuration = 5 * time.Minute
+		slog.Info("Rate limit cache default duration not set, fallback to default", "defaultCacheDefaultDuration", cacheDefaultDuration)
+	}
+
+	cacheCleanupPeriod, err := time.ParseDuration(os.Getenv("RATE_LIMIT_CACHE_CLEANUP_PERIOD"))
+	if err != nil {
+		slog.Info("Rate limit cache cleanup period not set, defaulting to 1 minute")
+		cacheCleanupPeriod = 1 * time.Minute
+	}
+
+	return cache.New(cacheDefaultDuration, cacheCleanupPeriod)
+}
+
 func main() {
 	exitCode := 0
 
@@ -195,7 +212,9 @@ func main() {
 		return
 	}
 
-	router := routes.SetupRouter(gormDB, authClient, healthService, openAPIConfig, swaggerDocs)
+	limiterCache := setupLimiterCacher()
+
+	router := routes.SetupRouter(gormDB, limiterCache, authClient, healthService, openAPIConfig, swaggerDocs)
 
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},

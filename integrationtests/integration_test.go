@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/patrickmn/go-cache"
 	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
@@ -143,7 +144,9 @@ func setupTestServer(t *testing.T) (*httptest.Server, func(*httptest.Server)) {
 		t.Fatal("Could not read swagger.html", err)
 	}
 
-	router := routes.SetupRouter(database, mock.FirebaseAuthMock{}, healthService, openAPIConfig, swaggerDocs)
+	limiterCache := cache.New(5*time.Minute, 1*time.Minute)
+
+	router := routes.SetupRouter(database, limiterCache, mock.FirebaseAuthMock{}, healthService, openAPIConfig, swaggerDocs)
 
 	server := httptest.NewServer(router)
 	teardown := func(*httptest.Server) {
