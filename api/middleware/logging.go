@@ -23,18 +23,20 @@ func RequestFromContext(ctx context.Context) (*Request, bool) {
 	return requestLogging, ok
 }
 
-func RequestLogging(logLevel slog.Level, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		requestLoggingContext := Request{
-			Method: request.Method,
-			Path:   request.RequestURI,
-			ID:     uuid.New(),
-		}
+func RequestLogging(logLevel slog.Level) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			requestLoggingContext := Request{
+				Method: request.Method,
+				Path:   request.RequestURI,
+				ID:     uuid.New(),
+			}
 
-		ctx := context.WithValue(request.Context(), requestKey, requestLoggingContext)
+			ctx := context.WithValue(request.Context(), requestKey, requestLoggingContext)
 
-		slog.Log(ctx, logLevel, "Incoming request")
+			slog.Log(ctx, logLevel, "Incoming request")
 
-		next.ServeHTTP(writer, request.WithContext(ctx))
-	})
+			next.ServeHTTP(writer, request.WithContext(ctx))
+		})
+	}
 }

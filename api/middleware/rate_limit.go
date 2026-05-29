@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net"
 	"net/http"
-	"slices"
 	"strings"
 
 	"github.com/hashicorp/golang-lru/v2/expirable"
@@ -15,35 +14,39 @@ type RateConfig struct {
 	Limit             rate.Limit
 	Burst             int
 	TrustForwardedFor bool
+	TrustedProxyHops  int
 }
 
-func RateLimit(config RateConfig, limiterCache *expirable.LRU[string, *rate.Limiter], next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip, err := getClientIP(r, config.TrustForwardedFor)
-		if err != nil {
-			http.Error(w, "Invalid IP", http.StatusBadRequest)
-			return
-		}
+func RateLimit(config RateConfig, limiterCache *expirable.LRU[string, *rate.Limiter]) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ip, err := getClientIP(r, config.TrustForwardedFor, config.TrustedProxyHops)
+			if err != nil {
+				http.Error(w, "Invalid IP", http.StatusBadRequest)
+				return
+			}
 
-		limiter := cachedLimiterByKey(ip, config.Limit, config.Burst, limiterCache)
+			limiter := cachedLimiterByKey(ip, config.Limit, config.Burst, limiterCache)
 
-		if !limiter.Allow() {
-			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
-			return
-		}
+			if !limiter.Allow() {
+				http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
+				return
+			}
 
-		next.ServeHTTP(w, r)
-	})
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 var errInvalidIP = errors.New("invalid IP")
 
-func getClientIP(r *http.Request, trustForwardedFor bool) (string, error) {
+func getClientIP(r *http.Request, trustForwardedFor bool, trustedProxyHops int) (string, error) {
 	if trustForwardedFor {
+		hops := max(trustedProxyHops, 1)
 		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
 			ips := strings.Split(xff, ",")
-			for _, v := range slices.Backward(ips) {
-				candidate := strings.TrimSpace(v)
+			if len(ips) >= hops {
+				candidate := strings.TrimSpace(ips[len(ips)-hops])
 				if net.ParseIP(candidate) != nil {
 					return candidate, nil
 				}

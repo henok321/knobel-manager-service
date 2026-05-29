@@ -353,7 +353,8 @@ Optional (with defaults):
 - `RATE_LIMIT_BURST_SIZE` - Default: `40`
 - `RATE_LIMIT_CACHE_DEFAULT_DURATION` - Sliding TTL for per-IP limiter entries. Default: `5m`
 - `RATE_LIMIT_CACHE_SIZE` - Max number of cached limiters (LRU bound, DoS-resistant under IP rotation). Default: `10000`
-- `TRUST_FORWARDED_FOR` - Set to `true` only when running behind a trusted reverse proxy (Coolify/Traefik). Uses the right-most `X-Forwarded-For` entry as the client IP. Default: `false`
+- `TRUST_FORWARDED_FOR` - Set to `true` only when running behind a trusted reverse proxy. Reads the client IP from `X-Forwarded-For` instead of `RemoteAddr`. Default: `false`
+- `TRUSTED_PROXY_HOPS` - Number of trusted reverse proxies in front of the service. The parser returns `xff[len-N]` (the entry written by the outermost trusted proxy, which observed the real client). Set to the count of proxies in your chain — e.g., `1` for plain Traefik, `2` for NPM → Traefik. Default: `1`
 - `MAX_REQUEST_SIZE` - Default: `1048576` (1MB in bytes)
 - `DB_MAX_OPEN_CONNS` - Default: `25`
 - `DB_MAX_IDLE_CONNS` - Default: `5`

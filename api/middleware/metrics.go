@@ -26,18 +26,20 @@ func init() {
 	prometheus.MustRegister(HTTPRequestDuration)
 }
 
-func Metrics(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		handlerName := strings.Trim(r.URL.Path, "/")
-		if handlerName == "" {
-			handlerName = "/"
-		}
+func Metrics() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			handlerName := strings.Trim(r.URL.Path, "/")
+			if handlerName == "" {
+				handlerName = "/"
+			}
 
-		duration := HTTPRequestDuration.MustCurryWith(prometheus.Labels{"handler": handlerName})
-		counter := HTTPRequestsTotal.MustCurryWith(prometheus.Labels{"handler": handlerName})
+			duration := HTTPRequestDuration.MustCurryWith(prometheus.Labels{"handler": handlerName})
+			counter := HTTPRequestsTotal.MustCurryWith(prometheus.Labels{"handler": handlerName})
 
-		instrumentedHandler := promhttp.InstrumentHandlerDuration(duration, promhttp.InstrumentHandlerCounter(counter, next))
+			instrumentedHandler := promhttp.InstrumentHandlerDuration(duration, promhttp.InstrumentHandlerCounter(counter, next))
 
-		instrumentedHandler.ServeHTTP(w, r)
-	})
+			instrumentedHandler.ServeHTTP(w, r)
+		})
+	}
 }

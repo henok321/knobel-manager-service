@@ -10,7 +10,7 @@ const (
 	DefaultMaxRequestSize = 1048576
 )
 
-func SecurityHeaders(contentSecurityPolicy string, next http.Handler) http.Handler {
+func SecurityHeaders(contentSecurityPolicy string) func(http.Handler) http.Handler {
 	maxSize := DefaultMaxRequestSize
 
 	if maxSizeEnv := os.Getenv("MAX_REQUEST_SIZE"); maxSizeEnv != "" {
@@ -19,22 +19,24 @@ func SecurityHeaders(contentSecurityPolicy string, next http.Handler) http.Handl
 		}
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch {
-			r.Body = http.MaxBytesReader(w, r.Body, int64(maxSize))
-		}
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch {
+				r.Body = http.MaxBytesReader(w, r.Body, int64(maxSize))
+			}
 
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("X-Frame-Options", "DENY")
-		w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
-		w.Header().Set("Cors-Origin-Resource-Policy", "same-origin")
-		w.Header().Set("Referrer-Policy", "no-referrer")
-		w.Header().Set("Cache-Control", "no-cache")
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("X-Frame-Options", "DENY")
+			w.Header().Set("Content-Security-Policy", contentSecurityPolicy)
+			w.Header().Set("Cors-Origin-Resource-Policy", "same-origin")
+			w.Header().Set("Referrer-Policy", "no-referrer")
+			w.Header().Set("Cache-Control", "no-cache")
 
-		if r.TLS != nil {
-			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
-		}
+			if r.TLS != nil {
+				w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+			}
 
-		next.ServeHTTP(w, r)
-	})
+			next.ServeHTTP(w, r)
+		})
+	}
 }

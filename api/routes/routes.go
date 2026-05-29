@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"slices"
 	"strconv"
 
 	"github.com/hashicorp/golang-lru/v2/expirable"
@@ -39,10 +40,16 @@ func rateLimitConfig() middleware.RateConfig {
 
 	trustForwardedFor, _ := strconv.ParseBool(os.Getenv("TRUST_FORWARDED_FOR"))
 
+	trustedProxyHops, err := strconv.Atoi(os.Getenv("TRUSTED_PROXY_HOPS"))
+	if err != nil || trustedProxyHops < 1 {
+		trustedProxyHops = 1
+	}
+
 	return middleware.RateConfig{
 		Limit:             rate.Limit(maxRequestsPerSecond),
 		Burst:             burstSize,
 		TrustForwardedFor: trustForwardedFor,
+		TrustedProxyHops:  trustedProxyHops,
 	}
 }
 
@@ -67,16 +74,42 @@ func SetupRouter(database *gorm.DB, limiterCache *expirable.LRU[string, *rate.Li
 	return instance.setup()
 }
 
+// chain composes middleware so the outermost (first listed) runs first.
+func chain(mw ...func(http.Handler) http.Handler) func(http.Handler) http.Handler {
+	return func(h http.Handler) http.Handler {
+		for _, v := range slices.Backward(mw) {
+			h = v(h)
+		}
+		return h
+	}
+}
+
 func (app *routeSetup) publicEndpoint(handler http.Handler) http.Handler {
-	return middleware.RateLimit(rateLimitConfig(), app.limiterCache, middleware.SecurityHeaders("default-src 'self'", middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
+	return chain(
+		middleware.RateLimit(rateLimitConfig(), app.limiterCache),
+		middleware.SecurityHeaders("default-src 'self'"),
+		middleware.Metrics(),
+		middleware.RequestLogging(slog.LevelDebug),
+	)(handler)
 }
 
 func (app *routeSetup) publicSwaggerDocsEndpoint(handler http.Handler) http.Handler {
-	return middleware.RateLimit(rateLimitConfig(), app.limiterCache, middleware.SecurityHeaders("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:", middleware.Metrics(middleware.RequestLogging(slog.LevelDebug, handler))))
+	return chain(
+		middleware.RateLimit(rateLimitConfig(), app.limiterCache),
+		middleware.SecurityHeaders("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:"),
+		middleware.Metrics(),
+		middleware.RequestLogging(slog.LevelDebug),
+	)(handler)
 }
 
 func (app *routeSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
-	return middleware.RateLimit(rateLimitConfig(), app.limiterCache, middleware.SecurityHeaders("default-src 'self'", middleware.Metrics(middleware.RequestLogging(slog.LevelInfo, middleware.Authentication(app.authClient, handler)))))
+	return chain(
+		middleware.RateLimit(rateLimitConfig(), app.limiterCache),
+		middleware.SecurityHeaders("default-src 'self'"),
+		middleware.Metrics(),
+		middleware.RequestLogging(slog.LevelInfo),
+		middleware.Authentication(app.authClient),
+	)(handler)
 }
 
 func (app *routeSetup) setup() *http.ServeMux {
