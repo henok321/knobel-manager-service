@@ -74,7 +74,6 @@ func SetupRouter(database *gorm.DB, limiterCache *expirable.LRU[string, *rate.Li
 	return instance.setup()
 }
 
-// chain composes middleware so the outermost (first listed) runs first.
 func chain(mw ...func(http.Handler) http.Handler) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		for _, v := range slices.Backward(mw) {

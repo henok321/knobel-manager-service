@@ -42,7 +42,6 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	// Validate required fields
 	if teamsRequest.Name == "" {
 		JSONError(writer, "Missing required fields", http.StatusBadRequest)
 		return
