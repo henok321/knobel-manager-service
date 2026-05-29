@@ -11,6 +11,34 @@ import (
 	"golang.org/x/time/rate"
 )
 
+var limiterCache *cache.Cache
+
+type RateConfig struct {
+	Limit                rate.Limit
+	Burst                int
+	CacheDefaultDuration time.Duration
+	CacheCleanupPeriod   time.Duration
+}
+
+func RateLimit(config RateConfig, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip, err := getClientIP(r)
+		if err != nil {
+			http.Error(w, "Invalid IP", http.StatusBadRequest)
+			return
+		}
+
+		limiter := cachedLimiterByKey(ip, config.Limit, config.Burst, config.CacheDefaultDuration, config.CacheCleanupPeriod)
+
+		if !limiter.Allow() {
+			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 var errInvalidIP = errors.New("invalid IP")
 
 func getClientIP(r *http.Request) (string, error) {
@@ -34,15 +62,6 @@ func getClientIP(r *http.Request) (string, error) {
 	return ip, nil
 }
 
-var limiterCache *cache.Cache
-
-type RateConfig struct {
-	Limit                rate.Limit
-	Burst                int
-	CacheDefaultDuration time.Duration
-	CacheCleanupPeriod   time.Duration
-}
-
 func cachedLimiterByKey(key string, limit rate.Limit, burst int, cacheDefaultDuration, cacheCleanupPeriod time.Duration) *rate.Limiter {
 	if limiterCache == nil {
 		limiterCache = cache.New(cacheDefaultDuration, cacheCleanupPeriod)
@@ -54,23 +73,4 @@ func cachedLimiterByKey(key string, limit rate.Limit, burst int, cacheDefaultDur
 	l := rate.NewLimiter(limit, burst)
 	limiterCache.Set(key, l, cache.DefaultExpiration)
 	return l
-}
-
-func RateLimit(config RateConfig, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip, err := getClientIP(r)
-		if err != nil {
-			http.Error(w, "Invalid IP", http.StatusBadRequest)
-			return
-		}
-
-		limiter := cachedLimiterByKey(ip, config.Limit, config.Burst, config.CacheDefaultDuration, config.CacheCleanupPeriod)
-
-		if !limiter.Allow() {
-			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
 }
