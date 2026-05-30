@@ -16,11 +16,9 @@ import (
 
 	firebase "firebase.google.com/go/v4"
 	"firebase.google.com/go/v4/auth"
-	"github.com/hashicorp/golang-lru/v2/expirable"
 	"github.com/pressly/goose"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
-	"golang.org/x/time/rate"
 	"google.golang.org/api/option"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -157,15 +155,6 @@ func setupOpenAPIConfig() (openAPIConfig, swaggerDocs []byte, err error) {
 	return openAPIConfig, swaggerDocs, nil
 }
 
-func setupLimiterCacher() *expirable.LRU[string, *rate.Limiter] {
-	cacheTTL := getEnvAsDuration("RATE_LIMIT_CACHE_DEFAULT_DURATION", 5*time.Minute)
-	cacheSize := getEnvAsInt("RATE_LIMIT_CACHE_SIZE", 10000)
-
-	slog.Info("Rate limit cache configured", "ttl", cacheTTL, "size", cacheSize)
-
-	return expirable.NewLRU[string, *rate.Limiter](cacheSize, nil, cacheTTL)
-}
-
 func main() {
 	exitCode := 0
 
@@ -206,9 +195,7 @@ func main() {
 		return
 	}
 
-	limiterCache := setupLimiterCacher()
-
-	router := routes.SetupRouter(gormDB, limiterCache, authClient, healthService, openAPIConfig, swaggerDocs)
+	router := routes.SetupRouter(gormDB, authClient, healthService, openAPIConfig, swaggerDocs)
 
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},

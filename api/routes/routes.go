@@ -3,12 +3,8 @@ package routes
 import (
 	"log/slog"
 	"net/http"
-	"os"
 	"slices"
-	"strconv"
 
-	"github.com/hashicorp/golang-lru/v2/expirable"
-	"golang.org/x/time/rate"
 	"gorm.io/gorm"
 
 	"github.com/henok321/knobel-manager-service/api/handlers"
@@ -26,46 +22,17 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/team"
 )
 
-func rateLimitConfig() middleware.RateConfig {
-	maxRequestsPerSecond, err := strconv.Atoi(os.Getenv("RATE_LIMIT_REQUESTS_PER_SECOND"))
-	if err != nil {
-		maxRequestsPerSecond = 20
-		slog.Info("Rate limit requests per seconds (rps) not set, fallback to default", "defaultMaxRequestsPerSecond", maxRequestsPerSecond)
-	}
-	burstSize, err := strconv.Atoi(os.Getenv("RATE_LIMIT_BURST_SIZE"))
-	if err != nil {
-		burstSize = 40
-		slog.Info("Rate limit burst not set, fallback to default", "defaultBurstSize", burstSize)
-	}
-
-	trustForwardedFor, _ := strconv.ParseBool(os.Getenv("TRUST_FORWARDED_FOR"))
-
-	trustedProxyHops, err := strconv.Atoi(os.Getenv("TRUSTED_PROXY_HOPS"))
-	if err != nil || trustedProxyHops < 1 {
-		trustedProxyHops = 1
-	}
-
-	return middleware.RateConfig{
-		Limit:             rate.Limit(maxRequestsPerSecond),
-		Burst:             burstSize,
-		TrustForwardedFor: trustForwardedFor,
-		TrustedProxyHops:  trustedProxyHops,
-	}
-}
-
 type routeSetup struct {
 	database      *gorm.DB
-	limiterCache  *expirable.LRU[string, *rate.Limiter]
 	authClient    middleware.FirebaseAuth
 	healthService *healthpkg.Service
 	openAPIConfig []byte
 	swaggerDocs   []byte
 }
 
-func SetupRouter(database *gorm.DB, limiterCache *expirable.LRU[string, *rate.Limiter], authClient middleware.FirebaseAuth, healthClient *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
+func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthClient *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
 	instance := routeSetup{
 		database:      database,
-		limiterCache:  limiterCache,
 		authClient:    authClient,
 		healthService: healthClient,
 		openAPIConfig: openAPIConfig,
@@ -85,7 +52,6 @@ func chain(mw ...func(http.Handler) http.Handler) func(http.Handler) http.Handle
 
 func (app *routeSetup) publicEndpoint(handler http.Handler) http.Handler {
 	return chain(
-		middleware.RateLimit(rateLimitConfig(), app.limiterCache),
 		middleware.SecurityHeaders("default-src 'self'"),
 		middleware.Metrics(),
 		middleware.RequestLogging(slog.LevelDebug),
@@ -94,7 +60,6 @@ func (app *routeSetup) publicEndpoint(handler http.Handler) http.Handler {
 
 func (app *routeSetup) publicSwaggerDocsEndpoint(handler http.Handler) http.Handler {
 	return chain(
-		middleware.RateLimit(rateLimitConfig(), app.limiterCache),
 		middleware.SecurityHeaders("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:"),
 		middleware.Metrics(),
 		middleware.RequestLogging(slog.LevelDebug),
@@ -103,7 +68,6 @@ func (app *routeSetup) publicSwaggerDocsEndpoint(handler http.Handler) http.Hand
 
 func (app *routeSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
 	return chain(
-		middleware.RateLimit(rateLimitConfig(), app.limiterCache),
 		middleware.SecurityHeaders("default-src 'self'"),
 		middleware.Metrics(),
 		middleware.RequestLogging(slog.LevelInfo),

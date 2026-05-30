@@ -68,13 +68,9 @@ Required variables (set by `make setup` in `.env` for local development):
 
 Optional variables (with defaults):
 
-| Variable                            | Default   | Description                          |
-|-------------------------------------|-----------|--------------------------------------|
-| `RATE_LIMIT_REQUESTS_PER_SECOND`    | `20`      | Rate limit requests per second       |
-| `RATE_LIMIT_BURST_SIZE`             | `40`      | Rate limit burst size                |
-| `RATE_LIMIT_CACHE_DEFAULT_DURATION` | `5m`      | Cache duration (e.g., `5m`, `1h`)    |
-| `RATE_LIMIT_CACHE_CLEANUP_PERIOD`   | `1m`      | Cache cleanup period (e.g., `1m`)    |
-| `MAX_REQUEST_SIZE`                  | `1048576` | Max request body size in bytes (1MB) |
+| Variable           | Default   | Description                          |
+|--------------------|-----------|--------------------------------------|
+| `MAX_REQUEST_SIZE` | `1048576` | Max request body size in bytes (1MB) |
 
 ## Development
 
