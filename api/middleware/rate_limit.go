@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"errors"
+	"log/slog"
 	"net"
 	"net/http"
 	"strings"
@@ -26,6 +27,8 @@ func RateLimit(config RateConfig, limiterCache *expirable.LRU[string, *rate.Limi
 				return
 			}
 
+			slog.InfoContext(r.Context(), "Client IP", "ip", ip)
+
 			limiter := cachedLimiterByKey(ip, config.Limit, config.Burst, limiterCache)
 
 			if !limiter.Allow() {
@@ -44,6 +47,7 @@ func getClientIP(r *http.Request, trustForwardedFor bool, trustedProxyHops int) 
 	if trustForwardedFor {
 		hops := max(trustedProxyHops, 1)
 		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			slog.InfoContext(r.Context(), "X-Forwarded-For", "xff", xff)
 			ips := strings.Split(xff, ",")
 			if len(ips) >= hops {
 				candidate := strings.TrimSpace(ips[len(ips)-hops])
