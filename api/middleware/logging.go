@@ -34,7 +34,8 @@ func RequestLogging(logLevel slog.Level) func(http.Handler) http.Handler {
 
 			ctx := context.WithValue(request.Context(), requestKey, requestLoggingContext)
 
-			slog.Log(ctx, logLevel, "Incoming request")
+			slog.Log(ctx, logLevel, "Incoming request", ":method", requestLoggingContext.Method, ":path", requestLoggingContext.Path, ":id", requestLoggingContext.ID)
+			slog.Log(ctx, logLevel, "Request headers", ":headers", request.Header)
 
 			next.ServeHTTP(writer, request.WithContext(ctx))
 		})
