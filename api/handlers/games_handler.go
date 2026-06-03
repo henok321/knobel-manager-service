@@ -258,6 +258,5 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	writer.Header().Set("Location", fmt.Sprintf("/games/%d", gameID))
-	writer.WriteHeader(http.StatusCreated)
+	writer.WriteHeader(http.StatusNoContent)
 }

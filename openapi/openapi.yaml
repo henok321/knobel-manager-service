@@ -195,14 +195,8 @@ paths:
       security:
         - bearerAuth: [ ]
       responses:
-        '200':
-          description: Tables assigned successfully
-          headers:
-            Location:
-              description: URL of the updated game
-              schema:
-                type: string
-                example: /games/1
+        '204':
+          description: Game setup complete; tables assigned for all rounds
         '400':
           description: Invalid gameID
         '403':
@@ -389,6 +383,32 @@ paths:
           description: Not owner of the game
         '404':
           description: Player or team not found
+  /games/{gameID}/tables:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getGameTables
+      tags: [ Tables ]
+      summary: List all tables for a game across rounds
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Tables found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TablesResponse'
+        '400':
+          description: Invalid gameID
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game not found
   /games/{gameID}/rounds/{roundNumber}/tables:
     parameters:
       - name: gameID

@@ -13,8 +13,7 @@ func TestGameSetup(t *testing.T) {
 		"Setup game tables": {
 			method:             "POST",
 			endpoint:           "/games/1/setup",
-			expectedStatusCode: http.StatusCreated,
-			expectedHeaders:    map[string]string{"Location": "/games/1"},
+			expectedStatusCode: http.StatusNoContent,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
@@ -100,11 +99,12 @@ func TestGameSetupMultipleTimes(t *testing.T) {
 	executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
 	defer executeSQLFile(t, db, "./test_data/cleanup.sql")
 
+	// Setup is idempotent at the API level: it returns 204 each time
+	// (it deletes and recreates rounds/tables on every call).
 	tc := testCase{
 		method:             "POST",
 		endpoint:           "/games/1/setup",
-		expectedStatusCode: http.StatusCreated,
-		expectedHeaders:    map[string]string{"Location": "/games/1"},
+		expectedStatusCode: http.StatusNoContent,
 		requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 	}
 
