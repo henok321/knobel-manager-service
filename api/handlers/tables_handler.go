@@ -111,7 +111,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 		if round.RoundNumber == roundNumber {
 			for _, currentTable := range round.Tables {
 				if currentTable.TableNumber == tableNumber {
-					response := entityTableToGamesTable(*currentTable)
+					response := tables.TableResponse{Table: entityTableToTablesTable(*currentTable)}
 
 					writer.Header().Set("Content-Type", "application/json")
 					writer.WriteHeader(http.StatusOK)

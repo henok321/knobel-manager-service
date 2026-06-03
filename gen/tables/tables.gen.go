@@ -41,6 +41,11 @@ type Table struct {
 	TableNumber int       `json:"tableNumber"`
 }
 
+// TableResponse defines model for TableResponse.
+type TableResponse struct {
+	Table Table `json:"table"`
+}
+
 // TablesResponse defines model for TablesResponse.
 type TablesResponse struct {
 	Tables []Table `json:"tables"`

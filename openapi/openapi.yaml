@@ -120,7 +120,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Game'
+                $ref: '#/components/schemas/GameResponse'
         '400':
           description: Invalid gameID
           content:
@@ -449,7 +449,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Table'
+                $ref: '#/components/schemas/TableResponse'
         '400':
           description: Invalid path parameters
         '403':

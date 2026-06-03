@@ -1,4 +1,5 @@
 {
+  "game": {
     "id": 1,
     "name": "Game 1",
     "numberOfRounds": 1,
@@ -481,4 +482,5 @@
             ]
         }
     ]
+  }
 }
