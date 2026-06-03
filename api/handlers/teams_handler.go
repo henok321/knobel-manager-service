@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
-	"github.com/henok321/knobel-manager-service/gen/teams"
+	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/team"
@@ -22,8 +22,6 @@ func NewTeamsHandler(service team.TeamsService) *TeamsHandler {
 	return &TeamsHandler{service}
 }
 
-var _ teams.ServerInterface = (*TeamsHandler)(nil)
-
 func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Request, gameID int) {
 	ctx := request.Context()
 
@@ -35,7 +33,7 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	teamsRequest := teams.TeamsRequest{}
+	teamsRequest := api.TeamsRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&teamsRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -68,8 +66,8 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Location", request.URL.String()+"/"+strconv.FormatInt(int64(createdTeam.ID), 10))
 	writer.WriteHeader(http.StatusCreated)
 
-	response := teams.TeamResponse{
-		Team: entityTeamToTeamsTeam(createdTeam),
+	response := api.TeamResponse{
+		Team: entityTeamToAPITeam(createdTeam),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
@@ -88,7 +86,7 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	teamsRequest := teams.TeamsRequest{}
+	teamsRequest := api.TeamsRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&teamsRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -118,8 +116,8 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	response := teams.TeamResponse{
-		Team: entityTeamToTeamsTeam(updatedGame),
+	response := api.TeamResponse{
+		Team: entityTeamToAPITeam(updatedGame),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {

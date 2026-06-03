@@ -40,16 +40,8 @@ openapi-generate:
 	@echo "Generate openapi code from spec..."
 	@echo "Generating Health handler..."
 	@cd openapi/config && go tool oapi-codegen --config=health.yaml ../openapi.yaml
-	@echo "Generating Games handler..."
-	@cd openapi/config && go tool oapi-codegen --config=games.yaml ../openapi.yaml
-	@echo "Generating Teams handler..."
-	@cd openapi/config && go tool oapi-codegen --config=teams.yaml ../openapi.yaml
-	@echo "Generating Players handler..."
-	@cd openapi/config && go tool oapi-codegen --config=players.yaml ../openapi.yaml
-	@echo "Generating Tables handler..."
-	@cd openapi/config && go tool oapi-codegen --config=tables.yaml ../openapi.yaml
-	@echo "Generating Scores handler..."
-	@cd openapi/config && go tool oapi-codegen --config=scores.yaml ../openapi.yaml
+	@echo "Generating API handlers..."
+	@cd openapi/config && go tool oapi-codegen --config=api.yaml ../openapi.yaml
 	@go mod tidy
 	@echo "✓ Generated code updated. Review changes with 'git diff gen/' and commit if needed."
 

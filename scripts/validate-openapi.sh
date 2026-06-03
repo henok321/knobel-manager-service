@@ -28,11 +28,7 @@ fi
 echo "→ Regenerating code from openapi/openapi.yaml..."
 cd openapi/config
 go tool oapi-codegen -config=health.yaml ../openapi.yaml >/dev/null
-go tool oapi-codegen -config=games.yaml ../openapi.yaml >/dev/null
-go tool oapi-codegen -config=teams.yaml ../openapi.yaml >/dev/null
-go tool oapi-codegen -config=players.yaml ../openapi.yaml >/dev/null
-go tool oapi-codegen -config=tables.yaml ../openapi.yaml >/dev/null
-go tool oapi-codegen -config=scores.yaml ../openapi.yaml >/dev/null
+go tool oapi-codegen -config=api.yaml ../openapi.yaml >/dev/null
 cd ../..
 
 echo "→ Comparing regenerated code with checked-in gen/..."

@@ -1,9 +1,0 @@
-package: scores
-generate:
-  std-http-server: true
-  embedded-spec: false
-  models: true
-output: ../../gen/scores/scores.gen.go
-output-options:
-  include-tags:
-    - Scores

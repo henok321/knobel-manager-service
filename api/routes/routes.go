@@ -10,12 +10,8 @@ import (
 	"github.com/henok321/knobel-manager-service/api/handlers"
 	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/middleware"
-	"github.com/henok321/knobel-manager-service/gen/games"
+	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/gen/health"
-	"github.com/henok321/knobel-manager-service/gen/players"
-	"github.com/henok321/knobel-manager-service/gen/scores"
-	"github.com/henok321/knobel-manager-service/gen/tables"
-	"github.com/henok321/knobel-manager-service/gen/teams"
 	"github.com/henok321/knobel-manager-service/pkg/game"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 	"github.com/henok321/knobel-manager-service/pkg/table"
@@ -29,6 +25,18 @@ type routeSetup struct {
 	openAPIConfig []byte
 	swaggerDocs   []byte
 }
+
+// apiServer composes the modular handlers into a single api.ServerInterface
+// implementation via Go method promotion. TablesHandler covers both the Tables
+// and Scores operations, so all 16 operations are satisfied.
+type apiServer struct {
+	*handlers.GamesHandler
+	*handlers.TeamsHandler
+	*handlers.PlayersHandler
+	*handlers.TablesHandler
+}
+
+var _ api.ServerInterface = (*apiServer)(nil)
 
 func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthClient *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
 	instance := routeSetup{
@@ -102,34 +110,10 @@ func (app *routeSetup) setup() *http.ServeMux {
 		Middlewares: []health.MiddlewareFunc{app.publicEndpoint},
 	})
 
-	games.HandlerWithOptions(gamesHandler, games.StdHTTPServerOptions{
+	api.HandlerWithOptions(&apiServer{gamesHandler, teamsHandler, playersHandler, tablesHandler}, api.StdHTTPServerOptions{
 		BaseRouter:       router,
 		ErrorHandlerFunc: handleValidationErrors,
-		Middlewares:      []games.MiddlewareFunc{app.authenticatedEndpoint},
-	})
-
-	teams.HandlerWithOptions(teamsHandler, teams.StdHTTPServerOptions{
-		BaseRouter:       router,
-		ErrorHandlerFunc: handleValidationErrors,
-		Middlewares:      []teams.MiddlewareFunc{app.authenticatedEndpoint},
-	})
-
-	players.HandlerWithOptions(playersHandler, players.StdHTTPServerOptions{
-		BaseRouter:       router,
-		ErrorHandlerFunc: handleValidationErrors,
-		Middlewares:      []players.MiddlewareFunc{app.authenticatedEndpoint},
-	})
-
-	tables.HandlerWithOptions(tablesHandler, tables.StdHTTPServerOptions{
-		BaseRouter:       router,
-		ErrorHandlerFunc: handleValidationErrors,
-		Middlewares:      []tables.MiddlewareFunc{app.authenticatedEndpoint},
-	})
-
-	scores.HandlerWithOptions(tablesHandler, scores.StdHTTPServerOptions{
-		BaseRouter:       router,
-		ErrorHandlerFunc: handleValidationErrors,
-		Middlewares:      []scores.MiddlewareFunc{app.authenticatedEndpoint},
+		Middlewares:      []api.MiddlewareFunc{app.authenticatedEndpoint},
 	})
 
 	return router

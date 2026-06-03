@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
-	"github.com/henok321/knobel-manager-service/gen/games"
+	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/game"
@@ -21,8 +21,6 @@ type GamesHandler struct {
 func NewGamesHandler(gamesService game.GamesService) *GamesHandler {
 	return &GamesHandler{gamesService}
 }
-
-var _ games.ServerInterface = (*GamesHandler)(nil)
 
 func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
@@ -44,12 +42,12 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	apiGames := make([]games.Game, len(allGames))
+	apiGames := make([]api.Game, len(allGames))
 	for i, entry := range allGames {
-		apiGames[i] = entityGameToGamesGame(entry)
+		apiGames[i] = entityGameToAPIGame(entry)
 	}
 
-	response := games.GamesResponse{
+	response := api.GamesResponse{
 		Games: apiGames,
 	}
 
@@ -86,7 +84,7 @@ func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	response := games.GameResponse{Game: entityGameToGamesGame(gameByID)}
+	response := api.GameResponse{Game: entityGameToAPIGame(gameByID)}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.ErrorContext(ctx, "Could not write body", "error", err)
@@ -104,7 +102,7 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	gameCreateRequest := games.GameCreateRequest{}
+	gameCreateRequest := api.GameCreateRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameCreateRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -127,8 +125,8 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	writer.Header().Set("Location", fmt.Sprintf("/games/%d", createdGame.ID))
 	writer.WriteHeader(http.StatusCreated)
 
-	response := games.GameResponse{
-		Game: entityGameToGamesGame(createdGame),
+	response := api.GameResponse{
+		Game: entityGameToAPIGame(createdGame),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
@@ -147,7 +145,7 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 
 	sub := userContext.Sub
 
-	gameUpdateRequest := games.GameUpdateRequest{}
+	gameUpdateRequest := api.GameUpdateRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameUpdateRequest); err != nil {
 		JSONError(writer, "Invalid request body", http.StatusBadRequest)
@@ -178,8 +176,8 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	response := games.GameResponse{
-		Game: entityGameToGamesGame(updatedGame),
+	response := api.GameResponse{
+		Game: entityGameToAPIGame(updatedGame),
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
