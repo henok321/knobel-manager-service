@@ -8,6 +8,8 @@ pre-commit install --hook-type pre-commit --hook-type pre-push
 echo "Setup database..."
 docker-compose up -d
 
+DATABASE_URL=postgres://postgres:secret@localhost:5432/postgres
+
 echo "Init .env..."
 
 echo "ENVIRONMENT=local" >.env
