@@ -96,13 +96,12 @@ type GameResponse struct {
 	Game Game `json:"game"`
 }
 
-// GameRound defines model for GameRound.
+// GameRound Round skeleton returned as part of game structure. Tables and scores are loaded lazily via the per-round tables endpoints, not embedded here.
 type GameRound struct {
 	GameID      int         `json:"gameID"`
 	Id          int         `json:"id"`
 	RoundNumber int         `json:"roundNumber"`
 	Status      RoundStatus `json:"status"`
-	Tables      *[]Table    `json:"tables,omitempty"`
 }
 
 // GameStatus defines model for GameStatus.
@@ -131,23 +130,6 @@ type Player struct {
 
 // RoundStatus defines model for RoundStatus.
 type RoundStatus string
-
-// Score defines model for Score.
-type Score struct {
-	Id       int `json:"id"`
-	PlayerID int `json:"playerID"`
-	Score    int `json:"score"`
-	TableID  int `json:"tableID"`
-}
-
-// Table defines model for Table.
-type Table struct {
-	Id          int       `json:"id"`
-	Players     *[]Player `json:"players,omitempty"`
-	RoundID     int       `json:"roundID"`
-	Scores      *[]Score  `json:"scores,omitempty"`
-	TableNumber int       `json:"tableNumber"`
-}
 
 // Team defines model for Team.
 type Team struct {

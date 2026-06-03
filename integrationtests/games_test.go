@@ -38,7 +38,7 @@ func TestGames(t *testing.T) {
 			expectedBody:   readContentFromFile(t, "./test_data/games_setup_by_id.json"),
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
-		"Find game by id with tables and scores": {
+		"Find game by id returns round skeletons without tables": {
 			method:   http.MethodGet,
 			endpoint: "/games/1",
 			setup: func(db *sql.DB) {

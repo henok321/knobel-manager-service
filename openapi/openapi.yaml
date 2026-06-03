@@ -603,6 +603,9 @@ components:
       required: [ id, playerID, tableID, score ]
     GameRound:
       type: object
+      description: >-
+        Round skeleton returned as part of game structure. Tables and scores
+        are loaded lazily via the per-round tables endpoints, not embedded here.
       properties:
         id:
           type: integer
@@ -612,10 +615,6 @@ components:
           type: integer
         status:
           $ref: '#/components/schemas/RoundStatus'
-        tables:
-          type: array
-          items:
-            $ref: '#/components/schemas/Table'
       required: [ id, gameID, roundNumber, status ]
     Game:
       type: object
