@@ -1,9 +1,0 @@
-package: players
-generate:
-  std-http-server: true
-  embedded-spec: false
-  models: true
-output: ../../gen/players/players.gen.go
-output-options:
-  include-tags:
-    - Players

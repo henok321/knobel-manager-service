@@ -225,55 +225,65 @@ The generated code in `gen/` provides:
 
 ### Generated Type Usage Pattern
 
-**IMPORTANT: Always use module-specific types.**
+**IMPORTANT: All authenticated-endpoint code generates into one package, `gen/api`.**
 
-oapi-codegen generates types within each module package (`gen/games`, `gen/teams`, `gen/players`, `gen/tables`,
-`gen/scores`). Each module contains its own types, ServerInterface definitions, and HTTP routing code. The codebase uses
-module-specific types throughout:
+oapi-codegen generates a single package (`gen/api`) covering every authenticated tag (Games, Teams, Players, Tables,
+Scores). It contains one copy of every schema type, one combined `api.ServerInterface` with all 16 operations, and the
+shared HTTP routing helpers. `gen/health` stays its own package because it uses public (unauthenticated) middleware.
 
 **✅ Correct Usage:**
 
-- Use module-specific types: `games.Game`, `teams.Team`, `players.Player`, `tables.Table`, `scores.Score`
-- Each module package contains both types AND ServerInterface
-- Converters in `api/handlers/converters.go` return module-specific types
-- Handlers use module-specific types for requests and responses
-- Services use module-specific types for request parameters
+- Use unified `api.*` types: `api.Game`, `api.Team`, `api.Player`, `api.Table`, `api.Score`, etc.
+- Converters in `api/handlers/converters.go` return `api.*` types — one converter per entity (e.g. `entityGameToAPIGame`)
+- Handlers use `api.*` types for requests and responses
+- Services use `api.*` types for request parameters (e.g. `api.GameCreateRequest`, `api.ScoresRequest`)
+- The modular handlers (`GamesHandler`, `TeamsHandler`, `PlayersHandler`, `TablesHandler`) are kept, each implementing
+  its slice of operations. They are composed into one `api.ServerInterface` via an embedded combined server in
+  `api/routes/routes.go`:
+
+```go
+type apiServer struct {
+    *handlers.GamesHandler
+    *handlers.TeamsHandler
+    *handlers.PlayersHandler
+    *handlers.TablesHandler
+}
+var _ api.ServerInterface = (*apiServer)(nil)
+```
+
+Go method promotion makes the embedded handlers satisfy the combined interface. `TablesHandler` implements both the
+Tables and Scores operations. Routing is registered once via `api.HandlerWithOptions(&apiServer{...}, ...)`.
 
 **Examples:**
 
 ```go
-// ✅ Correct - import only the module package you need
-import "github.com/henok321/knobel-manager-service/gen/games"
+import "github.com/henok321/knobel-manager-service/gen/api"
 
-// ✅ Correct - converter returns games.Game
-func entityGameToAPIGame(e entity.Game) games.Game { ... }
-
-// ✅ Correct - handler implements games.ServerInterface and uses games.Game
-var _ games.ServerInterface = (*GamesHandler)(nil)
+// converter returns api.Game
+func entityGameToAPIGame(e entity.Game) api.Game { ... }
 
 func (h *GamesHandler) GetGames(w http.ResponseWriter, r *http.Request) {
-apiGames := make([]games.Game, len(allGames))
-response := games.GamesResponse{Games: apiGames}
+apiGames := make([]api.Game, len(allGames))
+response := api.GamesResponse{Games: apiGames}
 }
 
-// ✅ Correct - service uses games.GameCreateRequest
-func (s *gamesService) CreateGame(ctx context.Context, sub string, game *games.GameCreateRequest) (entity.Game, error) { ... }
+// service uses api.GameCreateRequest
+func (s *gamesService) CreateGame(ctx context.Context, sub string, game *api.GameCreateRequest) (entity.Game, error) { ... }
 ```
 
 **Why this pattern?**
 
-- Self-contained modules with no cross-dependencies
-- Types are scoped to their API context (e.g., `games.Player` represents a player in game responses, while
-  `players.Player` represents a player in CRUD operations)
-- Simpler configuration - no import-mapping complexity
-- Generated code duplication is intentional and correct (same schema, different contexts)
+- One set of types, no per-tag duplication of identical schemas
+- One `ServerInterface` to satisfy, while domain logic stays split across the modular handlers
+- Simpler configuration — a single `openapi/config/api.yaml` with `include-tags`
 
 **File references:**
 
-- Module types and interfaces: `gen/games/games.gen.go`, `gen/teams/teams.gen.go`, `gen/players/players.gen.go`,
-  `gen/tables/tables.gen.go`, `gen/scores/scores.gen.go`
+- Unified types and interface: `gen/api/api.gen.go`
+- Health (separate, public): `gen/health/health.gen.go`
 - Converters: `api/handlers/converters.go`
 - Handlers: `api/handlers/*_handler.go`
+- Combined server + routing: `api/routes/routes.go`
 - Services: `pkg/*/service.go`
 
 ### Database Models
@@ -314,9 +324,10 @@ Configured in `api/routes/routes.go`:
 
 ### Scores Architecture Note
 
-The `gen/scores` package is generated from the OpenAPI spec, but **scores are implemented by `TablesHandler`**
+The Scores operations are part of the unified `gen/api` package, but **scores are implemented by `TablesHandler`**
 (`api/handlers/tables_handler.go`), not a dedicated scores handler. There is no `pkg/scores` domain module.
-In `api/routes/routes.go`, `scores.HandlerWithOptions` is wired to `tablesHandler`.
+`TablesHandler` provides both the Tables and Scores methods of `api.ServerInterface`; it is embedded in the combined
+`apiServer` in `api/routes/routes.go`.
 
 ## Test Setup
 

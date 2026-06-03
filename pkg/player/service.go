@@ -6,15 +6,15 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/henok321/knobel-manager-service/gen/players"
+	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/team"
 )
 
 type PlayersService interface {
-	CreatePlayer(ctx context.Context, request players.PlayersRequest, teamID int, sub string) (entity.Player, error)
-	UpdatePlayer(ctx context.Context, id int, request players.PlayersRequest, sub string) (entity.Player, error)
+	CreatePlayer(ctx context.Context, request api.PlayersRequest, teamID int, sub string) (entity.Player, error)
+	UpdatePlayer(ctx context.Context, id int, request api.PlayersRequest, sub string) (entity.Player, error)
 	DeletePlayer(ctx context.Context, id int, sub string) error
 }
 
@@ -27,7 +27,7 @@ func NewPlayersService(playersRepo PlayersRepository, teamsRepo team.TeamsReposi
 	return &playersService{playersRepo: playersRepo, teamsRepo: teamsRepo}
 }
 
-func (s playersService) CreatePlayer(ctx context.Context, request players.PlayersRequest, teamID int, sub string) (entity.Player, error) {
+func (s playersService) CreatePlayer(ctx context.Context, request api.PlayersRequest, teamID int, sub string) (entity.Player, error) {
 	teamByID, err := s.teamsRepo.FindByID(ctx, teamID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -52,7 +52,7 @@ func (s playersService) CreatePlayer(ctx context.Context, request players.Player
 	return createdPlayer, nil
 }
 
-func (s playersService) UpdatePlayer(ctx context.Context, id int, request players.PlayersRequest, sub string) (entity.Player, error) {
+func (s playersService) UpdatePlayer(ctx context.Context, id int, request api.PlayersRequest, sub string) (entity.Player, error) {
 	player, err := s.playersRepo.FindPlayerByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

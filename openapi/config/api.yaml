@@ -1,9 +1,13 @@
-package: tables
+package: api
 generate:
   std-http-server: true
   embedded-spec: false
   models: true
-output: ../../gen/tables/tables.gen.go
+output: ../../gen/api/api.gen.go
 output-options:
   include-tags:
+    - Games
+    - Teams
+    - Players
     - Tables
+    - Scores

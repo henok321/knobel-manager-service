@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
-	"github.com/henok321/knobel-manager-service/gen/players"
+	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 )
@@ -23,8 +23,6 @@ func NewPlayersHandler(service player.PlayersService) *PlayersHandler {
 	}
 }
 
-var _ players.ServerInterface = (*PlayersHandler)(nil)
-
 func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
 	ctx := request.Context()
 
@@ -36,7 +34,7 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 
 	sub := userContext.Sub
 
-	playersRequest := players.PlayersRequest{}
+	playersRequest := api.PlayersRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -66,8 +64,8 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusCreated)
 
-	response := players.PlayersResponse{
-		Player: entityPlayerToPlayersPlayer(createPlayer),
+	response := api.PlayersResponse{
+		Player: entityPlayerToAPIPlayer(createPlayer),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
@@ -86,7 +84,7 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 
 	sub := userContext.Sub
 
-	playersRequest := players.PlayersRequest{}
+	playersRequest := api.PlayersRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -115,8 +113,8 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	response := players.PlayersResponse{
-		Player: entityPlayerToPlayersPlayer(updatePlayer),
+	response := api.PlayersResponse{
+		Player: entityPlayerToAPIPlayer(updatePlayer),
 	}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {

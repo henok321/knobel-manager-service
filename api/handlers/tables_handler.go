@@ -7,8 +7,7 @@ import (
 	"net/http"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
-	"github.com/henok321/knobel-manager-service/gen/scores"
-	"github.com/henok321/knobel-manager-service/gen/tables"
+	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/game"
@@ -23,11 +22,6 @@ type TablesHandler struct {
 func NewTablesHandler(gamesService game.GamesService, tablesService table.TablesService) *TablesHandler {
 	return &TablesHandler{gamesService: gamesService, tablesService: tablesService}
 }
-
-var (
-	_ tables.ServerInterface = (*TablesHandler)(nil)
-	_ scores.ServerInterface = (*TablesHandler)(nil)
-)
 
 func (t *TablesHandler) GetGameTables(writer http.ResponseWriter, request *http.Request, gameID int) {
 	ctx := request.Context()
@@ -55,15 +49,15 @@ func (t *TablesHandler) GetGameTables(writer http.ResponseWriter, request *http.
 		}
 	}
 
-	apiTables := make([]tables.Table, 0)
+	apiTables := make([]api.Table, 0)
 
 	for _, round := range gameByID.Rounds {
 		for _, currentTable := range round.Tables {
-			apiTables = append(apiTables, entityTableToTablesTable(*currentTable))
+			apiTables = append(apiTables, entityTableToAPITable(*currentTable))
 		}
 	}
 
-	response := tables.TablesResponse{
+	response := api.TablesResponse{
 		Tables: apiTables,
 	}
 
@@ -103,12 +97,12 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 
 	for _, round := range gameByID.Rounds {
 		if round.RoundNumber == roundNumber {
-			apiTables := make([]tables.Table, len(round.Tables))
+			apiTables := make([]api.Table, len(round.Tables))
 			for i, t := range round.Tables {
-				apiTables[i] = entityTableToTablesTable(*t)
+				apiTables[i] = entityTableToAPITable(*t)
 			}
 
-			response := tables.TablesResponse{
+			response := api.TablesResponse{
 				Tables: apiTables,
 			}
 
@@ -156,7 +150,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 		if round.RoundNumber == roundNumber {
 			for _, currentTable := range round.Tables {
 				if currentTable.TableNumber == tableNumber {
-					response := tables.TableResponse{Table: entityTableToTablesTable(*currentTable)}
+					response := api.TableResponse{Table: entityTableToAPITable(*currentTable)}
 
 					writer.Header().Set("Content-Type", "application/json")
 					writer.WriteHeader(http.StatusOK)
@@ -185,7 +179,7 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 
 	sub := userContext.Sub
 
-	scoresRequest := scores.ScoresRequest{}
+	scoresRequest := api.ScoresRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&scoresRequest); err != nil {
 		JSONError(writer, err.Error(), http.StatusBadRequest)
@@ -211,8 +205,8 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	response := scores.TableResponse{
-		Table: entityTableToScoresTable(updatedTable),
+	response := api.TableResponse{
+		Table: entityTableToAPITable(updatedTable),
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
