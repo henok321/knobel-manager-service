@@ -258,26 +258,5 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	game, err := h.gamesService.FindByID(ctx, gameID, sub)
-	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game not found", http.StatusNotFound)
-		default:
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-		}
-
-		return
-	}
-
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	response := games.GameResponse{Game: entityGameToGamesGame(game)}
-
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
-	}
+	writer.WriteHeader(http.StatusNoContent)
 }
