@@ -3,6 +3,7 @@ package handlers
 import (
 	"github.com/henok321/knobel-manager-service/gen/games"
 	"github.com/henok321/knobel-manager-service/gen/players"
+	"github.com/henok321/knobel-manager-service/gen/scores"
 	"github.com/henok321/knobel-manager-service/gen/tables"
 	"github.com/henok321/knobel-manager-service/gen/teams"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
@@ -174,6 +175,49 @@ func entityTableToGamesTable(tableEntity entity.GameTable) games.Table {
 			scores[i] = entityScoreToGamesScore(*score)
 		}
 		apiTable.Scores = &scores
+	}
+
+	return apiTable
+}
+
+func entityPlayerToScoresPlayer(p entity.Player) scores.Player {
+	return scores.Player{
+		Id:     p.ID,
+		Name:   p.Name,
+		TeamID: p.TeamID,
+	}
+}
+
+func entityScoreToScoresScore(s entity.Score) scores.Score {
+	return scores.Score{
+		Id:       s.ID,
+		PlayerID: s.PlayerID,
+		Score:    s.Score,
+		TableID:  s.TableID,
+	}
+}
+
+func entityTableToScoresTable(tableEntity entity.GameTable) scores.Table {
+	apiTable := scores.Table{
+		Id:          tableEntity.ID,
+		RoundID:     tableEntity.RoundID,
+		TableNumber: tableEntity.TableNumber,
+	}
+
+	if len(tableEntity.Players) > 0 {
+		apiPlayers := make([]scores.Player, len(tableEntity.Players))
+		for i, player := range tableEntity.Players {
+			apiPlayers[i] = entityPlayerToScoresPlayer(*player)
+		}
+		apiTable.Players = &apiPlayers
+	}
+
+	if len(tableEntity.Scores) > 0 {
+		scoresSlice := make([]scores.Score, len(tableEntity.Scores))
+		for i, score := range tableEntity.Scores {
+			scoresSlice[i] = entityScoreToScoresScore(*score)
+		}
+		apiTable.Scores = &scoresSlice
 	}
 
 	return apiTable

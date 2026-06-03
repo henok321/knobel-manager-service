@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
-	"github.com/henok321/knobel-manager-service/gen/games"
 	"github.com/henok321/knobel-manager-service/gen/scores"
 	"github.com/henok321/knobel-manager-service/gen/tables"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
@@ -152,7 +151,7 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	_, err := t.tablesService.UpdateScore(ctx, gameID, roundNumber, tableNumber, sub, scoresRequest)
+	updatedTable, err := t.tablesService.UpdateScore(ctx, gameID, roundNumber, tableNumber, sub, scoresRequest)
 	if err != nil {
 		switch {
 		case errors.Is(err, apperror.ErrInvalidScore):
@@ -166,22 +165,8 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	updatedGame, err := t.gamesService.FindByID(ctx, gameID, sub)
-	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "Forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game not found", http.StatusNotFound)
-		default:
-			JSONError(writer, err.Error(), http.StatusInternalServerError)
-		}
-
-		return
-	}
-
-	response := games.GameResponse{
-		Game: entityGameToGamesGame(updatedGame),
+	response := scores.TableResponse{
+		Table: entityTableToScoresTable(updatedTable),
 	}
 
 	writer.Header().Set("Content-Type", "application/json")

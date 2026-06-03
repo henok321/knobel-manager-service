@@ -487,11 +487,11 @@ paths:
               $ref: '#/components/schemas/ScoresRequest'
       responses:
         '200':
-          description: Updated game with new scores
+          description: Updated table with new scores
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameResponse'
+                $ref: '#/components/schemas/TableResponse'
         '400':
           description: Invalid request body or path params
         '403':
