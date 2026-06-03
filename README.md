@@ -96,6 +96,9 @@ make test                   # Run tests
 
 ```sh
 make build                  # Build binary
+set -a
+source .env
+set +a
 ./knobel-manager-service    # Run binary (requires sourced .env)
 ```
 

@@ -17,93 +17,12 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
-// Defines values for GameStatus.
-const (
-	GameStatusCompleted  GameStatus = "completed"
-	GameStatusInProgress GameStatus = "in_progress"
-	GameStatusSetup      GameStatus = "setup"
-)
-
-// Valid indicates whether the value is a known member of the GameStatus enum.
-func (e GameStatus) Valid() bool {
-	switch e {
-	case GameStatusCompleted:
-		return true
-	case GameStatusInProgress:
-		return true
-	case GameStatusSetup:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for RoundStatus.
-const (
-	RoundStatusCompleted  RoundStatus = "completed"
-	RoundStatusInProgress RoundStatus = "in_progress"
-	RoundStatusSetup      RoundStatus = "setup"
-)
-
-// Valid indicates whether the value is a known member of the RoundStatus enum.
-func (e RoundStatus) Valid() bool {
-	switch e {
-	case RoundStatusCompleted:
-		return true
-	case RoundStatusInProgress:
-		return true
-	case RoundStatusSetup:
-		return true
-	default:
-		return false
-	}
-}
-
-// Game defines model for Game.
-type Game struct {
-	Id             int          `json:"id"`
-	Name           string       `json:"name"`
-	NumberOfRounds int          `json:"numberOfRounds"`
-	Owners         []GameOwner  `json:"owners"`
-	Rounds         *[]GameRound `json:"rounds,omitempty"`
-	Status         GameStatus   `json:"status"`
-	TableSize      int          `json:"tableSize"`
-	TeamSize       int          `json:"teamSize"`
-	Teams          *[]Team      `json:"teams,omitempty"`
-}
-
-// GameOwner defines model for GameOwner.
-type GameOwner struct {
-	GameID   int    `json:"gameID"`
-	OwnerSub string `json:"ownerSub"`
-}
-
-// GameResponse defines model for GameResponse.
-type GameResponse struct {
-	Game Game `json:"game"`
-}
-
-// GameRound defines model for GameRound.
-type GameRound struct {
-	GameID      int         `json:"gameID"`
-	Id          int         `json:"id"`
-	RoundNumber int         `json:"roundNumber"`
-	Status      RoundStatus `json:"status"`
-	Tables      *[]Table    `json:"tables,omitempty"`
-}
-
-// GameStatus defines model for GameStatus.
-type GameStatus string
-
 // Player defines model for Player.
 type Player struct {
 	Id     int    `json:"id"`
 	Name   string `json:"name"`
 	TeamID int    `json:"teamID"`
 }
-
-// RoundStatus defines model for RoundStatus.
-type RoundStatus string
 
 // Score defines model for Score.
 type Score struct {
@@ -130,12 +49,9 @@ type Table struct {
 	TableNumber int       `json:"tableNumber"`
 }
 
-// Team defines model for Team.
-type Team struct {
-	GameID  int       `json:"gameID"`
-	Id      int       `json:"id"`
-	Name    string    `json:"name"`
-	Players *[]Player `json:"players,omitempty"`
+// TableResponse defines model for TableResponse.
+type TableResponse struct {
+	Table Table `json:"table"`
 }
 
 // bearerAuthContextKey is the context key for bearerAuth security scheme

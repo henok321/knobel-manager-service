@@ -120,7 +120,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Game'
+                $ref: '#/components/schemas/GameResponse'
         '400':
           description: Invalid gameID
           content:
@@ -449,7 +449,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Table'
+                $ref: '#/components/schemas/TableResponse'
         '400':
           description: Invalid path parameters
         '403':
@@ -487,11 +487,11 @@ paths:
               $ref: '#/components/schemas/ScoresRequest'
       responses:
         '200':
-          description: Updated game with new scores
+          description: Updated table with new scores
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GameResponse'
+                $ref: '#/components/schemas/TableResponse'
         '400':
           description: Invalid request body or path params
         '403':
@@ -603,6 +603,9 @@ components:
       required: [ id, playerID, tableID, score ]
     GameRound:
       type: object
+      description: >-
+        Round skeleton returned as part of game structure. Tables and scores
+        are loaded lazily via the per-round tables endpoints, not embedded here.
       properties:
         id:
           type: integer
@@ -612,10 +615,6 @@ components:
           type: integer
         status:
           $ref: '#/components/schemas/RoundStatus'
-        tables:
-          type: array
-          items:
-            $ref: '#/components/schemas/Table'
       required: [ id, gameID, roundNumber, status ]
     Game:
       type: object

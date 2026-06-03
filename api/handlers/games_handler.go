@@ -86,7 +86,7 @@ func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
 
-	response := entityGameToGamesGame(gameByID)
+	response := games.GameResponse{Game: entityGameToGamesGame(gameByID)}
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		slog.ErrorContext(ctx, "Could not write body", "error", err)
