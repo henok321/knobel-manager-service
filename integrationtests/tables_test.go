@@ -10,6 +10,47 @@ import (
 
 func TestTables(t *testing.T) {
 	tests := map[string]testCase{
+		"get all tables for gameID 1 across rounds": {
+			method:             "GET",
+			endpoint:           "/games/1/tables",
+			expectedStatusCode: http.StatusOK,
+			expectedBody:       readContentFromFile(t, "./test_data/game_1_tables.json"),
+
+			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+			},
+		},
+		"get all tables for game forbidden": {
+			method:             "GET",
+			endpoint:           "/games/1/tables",
+			expectedStatusCode: http.StatusForbidden,
+
+			requestHeaders: map[string]string{"Authorization": "Bearer sub-2"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+			},
+		},
+		"get all tables game not found": {
+			method:             "GET",
+			endpoint:           "/games/2/tables",
+			expectedStatusCode: http.StatusNotFound,
+
+			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+			},
+		},
+		"get all tables invalid game id": {
+			method:             "GET",
+			endpoint:           "/games/invalid/tables",
+			expectedStatusCode: http.StatusBadRequest,
+
+			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+			},
+		},
 		"get tables for gameID 1 and round number 1": {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/1/tables",

@@ -29,6 +29,52 @@ var (
 	_ scores.ServerInterface = (*TablesHandler)(nil)
 )
 
+func (t *TablesHandler) GetGameTables(writer http.ResponseWriter, request *http.Request, gameID int) {
+	ctx := request.Context()
+
+	userContext, ok := middleware.UserFromContext(ctx)
+	if !ok {
+		JSONError(writer, "User context not found", http.StatusInternalServerError)
+		return
+	}
+
+	sub := userContext.Sub
+
+	gameByID, err := t.gamesService.FindByID(ctx, gameID, sub)
+	if err != nil {
+		switch {
+		case errors.Is(err, apperror.ErrNotOwner):
+			JSONError(writer, "Forbidden", http.StatusForbidden)
+			return
+		case errors.Is(err, entity.ErrGameNotFound):
+			JSONError(writer, "Game not found", http.StatusNotFound)
+			return
+		default:
+			JSONError(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	apiTables := make([]tables.Table, 0)
+
+	for _, round := range gameByID.Rounds {
+		for _, currentTable := range round.Tables {
+			apiTables = append(apiTables, entityTableToTablesTable(*currentTable))
+		}
+	}
+
+	response := tables.TablesResponse{
+		Tables: apiTables,
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+	writer.WriteHeader(http.StatusOK)
+
+	if err := json.NewEncoder(writer).Encode(response); err != nil {
+		slog.InfoContext(ctx, "Could not write body", "error", err)
+	}
+}
+
 func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request, gameID, roundNumber int) {
 	ctx := request.Context()
 

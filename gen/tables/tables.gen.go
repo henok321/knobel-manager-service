@@ -62,6 +62,9 @@ type ServerInterface interface {
 	// Get a table by number in round
 	// (GET /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber})
 	GetTable(w http.ResponseWriter, r *http.Request, gameID int, roundNumber int, tableNumber int)
+	// List all tables for a game across rounds
+	// (GET /games/{gameID}/tables)
+	GetGameTables(w http.ResponseWriter, r *http.Request, gameID int)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -155,6 +158,38 @@ func (siw *ServerInterfaceWrapper) GetTable(w http.ResponseWriter, r *http.Reque
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetTable(w, r, gameID, roundNumber, tableNumber)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetGameTables operation middleware
+func (siw *ServerInterfaceWrapper) GetGameTables(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "gameID" -------------
+	var gameID int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetGameTables(w, r, gameID)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -286,6 +321,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables", wrapper.GetTables)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", wrapper.GetTable)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/tables", wrapper.GetGameTables)
 
 	return m
 }
