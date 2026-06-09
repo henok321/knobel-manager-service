@@ -2,6 +2,8 @@
 dialect = postgres
 quoted_identifiers_policy = all
 unquoted_identifiers_policy = all
+# PG01: CONCURRENTLY can't run in goose's per-migration transaction.
+exclude_rules = PG01
 
 [sqlfluff:rules:capitalisation.keywords]
 capitalisation_policy = upper
