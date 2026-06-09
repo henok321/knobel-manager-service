@@ -11,10 +11,15 @@
     "customFormatter": "golangci-lint"
   },
   "go.formatTool": "custom",
-  "go.formatFlags": ["fmt", "--stdin"],
+  "go.formatFlags": [
+    "fmt",
+    "--stdin"
+  ],
   "go.lintTool": "golangci-lint",
   "go.lintOnSave": "workspace",
-  "go.lintFlags": ["--fast-only"],
+  "go.lintFlags": [
+    "--fast-only"
+  ],
   "go.useLanguageServer": true,
   "gopls": {
     "ui.semanticTokens": true,

@@ -13,8 +13,8 @@ DATABASE_URL=postgres://postgres:secret@localhost:5432/postgres
 echo "Init .env..."
 
 {
-	echo "ENVIRONMENT=local"
-	echo "DB_MIGRATION_DIR=db_migration"
-	echo "FIREBASE_SECRET=$(jq -c . ./firebaseServiceAccount.json | base64)"
-	echo "DATABASE_URL=$DATABASE_URL"
+  echo "ENVIRONMENT=local"
+  echo "DB_MIGRATION_DIR=db_migration"
+  echo "FIREBASE_SECRET=$(jq -c . ./firebaseServiceAccount.json | base64)"
+  echo "DATABASE_URL=$DATABASE_URL"
 } >.env

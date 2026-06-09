@@ -5,7 +5,9 @@
       "label": "make setup",
       "type": "shell",
       "command": "make",
-      "args": ["setup"],
+      "args": [
+        "setup"
+      ],
       "group": {
         "kind": "none",
         "isDefault": false
@@ -15,7 +17,9 @@
       "label": "docker-compose down",
       "type": "shell",
       "command": "docker-compose",
-      "args": ["down"],
+      "args": [
+        "down"
+      ],
       "group": {
         "kind": "none",
         "isDefault": false

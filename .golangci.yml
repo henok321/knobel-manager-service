@@ -65,7 +65,7 @@ linters:
     nolintlint:
       require-explanation: true
       require-specific: true
-      allow-no-explanation: []
+      allow-no-explanation: [ ]
     perfsprint:
       strconcat: false
     revive:
