@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/assert/yaml"
 	"github.com/stretchr/testify/require"
@@ -88,10 +87,10 @@ func TestOpenAPI(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode, "Expected status code 200")
 		assert.Contains(t, resp.Header.Get("Content-Type"), "text/html")
 
-		swaggerDocs, err := goquery.NewDocumentFromReader(resp.Body)
+		swaggerDocs, err := io.ReadAll(resp.Body)
 
 		require.NoError(t, err)
 
-		assert.Equal(t, "Knobel Manager API Docs", swaggerDocs.Find("title").Text())
+		assert.Contains(t, string(swaggerDocs), "Knobel Manager API Docs")
 	})
 }

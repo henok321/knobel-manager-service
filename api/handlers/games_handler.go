@@ -15,10 +15,10 @@ import (
 )
 
 type GamesHandler struct {
-	gamesService game.GamesService
+	gamesService *game.GamesService
 }
 
-func NewGamesHandler(gamesService game.GamesService) *GamesHandler {
+func NewGamesHandler(gamesService *game.GamesService) *GamesHandler {
 	return &GamesHandler{gamesService}
 }
 

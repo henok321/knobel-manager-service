@@ -14,10 +14,10 @@ import (
 )
 
 type PlayersHandler struct {
-	playersService player.PlayersService
+	playersService *player.PlayersService
 }
 
-func NewPlayersHandler(service player.PlayersService) *PlayersHandler {
+func NewPlayersHandler(service *player.PlayersService) *PlayersHandler {
 	return &PlayersHandler{
 		playersService: service,
 	}

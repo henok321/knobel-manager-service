@@ -84,10 +84,10 @@ func (app *routeSetup) authenticatedEndpoint(handler http.Handler) http.Handler 
 }
 
 func (app *routeSetup) setup() *http.ServeMux {
-	gameService := game.InitializeGameModule(app.database)
-	playerService := player.InitializePlayerModule(app.database)
-	tableService := table.InitializeTablesModule(app.database)
-	teamService := team.InitializeTeamsModule(app.database)
+	gameService := game.NewGamesService(game.NewGamesRepository(app.database))
+	playerService := player.NewPlayersService(player.NewPlayersRepository(app.database), team.NewTeamsRepository(app.database))
+	tableService := table.NewTablesService(table.NewTablesRepository(app.database))
+	teamService := team.NewTeamsService(team.NewTeamsRepository(app.database), game.NewGamesRepository(app.database))
 
 	healthHandler := handlers.NewHealthHandler(app.healthService)
 	openAPIHandler := handlers.NewOpenAPIHandler(app.openAPIConfig, app.swaggerDocs)

@@ -8,13 +8,6 @@ type Checker interface {
 	Check(ctx context.Context) error
 }
 
-type ComponentStatus string
-
-const (
-	ComponentStatusPass ComponentStatus = "pass"
-	ComponentStatusFail ComponentStatus = "fail"
-)
-
 type Status string
 
 const (
@@ -24,7 +17,7 @@ const (
 
 type CheckResult struct {
 	Name    string
-	Status  ComponentStatus
+	Status  Status
 	Message string
 }
 

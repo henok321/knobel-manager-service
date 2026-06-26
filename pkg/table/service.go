@@ -8,19 +8,15 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
 
-type TablesService interface {
-	UpdateScore(ctx context.Context, gameID, roundNumber, tableNumber int, sub string, scoresRequest api.ScoresRequest) (entity.GameTable, error)
+type TablesService struct {
+	repo *TablesRepository
 }
 
-type tablesService struct {
-	repo TablesRepository
+func NewTablesService(repo *TablesRepository) *TablesService {
+	return &TablesService{repo}
 }
 
-func NewTablesService(repo TablesRepository) TablesService {
-	return &tablesService{repo}
-}
-
-func (t *tablesService) UpdateScore(ctx context.Context, gameID, roundNumber, tableNumber int, sub string, scoresRequest api.ScoresRequest) (entity.GameTable, error) {
+func (t *TablesService) UpdateScore(ctx context.Context, gameID, roundNumber, tableNumber int, sub string, scoresRequest api.ScoresRequest) (entity.GameTable, error) {
 	table, err := t.repo.FindTable(ctx, sub, gameID, roundNumber, tableNumber)
 	if err != nil {
 		return entity.GameTable{}, apperror.ErrRoundOrTableNotFound

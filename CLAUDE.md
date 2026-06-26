@@ -199,12 +199,12 @@ integrationtests/      # Integration tests using testcontainers
 
 Each domain module (`pkg/game`, `pkg/team`, `pkg/player`, `pkg/table`) follows this structure:
 
-- `init.go` - Module initialization function (wires repository → service)
-- `repository.go` - Database operations (GORM)
-- `service.go` - Business logic
+- `repository.go` - Database operations (GORM), exported concrete struct (e.g. `*GamesRepository`)
+- `service.go` - Business logic, exported concrete struct (e.g. `*GamesService`)
 
-Modules are initialized in `api/routes/routes.go` and injected into handlers. Note: scores are handled by
-`TablesHandler` — there is no separate scores domain module in `pkg/`.
+Modules are wired directly in `api/routes/routes.go` (e.g. `game.NewGamesService(game.NewGamesRepository(db))`)
+and injected into handlers as concrete pointer types. Note: scores are handled by `TablesHandler` — there is no
+separate scores domain module in `pkg/`.
 
 ### OpenAPI-First Development
 
@@ -268,7 +268,7 @@ response := api.GamesResponse{Games: apiGames}
 }
 
 // service uses api.GameCreateRequest
-func (s *gamesService) CreateGame(ctx context.Context, sub string, game *api.GameCreateRequest) (entity.Game, error) { ... }
+func (s *GamesService) CreateGame(ctx context.Context, sub string, game *api.GameCreateRequest) (entity.Game, error) { ... }
 ```
 
 **Why this pattern?**
@@ -473,7 +473,7 @@ When reviewing code changes, apply these standards with appropriate severity:
 
 ### Project Best Practices to Encourage
 
-- Following domain module pattern (init.go, repository.go, service.go)
+- Following domain module pattern (repository.go, service.go; concrete struct types, no interfaces)
 - Clear separation: handler → service → repository
 - Using sentinel errors from `pkg/apperror` (e.g., `apperror.ErrNotOwner`, `apperror.ErrTeamNotFound`)
 - Comprehensive error handling with context

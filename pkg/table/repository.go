@@ -8,20 +8,15 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
 
-type TablesRepository interface {
-	FindTable(ctx context.Context, sub string, gameID, roundNumber, tableNumber int) (entity.GameTable, error)
-	UpdateTable(ctx context.Context, table *entity.GameTable) (entity.GameTable, error)
-}
-
-type tablesRepository struct {
+type TablesRepository struct {
 	db *gorm.DB
 }
 
-func NewTablesRepository(db *gorm.DB) TablesRepository {
-	return &tablesRepository{db}
+func NewTablesRepository(db *gorm.DB) *TablesRepository {
+	return &TablesRepository{db}
 }
 
-func (t *tablesRepository) FindTable(ctx context.Context, sub string, gameID, roundNumber, tableNumber int) (entity.GameTable, error) {
+func (t *TablesRepository) FindTable(ctx context.Context, sub string, gameID, roundNumber, tableNumber int) (entity.GameTable, error) {
 	tableEntity := entity.GameTable{}
 
 	err := t.db.WithContext(ctx).
@@ -41,7 +36,7 @@ func (t *tablesRepository) FindTable(ctx context.Context, sub string, gameID, ro
 	return tableEntity, nil
 }
 
-func (t *tablesRepository) UpdateTable(ctx context.Context, table *entity.GameTable) (entity.GameTable, error) {
+func (t *TablesRepository) UpdateTable(ctx context.Context, table *entity.GameTable) (entity.GameTable, error) {
 	for _, score := range table.Scores {
 		err := t.db.WithContext(ctx).Save(score).Error
 		if err != nil {
