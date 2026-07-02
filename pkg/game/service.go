@@ -14,28 +14,19 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/setup"
 )
 
-type GamesService interface {
-	FindAllByOwner(ctx context.Context, sub string) ([]entity.Game, error)
-	FindByID(ctx context.Context, id int, sub string) (entity.Game, error)
-	CreateGame(ctx context.Context, sub string, game *api.GameCreateRequest) (entity.Game, error)
-	UpdateGame(ctx context.Context, id int, sub string, game api.GameUpdateRequest) (entity.Game, error)
-	DeleteGame(ctx context.Context, id int, sub string) error
-	AssignTables(ctx context.Context, game entity.Game) error
+type GamesService struct {
+	repo *GamesRepository
 }
 
-type gamesService struct {
-	repo GamesRepository
+func NewGamesService(repo *GamesRepository) *GamesService {
+	return &GamesService{repo}
 }
 
-func NewGamesService(repo GamesRepository) GamesService {
-	return &gamesService{repo}
-}
-
-func (s *gamesService) FindAllByOwner(ctx context.Context, sub string) ([]entity.Game, error) {
+func (s *GamesService) FindAllByOwner(ctx context.Context, sub string) ([]entity.Game, error) {
 	return s.repo.FindAllByOwner(ctx, sub)
 }
 
-func (s *gamesService) FindByID(ctx context.Context, id int, sub string) (entity.Game, error) {
+func (s *GamesService) FindByID(ctx context.Context, id int, sub string) (entity.Game, error) {
 	gameByID, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -52,7 +43,7 @@ func (s *gamesService) FindByID(ctx context.Context, id int, sub string) (entity
 	return gameByID, nil
 }
 
-func (s *gamesService) CreateGame(ctx context.Context, sub string, game *api.GameCreateRequest) (entity.Game, error) {
+func (s *GamesService) CreateGame(ctx context.Context, sub string, game *api.GameCreateRequest) (entity.Game, error) {
 	gameModel := entity.Game{
 		Name:           game.Name,
 		TeamSize:       game.TeamSize,
@@ -65,7 +56,7 @@ func (s *gamesService) CreateGame(ctx context.Context, sub string, game *api.Gam
 	return s.repo.CreateOrUpdateGame(ctx, &gameModel)
 }
 
-func (s *gamesService) UpdateGame(ctx context.Context, id int, sub string, game api.GameUpdateRequest) (entity.Game, error) {
+func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, game api.GameUpdateRequest) (entity.Game, error) {
 	gameByID, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -128,7 +119,7 @@ func gameIncompleteScoresMissing(game entity.Game) bool {
 	return false
 }
 
-func (s *gamesService) DeleteGame(ctx context.Context, id int, sub string) error {
+func (s *GamesService) DeleteGame(ctx context.Context, id int, sub string) error {
 	gameByID, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -145,8 +136,8 @@ func (s *gamesService) DeleteGame(ctx context.Context, id int, sub string) error
 	return s.repo.DeleteGame(ctx, id)
 }
 
-func (s *gamesService) AssignTables(ctx context.Context, game entity.Game) error {
-	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo GamesRepository) error {
+func (s *GamesService) AssignTables(ctx context.Context, game entity.Game) error {
+	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
 		if err := txRepo.ResetGameTables(ctx, game.ID); err != nil {
 			return fmt.Errorf("cannot reset game tables: %w", err)
 		}

@@ -12,25 +12,19 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/game"
 )
 
-type TeamsService interface {
-	CreateTeam(ctx context.Context, gameID int, sub string, request api.TeamsRequest) (entity.Team, error)
-	UpdateTeam(ctx context.Context, gameID int, sub string, teamID int, request api.TeamsRequest) (entity.Team, error)
-	DeleteTeam(ctx context.Context, gameID int, sub string, teamID int) error
+type TeamsService struct {
+	teamRepo  *TeamsRepository
+	gamesRepo *game.GamesRepository
 }
 
-type teamsService struct {
-	teamRepo  TeamsRepository
-	gamesRepo game.GamesRepository
-}
-
-func NewTeamsService(teamRepo TeamsRepository, gameRepo game.GamesRepository) TeamsService {
-	return &teamsService{
+func NewTeamsService(teamRepo *TeamsRepository, gameRepo *game.GamesRepository) *TeamsService {
+	return &TeamsService{
 		teamRepo:  teamRepo,
 		gamesRepo: gameRepo,
 	}
 }
 
-func (s *teamsService) CreateTeam(ctx context.Context, gameID int, sub string, request api.TeamsRequest) (entity.Team, error) {
+func (s *TeamsService) CreateTeam(ctx context.Context, gameID int, sub string, request api.TeamsRequest) (entity.Team, error) {
 	gameByID, err := s.gamesRepo.FindByID(ctx, gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -70,7 +64,7 @@ func (s *teamsService) CreateTeam(ctx context.Context, gameID int, sub string, r
 	return s.teamRepo.CreateOrUpdateTeam(ctx, &team)
 }
 
-func (s *teamsService) UpdateTeam(ctx context.Context, gameID int, sub string, teamID int, request api.TeamsRequest) (entity.Team, error) {
+func (s *TeamsService) UpdateTeam(ctx context.Context, gameID int, sub string, teamID int, request api.TeamsRequest) (entity.Team, error) {
 	gameByID, err := s.gamesRepo.FindByID(ctx, gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -94,7 +88,7 @@ func (s *teamsService) UpdateTeam(ctx context.Context, gameID int, sub string, t
 	return entity.Team{}, apperror.ErrTeamNotFound
 }
 
-func (s *teamsService) DeleteTeam(ctx context.Context, gameID int, sub string, teamID int) error {
+func (s *TeamsService) DeleteTeam(ctx context.Context, gameID int, sub string, teamID int) error {
 	gameByID, err := s.gamesRepo.FindByID(ctx, gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

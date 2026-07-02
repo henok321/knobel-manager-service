@@ -24,11 +24,7 @@ var _ health.ServerInterface = (*HealthHandler)(nil)
 func (h *HealthHandler) LivenessCheck(writer http.ResponseWriter, request *http.Request) {
 	slog.DebugContext(request.Context(), "Handle liveness check")
 
-	results := h.healthService.Liveness()
-
-	response := health.HealthCheckResponse{
-		Status: string(results.Status),
-	}
+	response := health.HealthCheckResponse{Status: string(healthpkg.StatusPass)}
 
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)

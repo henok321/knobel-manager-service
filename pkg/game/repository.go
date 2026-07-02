@@ -8,26 +8,15 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
 
-type GamesRepository interface {
-	FindAllByOwner(ctx context.Context, sub string) ([]entity.Game, error)
-	FindByID(ctx context.Context, id int) (entity.Game, error)
-	CreateOrUpdateGame(ctx context.Context, game *entity.Game) (entity.Game, error)
-	DeleteGame(ctx context.Context, id int) error
-	CreateRound(ctx context.Context, round *entity.Round) (entity.Round, error)
-	CreateGameTables(ctx context.Context, gameTables []entity.GameTable) error
-	ResetGameTables(ctx context.Context, gameID int) error
-	WithinTransaction(ctx context.Context, fn func(ctx context.Context, txRepo GamesRepository) error) error
-}
-
-type gamesRepository struct {
+type GamesRepository struct {
 	db *gorm.DB
 }
 
-func NewGamesRepository(db *gorm.DB) GamesRepository {
-	return &gamesRepository{db}
+func NewGamesRepository(db *gorm.DB) *GamesRepository {
+	return &GamesRepository{db}
 }
 
-func (r *gamesRepository) FindAllByOwner(ctx context.Context, sub string) ([]entity.Game, error) {
+func (r *GamesRepository) FindAllByOwner(ctx context.Context, sub string) ([]entity.Game, error) {
 	var games []entity.Game
 
 	err := r.db.WithContext(ctx).
@@ -47,7 +36,7 @@ func (r *gamesRepository) FindAllByOwner(ctx context.Context, sub string) ([]ent
 	return games, nil
 }
 
-func (r *gamesRepository) FindByID(ctx context.Context, id int) (entity.Game, error) {
+func (r *GamesRepository) FindByID(ctx context.Context, id int) (entity.Game, error) {
 	var game entity.Game
 
 	err := r.db.WithContext(ctx).
@@ -66,7 +55,7 @@ func (r *gamesRepository) FindByID(ctx context.Context, id int) (entity.Game, er
 	return game, nil
 }
 
-func (r *gamesRepository) CreateOrUpdateGame(ctx context.Context, game *entity.Game) (entity.Game, error) {
+func (r *GamesRepository) CreateOrUpdateGame(ctx context.Context, game *entity.Game) (entity.Game, error) {
 	err := r.db.WithContext(ctx).Save(game).Error
 	if err != nil {
 		return entity.Game{}, err
@@ -82,11 +71,11 @@ func (r *gamesRepository) CreateOrUpdateGame(ctx context.Context, game *entity.G
 	return savedGame, nil
 }
 
-func (r *gamesRepository) DeleteGame(ctx context.Context, id int) error {
+func (r *GamesRepository) DeleteGame(ctx context.Context, id int) error {
 	return r.db.WithContext(ctx).Delete(&entity.Game{}, id).Error
 }
 
-func (r *gamesRepository) CreateRound(ctx context.Context, round *entity.Round) (entity.Round, error) {
+func (r *GamesRepository) CreateRound(ctx context.Context, round *entity.Round) (entity.Round, error) {
 	err := r.db.WithContext(ctx).Save(round).Error
 	if err != nil {
 		return entity.Round{}, err
@@ -95,11 +84,11 @@ func (r *gamesRepository) CreateRound(ctx context.Context, round *entity.Round) 
 	return *round, nil
 }
 
-func (r *gamesRepository) CreateGameTables(ctx context.Context, gameTables []entity.GameTable) error {
+func (r *GamesRepository) CreateGameTables(ctx context.Context, gameTables []entity.GameTable) error {
 	return r.db.WithContext(ctx).Save(gameTables).Error
 }
 
-func (r *gamesRepository) ResetGameTables(ctx context.Context, gameID int) error {
+func (r *GamesRepository) ResetGameTables(ctx context.Context, gameID int) error {
 	var roundIDs []int
 	if err := r.db.WithContext(ctx).Model(&entity.Round{}).Where("game_id = ?", gameID).Pluck("id", &roundIDs).Error; err != nil {
 		return err
@@ -133,9 +122,9 @@ func (r *gamesRepository) ResetGameTables(ctx context.Context, gameID int) error
 	return nil
 }
 
-func (r *gamesRepository) WithinTransaction(ctx context.Context, operation func(ctx context.Context, txRepo GamesRepository) error) error {
+func (r *GamesRepository) WithinTransaction(ctx context.Context, operation func(ctx context.Context, txRepo *GamesRepository) error) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		txRepo := &gamesRepository{db: tx}
+		txRepo := &GamesRepository{db: tx}
 		return operation(ctx, txRepo)
 	})
 }
