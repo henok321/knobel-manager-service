@@ -205,6 +205,73 @@ paths:
           description: Game not found
         '500':
           description: Internal server error during table assignment
+  /games/{gameID}/owners:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+    post:
+      operationId: addOwner
+      tags: [ Games ]
+      summary: Add an owner to a game by email
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddOwnerRequest'
+      responses:
+        '200':
+          description: Owner added; updated game returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameResponse'
+        '400':
+          description: Invalid request
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game not found
+        '409':
+          description: User is already an owner
+        '422':
+          description: No user found for the given email
+  /games/{gameID}/owners/{ownerSub}:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: ownerSub
+        in: path
+        required: true
+        schema:
+          type: string
+    delete:
+      operationId: removeOwner
+      tags: [ Games ]
+      summary: Remove an owner from a game
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Owner removed; updated game returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameResponse'
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game or owner not found
+        '409':
+          description: Cannot remove the last owner
   /games/{gameID}/teams:
     parameters:
       - name: gameID
@@ -553,7 +620,18 @@ components:
         ownerSub:
           type: string
           example: sub-1
+        email:
+          type: string
+          description: Resolved live from Firebase; absent if the user cannot be resolved.
+          example: owner@example.org
       required: [ gameID, ownerSub ]
+    AddOwnerRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          example: owner@example.org
+      required: [ email ]
     Player:
       type: object
       properties:

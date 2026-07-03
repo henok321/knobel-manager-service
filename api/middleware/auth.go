@@ -15,6 +15,8 @@ const userKey userContextKey = "user"
 
 type FirebaseAuth interface {
 	VerifyIDToken(ctx context.Context, idToken string) (*auth.Token, error)
+	GetUserByEmail(ctx context.Context, email string) (*auth.UserRecord, error)
+	GetUsers(ctx context.Context, identifiers []auth.UserIdentifier) (*auth.GetUsersResult, error)
 }
 
 type User struct {

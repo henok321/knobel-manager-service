@@ -59,6 +59,11 @@ func (e RoundStatus) Valid() bool {
 	}
 }
 
+// AddOwnerRequest defines model for AddOwnerRequest.
+type AddOwnerRequest struct {
+	Email string `json:"email"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	Error string `json:"error"`
@@ -87,8 +92,10 @@ type GameCreateRequest struct {
 
 // GameOwner defines model for GameOwner.
 type GameOwner struct {
-	GameID   int    `json:"gameID"`
-	OwnerSub string `json:"ownerSub"`
+	// Email Resolved live from Firebase; absent if the user cannot be resolved.
+	Email    *string `json:"email,omitempty"`
+	GameID   int     `json:"gameID"`
+	OwnerSub string  `json:"ownerSub"`
 }
 
 // GameResponse defines model for GameResponse.
@@ -204,6 +211,9 @@ type CreateGameJSONRequestBody = GameCreateRequest
 // UpdateGameJSONRequestBody defines body for UpdateGame for application/json ContentType.
 type UpdateGameJSONRequestBody = GameUpdateRequest
 
+// AddOwnerJSONRequestBody defines body for AddOwner for application/json ContentType.
+type AddOwnerJSONRequestBody = AddOwnerRequest
+
 // UpdateScoresJSONRequestBody defines body for UpdateScores for application/json ContentType.
 type UpdateScoresJSONRequestBody = ScoresRequest
 
@@ -236,6 +246,12 @@ type ServerInterface interface {
 	// Update an existing game
 	// (PUT /games/{gameID})
 	UpdateGame(w http.ResponseWriter, r *http.Request, gameID int)
+	// Add an owner to a game by email
+	// (POST /games/{gameID}/owners)
+	AddOwner(w http.ResponseWriter, r *http.Request, gameID int)
+	// Remove an owner from a game
+	// (DELETE /games/{gameID}/owners/{ownerSub})
+	RemoveOwner(w http.ResponseWriter, r *http.Request, gameID int, ownerSub string)
 	// List tables for a round
 	// (GET /games/{gameID}/rounds/{roundNumber}/tables)
 	GetTables(w http.ResponseWriter, r *http.Request, gameID int, roundNumber int)
@@ -407,6 +423,79 @@ func (siw *ServerInterfaceWrapper) UpdateGame(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateGame(w, r, gameID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddOwner operation middleware
+func (siw *ServerInterfaceWrapper) AddOwner(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "gameID" -------------
+	var gameID int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddOwner(w, r, gameID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveOwner operation middleware
+func (siw *ServerInterfaceWrapper) RemoveOwner(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "gameID" -------------
+	var gameID int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "ownerSub" -------------
+	var ownerSub string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "ownerSub", r.PathValue("ownerSub"), &ownerSub, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: ""})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "ownerSub", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveOwner(w, r, gameID, ownerSub)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1001,6 +1090,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameID}", wrapper.DeleteGame)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}", wrapper.GetGame)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameID}", wrapper.UpdateGame)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/games/{gameID}/owners", wrapper.AddOwner)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameID}/owners/{ownerSub}", wrapper.RemoveOwner)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables", wrapper.GetTables)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", wrapper.GetTable)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores", wrapper.UpdateScores)
