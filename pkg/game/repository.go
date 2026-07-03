@@ -75,6 +75,16 @@ func (r *GamesRepository) DeleteGame(ctx context.Context, id int) error {
 	return r.db.WithContext(ctx).Delete(&entity.Game{}, id).Error
 }
 
+func (r *GamesRepository) AddOwner(ctx context.Context, gameID int, sub string) error {
+	return r.db.WithContext(ctx).Create(&entity.GameOwner{GameID: gameID, OwnerSub: sub}).Error
+}
+
+func (r *GamesRepository) RemoveOwner(ctx context.Context, gameID int, sub string) error {
+	return r.db.WithContext(ctx).
+		Where("game_id = ? AND owner_sub = ?", gameID, sub).
+		Delete(&entity.GameOwner{}).Error
+}
+
 func (r *GamesRepository) CreateRound(ctx context.Context, round *entity.Round) (entity.Round, error) {
 	err := r.db.WithContext(ctx).Save(round).Error
 	if err != nil {

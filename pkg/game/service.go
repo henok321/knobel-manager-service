@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"firebase.google.com/go/v4/auth"
 	"gorm.io/gorm"
 
 	"github.com/henok321/knobel-manager-service/gen/api"
@@ -14,12 +15,20 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/setup"
 )
 
-type GamesService struct {
-	repo *GamesRepository
+// UserLookup resolves an email to a Firebase user. It is the subset of the
+// Firebase auth client the service needs; defined here so pkg/game does not
+// depend on api/middleware.
+type UserLookup interface {
+	GetUserByEmail(ctx context.Context, email string) (*auth.UserRecord, error)
 }
 
-func NewGamesService(repo *GamesRepository) *GamesService {
-	return &GamesService{repo}
+type GamesService struct {
+	repo  *GamesRepository
+	users UserLookup
+}
+
+func NewGamesService(repo *GamesRepository, users UserLookup) *GamesService {
+	return &GamesService{repo, users}
 }
 
 func (s *GamesService) FindAllByOwner(ctx context.Context, sub string) ([]entity.Game, error) {
@@ -134,6 +143,49 @@ func (s *GamesService) DeleteGame(ctx context.Context, id int, sub string) error
 	}
 
 	return s.repo.DeleteGame(ctx, id)
+}
+
+func (s *GamesService) AddOwner(ctx context.Context, gameID int, callerSub, email string) (entity.Game, error) {
+	game, err := s.FindByID(ctx, gameID, callerSub) // enforces game exists + caller is an owner
+	if err != nil {
+		return entity.Game{}, err
+	}
+
+	record, err := s.users.GetUserByEmail(ctx, email)
+	if err != nil {
+		return entity.Game{}, apperror.ErrUserNotFound
+	}
+
+	if entity.IsOwner(game, record.UID) {
+		return entity.Game{}, apperror.ErrAlreadyOwner
+	}
+
+	if err := s.repo.AddOwner(ctx, gameID, record.UID); err != nil {
+		return entity.Game{}, err
+	}
+
+	return s.repo.FindByID(ctx, gameID)
+}
+
+func (s *GamesService) RemoveOwner(ctx context.Context, gameID int, callerSub, targetSub string) (entity.Game, error) {
+	game, err := s.FindByID(ctx, gameID, callerSub) // enforces game exists + caller is an owner
+	if err != nil {
+		return entity.Game{}, err
+	}
+
+	if !entity.IsOwner(game, targetSub) {
+		return entity.Game{}, entity.ErrGameNotFound
+	}
+
+	if len(game.Owners) <= 1 {
+		return entity.Game{}, apperror.ErrLastOwner
+	}
+
+	if err := s.repo.RemoveOwner(ctx, gameID, targetSub); err != nil {
+		return entity.Game{}, err
+	}
+
+	return s.repo.FindByID(ctx, gameID)
 }
 
 func (s *GamesService) AssignTables(ctx context.Context, game entity.Game) error {

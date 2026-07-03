@@ -12,4 +12,7 @@ var (
 	ErrTeamSizeNotAllowed   = errors.New("team size not allowed")
 	ErrInvalidGameSetup     = errors.New("invalid game setup")
 	ErrGameIncomplete       = errors.New("game is complete")
+	ErrUserNotFound         = errors.New("no user found for the given email")
+	ErrAlreadyOwner         = errors.New("user is already an owner")
+	ErrLastOwner            = errors.New("cannot remove the last owner")
 )
