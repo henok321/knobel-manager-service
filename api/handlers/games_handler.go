@@ -63,8 +63,7 @@ func (h *GamesHandler) enrichOwnerEmails(ctx context.Context, games ...*api.Game
 	for _, g := range games {
 		for i := range g.Owners {
 			if email, ok := emailByUID[g.Owners[i].OwnerSub]; ok && email != "" {
-				emailValue := email
-				g.Owners[i].Email = &emailValue
+				g.Owners[i].Email = &email
 			}
 		}
 	}
