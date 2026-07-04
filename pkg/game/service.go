@@ -15,9 +15,6 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/setup"
 )
 
-// UserLookup resolves an email to a Firebase user. It is the subset of the
-// Firebase auth client the service needs; defined here so pkg/game does not
-// depend on api/middleware.
 type UserLookup interface {
 	GetUserByEmail(ctx context.Context, email string) (*auth.UserRecord, error)
 }

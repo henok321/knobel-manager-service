@@ -61,7 +61,6 @@ func (r *GamesRepository) CreateOrUpdateGame(ctx context.Context, game *entity.G
 		return entity.Game{}, err
 	}
 
-	// Reload game without associations to avoid returning stale preloaded data
 	var savedGame entity.Game
 	err = r.db.WithContext(ctx).Preload("Owners").First(&savedGame, game.ID).Error
 	if err != nil {

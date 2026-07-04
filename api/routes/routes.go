@@ -26,9 +26,6 @@ type routeSetup struct {
 	swaggerDocs   []byte
 }
 
-// apiServer composes the modular handlers into a single api.ServerInterface
-// implementation via Go method promotion. TablesHandler covers both the Tables
-// and Scores operations, so all 16 operations are satisfied.
 type apiServer struct {
 	*handlers.GamesHandler
 	*handlers.TeamsHandler

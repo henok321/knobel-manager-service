@@ -26,9 +26,6 @@ func NewGamesHandler(gamesService *game.GamesService, users middleware.FirebaseA
 	return &GamesHandler{gamesService, users}
 }
 
-// enrichOwnerEmails fills GameOwner.Email from Firebase in a single batched
-// lookup, best-effort: on any failure the games are returned unchanged (owners
-// without an email) so game reads never fail on the identity provider.
 func (h *GamesHandler) enrichOwnerEmails(ctx context.Context, games ...*api.Game) {
 	seen := map[string]struct{}{}
 
