@@ -22,10 +22,10 @@ repos:
       - id: detect-private-key
       - id: forbid-submodules
       - id: check-added-large-files
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.30.1
+  - repo: https://github.com/betterleaks/betterleaks
+    rev: v1.6.1
     hooks:
-      - id: gitleaks
+      - id: betterleaks
   - repo: https://github.com/EbodShojaei/bake
     rev: v1.4.6
     hooks:
