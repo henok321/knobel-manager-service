@@ -11,7 +11,7 @@ tool (
 )
 
 require (
-	firebase.google.com/go/v4 v4.20.0
+	firebase.google.com/go/v4 v4.21.0
 	github.com/lib/pq v1.12.3
 	github.com/oapi-codegen/runtime v1.4.2
 	github.com/pressly/goose v2.7.0+incompatible
