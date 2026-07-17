@@ -1,6 +1,6 @@
 module github.com/henok321/knobel-manager-service
 
-go 1.26.4
+go 1.26.5
 
 tool (
 	github.com/golangci/golangci-lint/v2/cmd/golangci-lint
