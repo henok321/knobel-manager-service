@@ -24,7 +24,7 @@ var _ health.ServerInterface = (*HealthHandler)(nil)
 func (h *HealthHandler) LivenessCheck(writer http.ResponseWriter, request *http.Request) {
 	slog.DebugContext(request.Context(), "Handle liveness check")
 
-	response := health.HealthCheckResponse{Status: string(healthpkg.StatusPass)}
+	response := health.HealthCheckResponse{Status: "pass"}
 
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(http.StatusOK)
@@ -36,38 +36,14 @@ func (h *HealthHandler) LivenessCheck(writer http.ResponseWriter, request *http.
 func (h *HealthHandler) ReadinessCheck(writer http.ResponseWriter, request *http.Request) {
 	slog.DebugContext(request.Context(), "Handle readiness check")
 
-	results := h.healthService.Readiness(request.Context())
-
-	checks := make(map[string]struct {
-		Message *string                                        `json:"message,omitempty"`
-		Status  health.HealthCheckDetailedResponseChecksStatus `json:"status"`
-	})
-	for name, result := range results.Checks {
-		checkValue := struct {
-			Message *string                                        `json:"message,omitempty"`
-			Status  health.HealthCheckDetailedResponseChecksStatus `json:"status"`
-		}{
-			Status: health.HealthCheckDetailedResponseChecksStatus(result.Status),
-		}
-		if result.Message != "" {
-			checkValue.Message = &result.Message
-		}
-		checks[name] = checkValue
-	}
-
-	response := health.HealthCheckDetailedResponse{
-		Status: health.HealthCheckDetailedResponseStatus(results.Status),
-	}
-	if len(checks) > 0 {
-		response.Checks = &checks
-	}
+	response := h.healthService.Readiness(request.Context())
 
 	statusCode := http.StatusOK
-	if results.Status != healthpkg.StatusPass {
+	if response.Status != health.HealthCheckDetailedResponseStatusPass {
 		statusCode = http.StatusServiceUnavailable
 		slog.WarnContext(request.Context(), "Readiness check failed",
-			"status", results.Status,
-			"checks", checks)
+			"status", response.Status,
+			"checks", response.Checks)
 	}
 
 	writer.Header().Set("Content-Type", "application/json")

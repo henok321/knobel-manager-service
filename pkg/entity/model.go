@@ -89,12 +89,10 @@ func (GameTable) TableName() string {
 }
 
 type Score struct {
-	ID        int        `gorm:"primaryKey"`
-	PlayerID  int        `gorm:"not null;uniqueIndex:idx_player_table"`
-	TableID   int        `gorm:"not null;uniqueIndex:idx_player_table"`
-	Score     int        `gorm:"not null"`
-	Players   []*Player  `gorm:"many2many:table_players"`
-	GameTable *GameTable `gorm:"foreignKey:TableID"`
+	ID        int `gorm:"primaryKey"`
+	PlayerID  int `gorm:"not null;uniqueIndex:idx_player_table"`
+	TableID   int `gorm:"not null;uniqueIndex:idx_player_table"`
+	Score     int `gorm:"not null"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
