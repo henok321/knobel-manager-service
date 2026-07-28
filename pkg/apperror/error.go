@@ -3,6 +3,7 @@ package apperror
 import "errors"
 
 var (
+	ErrGameNotFound         = errors.New("game not found")
 	ErrTeamNotFound         = errors.New("team not found")
 	ErrPlayerNotFound       = errors.New("player not found")
 	ErrNotOwner             = errors.New("user is not the owner of the requested resource")

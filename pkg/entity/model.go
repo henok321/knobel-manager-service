@@ -1,11 +1,8 @@
 package entity
 
 import (
-	"errors"
 	"time"
 )
-
-var ErrGameNotFound = errors.New("game not found")
 
 type GameStatus string
 

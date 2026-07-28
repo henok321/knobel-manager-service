@@ -18,14 +18,6 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/team"
 )
 
-type routeSetup struct {
-	database      *gorm.DB
-	authClient    middleware.FirebaseAuth
-	healthService *healthpkg.Service
-	openAPIConfig []byte
-	swaggerDocs   []byte
-}
-
 type apiServer struct {
 	*handlers.GamesHandler
 	*handlers.TeamsHandler
@@ -34,17 +26,6 @@ type apiServer struct {
 }
 
 var _ api.ServerInterface = (*apiServer)(nil)
-
-func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthClient *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
-	instance := routeSetup{
-		database:      database,
-		authClient:    authClient,
-		healthService: healthClient,
-		openAPIConfig: openAPIConfig,
-		swaggerDocs:   swaggerDocs,
-	}
-	return instance.setup()
-}
 
 func chain(mw ...func(http.Handler) http.Handler) func(http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
@@ -55,48 +36,38 @@ func chain(mw ...func(http.Handler) http.Handler) func(http.Handler) http.Handle
 	}
 }
 
-func (app *routeSetup) publicEndpoint(handler http.Handler) http.Handler {
-	return chain(
-		middleware.SecurityHeaders("default-src 'self'"),
-		middleware.Metrics(),
-		middleware.RequestLogging(slog.LevelDebug),
-	)(handler)
-}
+func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthService *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
+	public := func(csp string) func(http.Handler) http.Handler {
+		return chain(
+			middleware.SecurityHeaders(csp),
+			middleware.Metrics(),
+			middleware.RequestLogging(slog.LevelDebug),
+		)
+	}
 
-func (app *routeSetup) publicSwaggerDocsEndpoint(handler http.Handler) http.Handler {
-	return chain(
-		middleware.SecurityHeaders("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:"),
-		middleware.Metrics(),
-		middleware.RequestLogging(slog.LevelDebug),
-	)(handler)
-}
-
-func (app *routeSetup) authenticatedEndpoint(handler http.Handler) http.Handler {
-	return chain(
+	authenticated := chain(
 		middleware.SecurityHeaders("default-src 'self'"),
 		middleware.Metrics(),
 		middleware.RequestLogging(slog.LevelInfo),
-		middleware.Authentication(app.authClient),
-	)(handler)
-}
+		middleware.Authentication(authClient),
+	)
 
-func (app *routeSetup) setup() *http.ServeMux {
-	gameService := game.NewGamesService(game.NewGamesRepository(app.database), app.authClient)
-	playerService := player.NewPlayersService(player.NewPlayersRepository(app.database), team.NewTeamsRepository(app.database))
-	tableService := table.NewTablesService(table.NewTablesRepository(app.database))
-	teamService := team.NewTeamsService(team.NewTeamsRepository(app.database), game.NewGamesRepository(app.database))
+	gameService := game.NewGamesService(game.NewGamesRepository(database), authClient)
+	playerService := player.NewPlayersService(player.NewPlayersRepository(database), team.NewTeamsRepository(database))
+	tableService := table.NewTablesService(table.NewTablesRepository(database))
+	teamService := team.NewTeamsService(team.NewTeamsRepository(database), game.NewGamesRepository(database))
 
-	healthHandler := handlers.NewHealthHandler(app.healthService)
-	openAPIHandler := handlers.NewOpenAPIHandler(app.openAPIConfig, app.swaggerDocs)
-	gamesHandler := handlers.NewGamesHandler(gameService, app.authClient)
+	healthHandler := handlers.NewHealthHandler(healthService)
+	openAPIHandler := handlers.NewOpenAPIHandler(openAPIConfig, swaggerDocs)
+	gamesHandler := handlers.NewGamesHandler(gameService, authClient)
 	playersHandler := handlers.NewPlayersHandler(playerService)
 	tablesHandler := handlers.NewTablesHandler(gameService, tableService)
 	teamsHandler := handlers.NewTeamsHandler(teamService)
 
 	router := http.NewServeMux()
 
-	router.Handle("/openapi.yaml", app.publicEndpoint(http.HandlerFunc(openAPIHandler.GetOpenAPIConfig)))
-	router.Handle("/docs", app.publicSwaggerDocsEndpoint(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
+	router.Handle("/openapi.yaml", public("default-src 'self'")(http.HandlerFunc(openAPIHandler.GetOpenAPIConfig)))
+	router.Handle("/docs", public("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:")(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
 
 	handleValidationErrors := func(w http.ResponseWriter, _ *http.Request, err error) {
 		handlers.JSONError(w, err.Error(), http.StatusBadRequest)
@@ -104,13 +75,13 @@ func (app *routeSetup) setup() *http.ServeMux {
 
 	health.HandlerWithOptions(healthHandler, health.StdHTTPServerOptions{
 		BaseRouter:  router,
-		Middlewares: []health.MiddlewareFunc{app.publicEndpoint},
+		Middlewares: []health.MiddlewareFunc{public("default-src 'self'")},
 	})
 
 	api.HandlerWithOptions(&apiServer{gamesHandler, teamsHandler, playersHandler, tablesHandler}, api.StdHTTPServerOptions{
 		BaseRouter:       router,
 		ErrorHandlerFunc: handleValidationErrors,
-		Middlewares:      []api.MiddlewareFunc{app.authenticatedEndpoint},
+		Middlewares:      []api.MiddlewareFunc{authenticated},
 	})
 
 	return router

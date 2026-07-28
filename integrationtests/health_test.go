@@ -17,7 +17,7 @@ func TestHealthCheck(t *testing.T) {
 		dbConn, teardownDatabase := setupTestDatabase(t)
 		defer teardownDatabase()
 
-		db, err := sql.Open("postgres", dbConn)
+		db, err := sql.Open("pgx", dbConn)
 		if err != nil {
 			t.Fatalf("Failed to open database connection: %v", err)
 		}
@@ -49,7 +49,7 @@ func TestHealthCheck(t *testing.T) {
 		dbConn, teardownDatabase := setupTestDatabase(t)
 		defer teardownDatabase()
 
-		db, err := sql.Open("postgres", dbConn)
+		db, err := sql.Open("pgx", dbConn)
 		if err != nil {
 			t.Fatalf("Failed to open database connection: %v", err)
 		}
@@ -91,7 +91,7 @@ func TestHealthCheck(t *testing.T) {
 	t.Run("readiness check database not available fail", func(t *testing.T) {
 		dbConn, teardownDatabase := setupTestDatabase(t)
 
-		db, err := sql.Open("postgres", dbConn)
+		db, err := sql.Open("pgx", dbConn)
 		if err != nil {
 			t.Fatalf("Failed to open database connection: %v", err)
 		}

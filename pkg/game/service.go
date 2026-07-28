@@ -6,25 +6,21 @@ import (
 	"fmt"
 	"time"
 
-	"firebase.google.com/go/v4/auth"
 	"gorm.io/gorm"
 
+	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/setup"
 )
 
-type UserLookup interface {
-	GetUserByEmail(ctx context.Context, email string) (*auth.UserRecord, error)
-}
-
 type GamesService struct {
 	repo  *GamesRepository
-	users UserLookup
+	users middleware.FirebaseAuth
 }
 
-func NewGamesService(repo *GamesRepository, users UserLookup) *GamesService {
+func NewGamesService(repo *GamesRepository, users middleware.FirebaseAuth) *GamesService {
 	return &GamesService{repo, users}
 }
 
@@ -36,7 +32,7 @@ func (s *GamesService) FindByID(ctx context.Context, id int, sub string) (entity
 	gameByID, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Game{}, entity.ErrGameNotFound
+			return entity.Game{}, apperror.ErrGameNotFound
 		}
 
 		return entity.Game{}, err
@@ -66,7 +62,7 @@ func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, game 
 	gameByID, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Game{}, entity.ErrGameNotFound
+			return entity.Game{}, apperror.ErrGameNotFound
 		}
 
 		return entity.Game{}, err
@@ -129,7 +125,7 @@ func (s *GamesService) DeleteGame(ctx context.Context, id int, sub string) error
 	gameByID, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.ErrGameNotFound
+			return apperror.ErrGameNotFound
 		}
 
 		return err
@@ -171,7 +167,7 @@ func (s *GamesService) RemoveOwner(ctx context.Context, gameID int, callerSub, t
 	}
 
 	if !entity.IsOwner(game, targetSub) {
-		return entity.Game{}, entity.ErrGameNotFound
+		return entity.Game{}, apperror.ErrGameNotFound
 	}
 
 	if len(game.Owners) <= 1 {

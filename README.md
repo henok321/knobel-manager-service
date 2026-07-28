@@ -66,12 +66,6 @@ Required variables (set by `make setup` in `.env` for local development):
 | `DATABASE_URL`     | PostgreSQL connection string                                       |
 | `DB_MIGRATION_DIR` | Directory for database migrations                                  |
 
-Optional variables (with defaults):
-
-| Variable           | Default   | Description                          |
-|--------------------|-----------|--------------------------------------|
-| `MAX_REQUEST_SIZE` | `1048576` | Max request body size in bytes (1MB) |
-
 ## Development
 
 ```sh

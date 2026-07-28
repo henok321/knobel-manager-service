@@ -2,14 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 
-	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/api"
-	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 )
 
@@ -26,13 +23,10 @@ func NewPlayersHandler(service *player.PlayersService) *PlayersHandler {
 func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
-
-	sub := userContext.Sub
 
 	playersRequest := api.PlayersRequest{}
 
@@ -48,15 +42,7 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 
 	createPlayer, err := h.playersService.CreatePlayer(ctx, playersRequest, teamID, sub)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrTeamNotFound):
-			JSONError(writer, "Team not found", http.StatusNotFound)
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "forbidden", http.StatusForbidden)
-		default:
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-		}
-
+		respondError(writer, err)
 		return
 	}
 
@@ -76,13 +62,10 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
-
-	sub := userContext.Sub
 
 	playersRequest := api.PlayersRequest{}
 
@@ -98,15 +81,7 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 
 	updatePlayer, err := h.playersService.UpdatePlayer(ctx, playerID, playersRequest, sub)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrTeamNotFound), errors.Is(err, apperror.ErrPlayerNotFound):
-			JSONError(writer, err.Error(), http.StatusNotFound)
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "forbidden", http.StatusForbidden)
-		default:
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-		}
-
+		respondError(writer, err)
 		return
 	}
 
@@ -123,27 +98,13 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 }
 
 func (h *PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
-	ctx := request.Context()
-
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
-	sub := userContext.Sub
-
-	err := h.playersService.DeletePlayer(ctx, playerID, sub)
-	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrPlayerNotFound):
-			JSONError(writer, err.Error(), http.StatusNotFound)
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "forbidden", http.StatusForbidden)
-		default:
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-		}
-
+	if err := h.playersService.DeletePlayer(request.Context(), playerID, sub); err != nil {
+		respondError(writer, err)
 		return
 	}
 

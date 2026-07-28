@@ -28,7 +28,7 @@ func (s *TeamsService) CreateTeam(ctx context.Context, gameID int, sub string, r
 	gameByID, err := s.gamesRepo.FindByID(ctx, gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Team{}, entity.ErrGameNotFound
+			return entity.Team{}, apperror.ErrGameNotFound
 		}
 
 		return entity.Team{}, err
@@ -68,7 +68,7 @@ func (s *TeamsService) UpdateTeam(ctx context.Context, gameID int, sub string, t
 	gameByID, err := s.gamesRepo.FindByID(ctx, gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Team{}, entity.ErrGameNotFound
+			return entity.Team{}, apperror.ErrGameNotFound
 		}
 
 		return entity.Team{}, err
@@ -92,7 +92,7 @@ func (s *TeamsService) DeleteTeam(ctx context.Context, gameID int, sub string, t
 	gameByID, err := s.gamesRepo.FindByID(ctx, gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.ErrGameNotFound
+			return apperror.ErrGameNotFound
 		}
 
 		return err
