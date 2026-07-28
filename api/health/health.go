@@ -3,7 +3,14 @@ package health
 import (
 	"context"
 	"sync/atomic"
+
+	"github.com/henok321/knobel-manager-service/gen/health"
 )
+
+type check = struct {
+	Message *string                                        `json:"message,omitempty"`
+	Status  health.HealthCheckDetailedResponseChecksStatus `json:"status"`
+}
 
 type Service struct {
 	checkers []Checker
@@ -16,35 +23,33 @@ func NewService(checkers ...Checker) *Service {
 	}
 }
 
-func (s *Service) Readiness(ctx context.Context) CheckResults {
+func (s *Service) Readiness(ctx context.Context) health.HealthCheckDetailedResponse {
 	if s.draining.Load() {
-		return CheckResults{
-			Status: StatusFail,
-			Checks: make(map[string]CheckResult),
-		}
+		return health.HealthCheckDetailedResponse{Status: health.HealthCheckDetailedResponseStatusFail}
 	}
 
-	results := CheckResults{
-		Status: StatusPass,
-		Checks: make(map[string]CheckResult),
-	}
+	checks := map[string]check{}
+	status := health.HealthCheckDetailedResponseStatusPass
 
 	for _, checker := range s.checkers {
-		result := CheckResult{
-			Name:   checker.Name(),
-			Status: StatusPass,
-		}
+		result := check{Status: health.HealthCheckDetailedResponseChecksStatusPass}
 
 		if err := checker.Check(ctx); err != nil {
-			result.Status = StatusFail
-			result.Message = err.Error()
-			results.Status = StatusFail
+			message := err.Error()
+			result.Status = health.HealthCheckDetailedResponseChecksStatusFail
+			result.Message = &message
+			status = health.HealthCheckDetailedResponseStatusFail
 		}
 
-		results.Checks[checker.Name()] = result
+		checks[checker.Name()] = result
 	}
 
-	return results
+	response := health.HealthCheckDetailedResponse{Status: status}
+	if len(checks) > 0 {
+		response.Checks = &checks
+	}
+
+	return response
 }
 
 func (s *Service) StartDraining() {
