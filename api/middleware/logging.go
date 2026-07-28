@@ -28,7 +28,7 @@ func RequestLogging(logLevel slog.Level) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 			b := make([]byte, 16)
 			_, _ = rand.Read(b)
-			requestLoggingContext := Request{
+			requestLoggingContext := &Request{
 				Method: request.Method,
 				Path:   request.RequestURI,
 				ID:     hex.EncodeToString(b),

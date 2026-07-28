@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/api"
-	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/game"
 )
@@ -69,17 +67,14 @@ func (h *GamesHandler) enrichOwnerEmails(ctx context.Context, games ...*api.Game
 func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
-	sub := userContext.Sub
-
 	allGames, err := h.gamesService.FindAllByOwner(ctx, sub)
 	if err != nil {
-		JSONError(writer, "Internal server error", http.StatusInternalServerError)
+		respondError(writer, err)
 		return
 	}
 
@@ -108,25 +103,14 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request, gameID int) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
-	sub := userContext.Sub
-
 	gameByID, err := h.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game not found", http.StatusNotFound)
-		default:
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-		}
-
+		respondError(writer, err)
 		return
 	}
 
@@ -145,13 +129,10 @@ func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request
 func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Request) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
-
-	sub := userContext.Sub
 
 	gameCreateRequest := api.GameCreateRequest{}
 
@@ -168,7 +149,7 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 
 	createdGame, err := h.gamesService.CreateGame(ctx, sub, &gameCreateRequest)
 	if err != nil {
-		JSONError(writer, "Internal server error", http.StatusInternalServerError)
+		respondError(writer, err)
 		return
 	}
 
@@ -190,13 +171,10 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Request, gameID int) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
-
-	sub := userContext.Sub
 
 	gameUpdateRequest := api.GameUpdateRequest{}
 
@@ -213,19 +191,7 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 
 	updatedGame, err := h.gamesService.UpdateGame(ctx, gameID, sub, gameUpdateRequest)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "Not owner", http.StatusForbidden)
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, apperror.ErrInvalidGameSetup):
-			JSONError(writer, "Invalid game setup", http.StatusConflict)
-		case errors.Is(err, apperror.ErrGameIncomplete):
-			JSONError(writer, "Game is complete", http.StatusConflict)
-		default:
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-		}
-
+		respondError(writer, err)
 		return
 	}
 
@@ -246,9 +212,8 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 func (h *GamesHandler) AddOwner(writer http.ResponseWriter, request *http.Request, gameID int) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
@@ -264,21 +229,9 @@ func (h *GamesHandler) AddOwner(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	updatedGame, err := h.gamesService.AddOwner(ctx, gameID, userContext.Sub, body.Email)
+	updatedGame, err := h.gamesService.AddOwner(ctx, gameID, sub, body.Email)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game not found", http.StatusNotFound)
-		case errors.Is(err, apperror.ErrAlreadyOwner):
-			JSONError(writer, "Already an owner", http.StatusConflict)
-		case errors.Is(err, apperror.ErrUserNotFound):
-			JSONError(writer, "No user found for the given email", http.StatusUnprocessableEntity)
-		default:
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-		}
-
+		respondError(writer, err)
 		return
 	}
 
@@ -296,25 +249,14 @@ func (h *GamesHandler) AddOwner(writer http.ResponseWriter, request *http.Reques
 func (h *GamesHandler) RemoveOwner(writer http.ResponseWriter, request *http.Request, gameID int, ownerSub string) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
-	updatedGame, err := h.gamesService.RemoveOwner(ctx, gameID, userContext.Sub, ownerSub)
+	updatedGame, err := h.gamesService.RemoveOwner(ctx, gameID, sub, ownerSub)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game or owner not found", http.StatusNotFound)
-		case errors.Is(err, apperror.ErrLastOwner):
-			JSONError(writer, "Cannot remove the last owner", http.StatusConflict)
-		default:
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-		}
-
+		respondError(writer, err)
 		return
 	}
 
@@ -332,24 +274,13 @@ func (h *GamesHandler) RemoveOwner(writer http.ResponseWriter, request *http.Req
 func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Request, gameID int) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
-	sub := userContext.Sub
-
 	if err := h.gamesService.DeleteGame(ctx, gameID, sub); err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game not found", http.StatusNotFound)
-		default:
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-		}
-
+		respondError(writer, err)
 		return
 	}
 
@@ -359,25 +290,14 @@ func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Request, gameID int) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
-	sub := userContext.Sub
-
 	gameToAssign, err := h.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "forbidden", http.StatusForbidden)
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game not found", http.StatusNotFound)
-		default:
-			JSONError(writer, "Internal server error", http.StatusInternalServerError)
-		}
-
+		respondError(writer, err)
 		return
 	}
 
@@ -393,7 +313,7 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 
 	err = h.gamesService.AssignTables(ctx, gameToAssign)
 	if err != nil {
-		JSONError(writer, "Internal server error", http.StatusInternalServerError)
+		respondError(writer, err)
 		return
 	}
 

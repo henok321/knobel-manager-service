@@ -358,14 +358,6 @@ Required in `.env`:
 - `DATABASE_URL` - PostgreSQL connection string
 - `DB_MIGRATION_DIR` - Path to migrations directory (e.g., `db_migration`)
 
-Optional (with defaults):
-
-- `MAX_REQUEST_SIZE` - Default: `1048576` (1MB in bytes)
-- `DB_MAX_OPEN_CONNS` - Default: `25`
-- `DB_MAX_IDLE_CONNS` - Default: `5`
-- `DB_CONN_MAX_LIFETIME` - Default: `5m`
-- `DB_CONN_MAX_IDLE_TIME` - Default: `10m`
-
 ## CI/CD
 
 GitHub Actions workflows in `.github/workflows/`:

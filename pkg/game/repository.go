@@ -24,9 +24,6 @@ func (r *GamesRepository) FindAllByOwner(ctx context.Context, sub string) ([]ent
 		Preload("Teams.Players.Scores").
 		Preload("Rounds.Tables.Players").
 		Preload("Rounds.Tables.Scores").
-		Preload("Rounds").
-		Preload("Teams").
-		Preload("Teams.Players").
 		Preload("Owners").
 		Find(&games).Error
 	if err != nil {
@@ -44,8 +41,6 @@ func (r *GamesRepository) FindByID(ctx context.Context, id int) (entity.Game, er
 		Preload("Teams.Players.Scores").
 		Preload("Rounds.Tables.Players").
 		Preload("Rounds.Tables.Scores").
-		Preload("Rounds").
-		Preload("Teams").
 		Preload("Owners").
 		First(&game).Error
 	if err != nil {

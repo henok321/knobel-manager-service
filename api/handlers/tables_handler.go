@@ -2,14 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"log/slog"
 	"net/http"
 
-	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/api"
-	"github.com/henok321/knobel-manager-service/pkg/apperror"
-	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/game"
 	"github.com/henok321/knobel-manager-service/pkg/table"
 )
@@ -26,27 +22,15 @@ func NewTablesHandler(gamesService *game.GamesService, tablesService *table.Tabl
 func (t *TablesHandler) GetGameTables(writer http.ResponseWriter, request *http.Request, gameID int) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
-	sub := userContext.Sub
-
 	gameByID, err := t.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "Forbidden", http.StatusForbidden)
-			return
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game not found", http.StatusNotFound)
-			return
-		default:
-			JSONError(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		respondError(writer, err)
+		return
 	}
 
 	apiTables := make([]api.Table, 0)
@@ -72,27 +56,15 @@ func (t *TablesHandler) GetGameTables(writer http.ResponseWriter, request *http.
 func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request, gameID, roundNumber int) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
-	sub := userContext.Sub
-
 	gameByID, err := t.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "Forbidden", http.StatusForbidden)
-			return
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game not found", http.StatusNotFound)
-			return
-		default:
-			JSONError(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		respondError(writer, err)
+		return
 	}
 
 	for _, round := range gameByID.Rounds {
@@ -123,27 +95,15 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
 
-	sub := userContext.Sub
-
 	gameByID, err := t.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrNotOwner):
-			JSONError(writer, "Forbidden", http.StatusForbidden)
-			return
-		case errors.Is(err, entity.ErrGameNotFound):
-			JSONError(writer, "Game not found", http.StatusNotFound)
-			return
-		default:
-			JSONError(writer, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		respondError(writer, err)
+		return
 	}
 
 	for _, round := range gameByID.Rounds {
@@ -171,13 +131,10 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
 	ctx := request.Context()
 
-	userContext, ok := middleware.UserFromContext(ctx)
+	sub, ok := userSub(writer, request)
 	if !ok {
-		JSONError(writer, "User context not found", http.StatusInternalServerError)
 		return
 	}
-
-	sub := userContext.Sub
 
 	scoresRequest := api.ScoresRequest{}
 
@@ -193,15 +150,7 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 
 	updatedTable, err := t.tablesService.UpdateScore(ctx, gameID, roundNumber, tableNumber, sub, scoresRequest)
 	if err != nil {
-		switch {
-		case errors.Is(err, apperror.ErrInvalidScore):
-			JSONError(writer, "Invalid score", http.StatusBadRequest)
-		case errors.Is(err, apperror.ErrRoundOrTableNotFound):
-			JSONError(writer, "Round or table not found", http.StatusNotFound)
-		default:
-			JSONError(writer, err.Error(), http.StatusInternalServerError)
-		}
-
+		respondError(writer, err)
 		return
 	}
 

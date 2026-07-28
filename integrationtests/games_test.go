@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/henok321/knobel-manager-service/pkg/entity"
@@ -261,7 +261,7 @@ func TestGames(t *testing.T) {
 	dbConn, teardownDatabase := setupTestDatabase(t)
 	defer teardownDatabase()
 
-	db, err := sql.Open("postgres", dbConn)
+	db, err := sql.Open("pgx", dbConn)
 	if err != nil {
 		t.Fatalf("Failed to open database connection: %v", err)
 	}

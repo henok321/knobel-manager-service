@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -27,24 +26,6 @@ import (
 	"github.com/henok321/knobel-manager-service/api/logging"
 	"github.com/henok321/knobel-manager-service/api/routes"
 )
-
-func getEnvAsInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if intValue, err := strconv.Atoi(value); err == nil {
-			return intValue
-		}
-	}
-	return defaultValue
-}
-
-func getEnvAsDuration(key string, defaultValue time.Duration) time.Duration {
-	if value := os.Getenv(key); value != "" {
-		if duration, err := time.ParseDuration(value); err == nil {
-			return duration
-		}
-	}
-	return defaultValue
-}
 
 func init() {
 	switch os.Getenv("ENVIRONMENT") {
@@ -101,17 +82,10 @@ func setupDatabase() (*gorm.DB, *sql.DB, error) {
 		return nil, nil, err
 	}
 
-	maxOpenConns := getEnvAsInt("DB_MAX_OPEN_CONNS", 25)
-	maxIdleConns := getEnvAsInt("DB_MAX_IDLE_CONNS", 5)
-	connMaxLifetime := getEnvAsDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute)
-	connMaxIdleTime := getEnvAsDuration("DB_CONN_MAX_IDLE_TIME", 10*time.Minute)
-
-	sqlDB.SetMaxOpenConns(maxOpenConns)
-	sqlDB.SetMaxIdleConns(maxIdleConns)
-	sqlDB.SetConnMaxLifetime(connMaxLifetime)
-	sqlDB.SetConnMaxIdleTime(connMaxIdleTime)
-
-	slog.Info("Database connection pool configured", "maxOpenConns", maxOpenConns, "maxIdleConns", maxIdleConns, "connMaxLifetime", connMaxLifetime, "connMaxIdleTime", connMaxIdleTime)
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetConnMaxLifetime(5 * time.Minute)
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
 
 	return gormDB, sqlDB, nil
 }
@@ -216,15 +190,9 @@ func main() {
 	metricsRouter := http.NewServeMux()
 	metricsRouter.Handle("GET /metrics", promhttp.Handler())
 
-	metricsCors := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"OPTIONS", "GET"},
-		MaxAge:         300, // 5 minutes
-	})
-
 	metricsServer := &http.Server{
 		Addr:         ":9090",
-		Handler:      metricsCors.Handler(metricsRouter),
+		Handler:      metricsRouter,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
