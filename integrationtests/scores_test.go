@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestScores(t *testing.T) {
@@ -100,6 +101,25 @@ func TestScores(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+			},
+		},
+		"Reject score for player not seated at the table (IDOR)": {
+			method:             "PUT",
+			endpoint:           "/games/1/rounds/1/tables/1/scores",
+			expectedStatusCode: http.StatusBadRequest,
+			// Player 17 exists but is seated at table 2, not table 1 (players 1, 5, 9, 13).
+			requestBody:    `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":17,"score":1}]}`,
+			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				var count int
+				if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM scores WHERE player_id = 17").Scan(&count); err != nil {
+					t.Fatalf("failed to query scores: %v", err)
+				}
+				assert.Equal(t, 0, count, "no score row may be written for a player not seated at the table")
 			},
 		},
 		"Update score invalid request body": {

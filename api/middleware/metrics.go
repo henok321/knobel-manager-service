@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"net/http"
-	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -29,9 +28,11 @@ func init() {
 func Metrics() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			handlerName := strings.Trim(r.URL.Path, "/")
+			// Label on the route template, not r.URL.Path: raw paths carry unbounded IDs
+			// (/games/{id}/…) and would let anyone explode metric cardinality → OOM.
+			handlerName := r.Pattern
 			if handlerName == "" {
-				handlerName = "/"
+				handlerName = "unmatched"
 			}
 
 			duration := HTTPRequestDuration.MustCurryWith(prometheus.Labels{"handler": handlerName})
