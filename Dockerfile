@@ -50,6 +50,6 @@ EXPOSE 8080
 
 ENV DB_MIGRATION_DIR=/home/appuser/db_migration
 
-USER appuser
+USER 1001:1001
 
 CMD ["/home/appuser/knobel-manager-service"]
