@@ -20,7 +20,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.43.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.43.0
-	google.golang.org/api v0.291.0
+	google.golang.org/api v0.292.0
 	gorm.io/driver/postgres v1.6.2
 	gorm.io/gorm v1.31.2
 )
@@ -373,8 +373,8 @@ require (
 	google.golang.org/appengine/v2 v2.0.6 // indirect
 	google.golang.org/genproto v0.0.0-20260724162435-b2f20204f0df // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260724162435-b2f20204f0df // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260724162435-b2f20204f0df // indirect
-	google.golang.org/grpc v1.82.1 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260803160001-6ac0973c030d // indirect
+	google.golang.org/grpc v1.83.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
