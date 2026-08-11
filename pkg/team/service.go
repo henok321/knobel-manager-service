@@ -24,18 +24,27 @@ func NewTeamsService(teamRepo *TeamsRepository, gameRepo *game.GamesRepository) 
 	}
 }
 
-func (s *TeamsService) CreateTeam(ctx context.Context, gameID int, sub string, request api.TeamsRequest) (entity.Team, error) {
+func (s *TeamsService) ownedGame(ctx context.Context, gameID int, sub string) (entity.Game, error) {
 	gameByID, err := s.gamesRepo.FindByID(ctx, gameID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Team{}, apperror.ErrGameNotFound
+			return entity.Game{}, apperror.ErrGameNotFound
 		}
 
-		return entity.Team{}, err
+		return entity.Game{}, err
 	}
 
 	if !entity.IsOwner(gameByID, sub) {
-		return entity.Team{}, apperror.ErrNotOwner
+		return entity.Game{}, apperror.ErrNotOwner
+	}
+
+	return gameByID, nil
+}
+
+func (s *TeamsService) CreateTeam(ctx context.Context, gameID int, sub string, request api.TeamsRequest) (entity.Team, error) {
+	gameByID, err := s.ownedGame(ctx, gameID, sub)
+	if err != nil {
+		return entity.Team{}, err
 	}
 
 	var playerCount int
@@ -65,17 +74,9 @@ func (s *TeamsService) CreateTeam(ctx context.Context, gameID int, sub string, r
 }
 
 func (s *TeamsService) UpdateTeam(ctx context.Context, gameID int, sub string, teamID int, request api.TeamsRequest) (entity.Team, error) {
-	gameByID, err := s.gamesRepo.FindByID(ctx, gameID)
+	gameByID, err := s.ownedGame(ctx, gameID, sub)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Team{}, apperror.ErrGameNotFound
-		}
-
 		return entity.Team{}, err
-	}
-
-	if !entity.IsOwner(gameByID, sub) {
-		return entity.Team{}, apperror.ErrNotOwner
 	}
 
 	for _, team := range gameByID.Teams {
@@ -89,17 +90,9 @@ func (s *TeamsService) UpdateTeam(ctx context.Context, gameID int, sub string, t
 }
 
 func (s *TeamsService) DeleteTeam(ctx context.Context, gameID int, sub string, teamID int) error {
-	gameByID, err := s.gamesRepo.FindByID(ctx, gameID)
+	gameByID, err := s.ownedGame(ctx, gameID, sub)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return apperror.ErrGameNotFound
-		}
-
 		return err
-	}
-
-	if !entity.IsOwner(gameByID, sub) {
-		return apperror.ErrNotOwner
 	}
 
 	for _, team := range gameByID.Teams {

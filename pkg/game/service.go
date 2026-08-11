@@ -59,17 +59,9 @@ func (s *GamesService) CreateGame(ctx context.Context, sub string, game *api.Gam
 }
 
 func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, game api.GameUpdateRequest) (entity.Game, error) {
-	gameByID, err := s.repo.FindByID(ctx, id)
+	gameByID, err := s.FindByID(ctx, id, sub)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Game{}, apperror.ErrGameNotFound
-		}
-
 		return entity.Game{}, err
-	}
-
-	if !entity.IsOwner(gameByID, sub) {
-		return entity.Game{}, apperror.ErrNotOwner
 	}
 
 	gameByID.Name = game.Name
@@ -82,13 +74,7 @@ func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, game 
 	}
 
 	if game.Status == "in_progress" {
-		teams := map[int][]int{}
-
-		for _, team := range gameByID.Teams {
-			for _, player := range team.Players {
-				teams[team.ID] = append(teams[team.ID], player.ID)
-			}
-		}
+		teams := teamsMap(gameByID)
 
 		if len(gameByID.Rounds) != gameByID.NumberOfRounds {
 			return entity.Game{}, apperror.ErrInvalidGameSetup
@@ -109,6 +95,18 @@ func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, game 
 	return s.repo.CreateOrUpdateGame(ctx, &gameByID)
 }
 
+func teamsMap(game entity.Game) map[int][]int {
+	teams := map[int][]int{}
+
+	for _, team := range game.Teams {
+		for _, player := range team.Players {
+			teams[team.ID] = append(teams[team.ID], player.ID)
+		}
+	}
+
+	return teams
+}
+
 func gameIncompleteScoresMissing(game entity.Game) bool {
 	for _, team := range game.Teams {
 		for _, player := range team.Players {
@@ -122,17 +120,8 @@ func gameIncompleteScoresMissing(game entity.Game) bool {
 }
 
 func (s *GamesService) DeleteGame(ctx context.Context, id int, sub string) error {
-	gameByID, err := s.repo.FindByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return apperror.ErrGameNotFound
-		}
-
+	if _, err := s.FindByID(ctx, id, sub); err != nil {
 		return err
-	}
-
-	if !entity.IsOwner(gameByID, sub) {
-		return apperror.ErrNotOwner
 	}
 
 	return s.repo.DeleteGame(ctx, id)
@@ -187,13 +176,7 @@ func (s *GamesService) AssignTables(ctx context.Context, game entity.Game) error
 			return fmt.Errorf("cannot reset game tables: %w", err)
 		}
 
-		teams := map[int][]int{}
-
-		for _, team := range game.Teams {
-			for _, player := range team.Players {
-				teams[team.ID] = append(teams[team.ID], player.ID)
-			}
-		}
+		teams := teamsMap(game)
 
 		for i := range game.NumberOfRounds {
 			tables, err := setup.AssignTables(setup.TeamSetup{Teams: teams, TeamSize: game.TeamSize, TableSize: game.TableSize}, time.Now().Unix()-(int64(i)*1000))

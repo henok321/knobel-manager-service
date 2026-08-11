@@ -38,15 +38,10 @@ func (s PlayersService) CreatePlayer(ctx context.Context, request api.PlayersReq
 
 	player := entity.Player{Name: request.Name, TeamID: teamID}
 
-	createdPlayer, err := s.playersRepo.CreateOrUpdatePlayer(ctx, &player)
-	if err != nil {
-		return entity.Player{}, err
-	}
-
-	return createdPlayer, nil
+	return s.playersRepo.CreateOrUpdatePlayer(ctx, &player)
 }
 
-func (s PlayersService) UpdatePlayer(ctx context.Context, id int, request api.PlayersRequest, sub string) (entity.Player, error) {
+func (s PlayersService) ownedPlayer(ctx context.Context, id int, sub string) (entity.Player, error) {
 	player, err := s.playersRepo.FindPlayerByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -56,36 +51,27 @@ func (s PlayersService) UpdatePlayer(ctx context.Context, id int, request api.Pl
 		return entity.Player{}, err
 	}
 
-	game := player.Team.Game
-
-	if !entity.IsOwner(*game, sub) {
+	if !entity.IsOwner(*player.Team.Game, sub) {
 		return entity.Player{}, apperror.ErrNotOwner
 	}
 
-	player.Name = request.Name
+	return player, nil
+}
 
-	updatePlayer, err := s.playersRepo.CreateOrUpdatePlayer(ctx, &player)
+func (s PlayersService) UpdatePlayer(ctx context.Context, id int, request api.PlayersRequest, sub string) (entity.Player, error) {
+	player, err := s.ownedPlayer(ctx, id, sub)
 	if err != nil {
 		return entity.Player{}, err
 	}
 
-	return updatePlayer, nil
+	player.Name = request.Name
+
+	return s.playersRepo.CreateOrUpdatePlayer(ctx, &player)
 }
 
 func (s PlayersService) DeletePlayer(ctx context.Context, id int, sub string) error {
-	player, err := s.playersRepo.FindPlayerByID(ctx, id)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return apperror.ErrPlayerNotFound
-		}
-
+	if _, err := s.ownedPlayer(ctx, id, sub); err != nil {
 		return err
-	}
-
-	game := player.Team.Game
-
-	if !entity.IsOwner(*game, sub) {
-		return apperror.ErrNotOwner
 	}
 
 	return s.playersRepo.DeletePlayer(ctx, id)
