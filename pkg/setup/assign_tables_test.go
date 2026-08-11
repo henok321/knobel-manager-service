@@ -141,3 +141,36 @@ func TestAssignTables(t *testing.T) {
 		})
 	}
 }
+
+// Regression: teamSize a strict multiple of tableSize yields more tables than
+// teams; the assignment loop used to fill only len(teams) tables and retry forever.
+func TestAssignTablesMoreTablesThanTeams(t *testing.T) {
+	teams := map[int][]int{
+		1: {1, 2, 3, 4, 5, 6, 7, 8},
+		2: {9, 10, 11, 12, 13, 14, 15, 16},
+		3: {17, 18, 19, 20, 21, 22, 23, 24},
+		4: {25, 26, 27, 28, 29, 30, 31, 32},
+	}
+
+	got, err := AssignTables(TeamSetup{Teams: teams, TeamSize: 8, TableSize: 4}, 1)
+
+	require.NoError(t, err)
+	require.Len(t, got, 8, "32 players / table size 4 = 8 tables")
+
+	assignedPlayers := map[int]bool{}
+
+	for _, players := range got {
+		assert.Len(t, players, 4, "every table must be full")
+
+		teamsAtTable := map[int]bool{}
+
+		for _, p := range players {
+			assert.False(t, teamsAtTable[p.TeamID], "no two players of the same team at one table")
+			teamsAtTable[p.TeamID] = true
+			assert.False(t, assignedPlayers[p.ID], "player %d assigned twice", p.ID)
+			assignedPlayers[p.ID] = true
+		}
+	}
+
+	assert.Len(t, assignedPlayers, 32, "all players must be assigned exactly once")
+}
