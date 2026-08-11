@@ -87,7 +87,7 @@ func AssignTables(teamSetup TeamSetup, seed int64) (TeamsPlayersMapping, error) 
 		}
 
 		for range teamSetup.TableSize {
-			for tableID := range numberOfTeams {
+			for tableID := range numberOfTables {
 				assignedToTable := tables[tableID]
 				for i, playerToAssign := range playersToAssign {
 					containsSameTeamID := slices.ContainsFunc(assignedToTable, func(p Player) bool {
