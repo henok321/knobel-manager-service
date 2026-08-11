@@ -41,11 +41,11 @@ type TeamSetup struct {
 }
 
 func AssignTables(teamSetup TeamSetup, seed int64) (TeamsPlayersMapping, error) {
-	for {
-		if !IsAssignable(teamSetup.Teams, teamSetup.TeamSize, teamSetup.TableSize) {
-			return nil, fmt.Errorf("invalid setup: teams=%d teamSize=%d tableSize=%d", len(teamSetup.Teams), teamSetup.TeamSize, teamSetup.TableSize)
-		}
+	if !IsAssignable(teamSetup.Teams, teamSetup.TeamSize, teamSetup.TableSize) {
+		return nil, fmt.Errorf("invalid setup: teams=%d teamSize=%d tableSize=%d", len(teamSetup.Teams), teamSetup.TeamSize, teamSetup.TableSize)
+	}
 
+	for {
 		numberOfTeams := len(teamSetup.Teams)
 		numberOfPlayers := teamSetup.TeamSize * numberOfTeams
 

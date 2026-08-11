@@ -36,6 +36,16 @@ func chain(mw ...func(http.Handler) http.Handler) func(http.Handler) http.Handle
 	}
 }
 
+func serveBytes(contentType string, body []byte) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", contentType)
+		w.Header().Set("Content-Disposition", "inline")
+		if _, err := w.Write(body); err != nil {
+			slog.Error("Could not write response body", "error", err)
+		}
+	}
+}
+
 func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthService *healthpkg.Service, openAPIConfig, swaggerDocs []byte) *http.ServeMux {
 	public := func(csp string) func(http.Handler) http.Handler {
 		return chain(
@@ -58,7 +68,6 @@ func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthSe
 	teamService := team.NewTeamsService(team.NewTeamsRepository(database), game.NewGamesRepository(database))
 
 	healthHandler := handlers.NewHealthHandler(healthService)
-	openAPIHandler := handlers.NewOpenAPIHandler(openAPIConfig, swaggerDocs)
 	gamesHandler := handlers.NewGamesHandler(gameService, authClient)
 	playersHandler := handlers.NewPlayersHandler(playerService)
 	tablesHandler := handlers.NewTablesHandler(gameService, tableService)
@@ -66,8 +75,8 @@ func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthSe
 
 	router := http.NewServeMux()
 
-	router.Handle("/openapi.yaml", public("default-src 'self'")(http.HandlerFunc(openAPIHandler.GetOpenAPIConfig)))
-	router.Handle("/docs", public("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:")(http.HandlerFunc(openAPIHandler.GetSwaggerDocs)))
+	router.Handle("/openapi.yaml", public("default-src 'self'")(serveBytes("text/yaml; charset=utf-8", openAPIConfig)))
+	router.Handle("/docs", public("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:")(serveBytes("text/html; charset=utf-8", swaggerDocs)))
 
 	handleValidationErrors := func(w http.ResponseWriter, _ *http.Request, err error) {
 		handlers.JSONError(w, err.Error(), http.StatusBadRequest)
