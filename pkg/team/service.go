@@ -2,9 +2,6 @@ package team
 
 import (
 	"context"
-	"errors"
-
-	"gorm.io/gorm"
 
 	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
@@ -13,36 +10,19 @@ import (
 )
 
 type TeamsService struct {
-	teamRepo  *TeamsRepository
-	gamesRepo *game.GamesRepository
+	teamRepo     *TeamsRepository
+	gamesService *game.GamesService
 }
 
-func NewTeamsService(teamRepo *TeamsRepository, gameRepo *game.GamesRepository) *TeamsService {
+func NewTeamsService(teamRepo *TeamsRepository, gamesService *game.GamesService) *TeamsService {
 	return &TeamsService{
-		teamRepo:  teamRepo,
-		gamesRepo: gameRepo,
+		teamRepo:     teamRepo,
+		gamesService: gamesService,
 	}
-}
-
-func (s *TeamsService) ownedGame(ctx context.Context, gameID int, sub string) (entity.Game, error) {
-	gameByID, err := s.gamesRepo.FindByID(ctx, gameID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entity.Game{}, apperror.ErrGameNotFound
-		}
-
-		return entity.Game{}, err
-	}
-
-	if !entity.IsOwner(gameByID, sub) {
-		return entity.Game{}, apperror.ErrNotOwner
-	}
-
-	return gameByID, nil
 }
 
 func (s *TeamsService) CreateTeam(ctx context.Context, gameID int, sub string, request api.TeamsRequest) (entity.Team, error) {
-	gameByID, err := s.ownedGame(ctx, gameID, sub)
+	gameByID, err := s.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
 		return entity.Team{}, err
 	}
@@ -74,7 +54,7 @@ func (s *TeamsService) CreateTeam(ctx context.Context, gameID int, sub string, r
 }
 
 func (s *TeamsService) UpdateTeam(ctx context.Context, gameID int, sub string, teamID int, request api.TeamsRequest) (entity.Team, error) {
-	gameByID, err := s.ownedGame(ctx, gameID, sub)
+	gameByID, err := s.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
 		return entity.Team{}, err
 	}
@@ -90,7 +70,7 @@ func (s *TeamsService) UpdateTeam(ctx context.Context, gameID int, sub string, t
 }
 
 func (s *TeamsService) DeleteTeam(ctx context.Context, gameID int, sub string, teamID int) error {
-	gameByID, err := s.ownedGame(ctx, gameID, sub)
+	gameByID, err := s.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
 		return err
 	}

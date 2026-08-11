@@ -77,9 +77,9 @@ func TestPlayers(t *testing.T) {
 			endpoint:           "/games/1/teams/1/players/1",
 			requestBody:        `{"name":"Player 1 Updated"}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
-			expectedStatusCode: http.StatusNotFound,
+			expectedStatusCode: http.StatusForbidden,
 			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
+				executeSQLFile(t, db, "./test_data/games_setup_with_team_player.sql")
 			},
 		},
 		"Delete player": {
@@ -98,6 +98,27 @@ func TestPlayers(t *testing.T) {
 			expectedStatusCode: http.StatusNotFound,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
+			},
+		},
+		"Delete player forbidden": {
+			method:             "DELETE",
+			endpoint:           "/games/1/teams/1/players/1",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
+			expectedStatusCode: http.StatusForbidden,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_team_player.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
+				var count int
+				err := db.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM players WHERE id = 1").Scan(&count)
+				if err != nil {
+					t.Fatalf("failed to count players: %v", err)
+				}
+				if count != 1 {
+					t.Errorf("player must not be deleted by a non-owner, got count %d", count)
+				}
 			},
 		},
 	}
