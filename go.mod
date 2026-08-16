@@ -13,7 +13,7 @@ tool (
 require (
 	firebase.google.com/go/v4 v4.21.0
 	github.com/jackc/pgx/v5 v5.10.0
-	github.com/oapi-codegen/runtime v1.6.0
+	github.com/oapi-codegen/runtime v1.7.0
 	github.com/pressly/goose/v3 v3.27.3
 	github.com/prometheus/client_golang v1.24.1
 	github.com/rs/cors v1.11.1
