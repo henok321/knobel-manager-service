@@ -195,10 +195,10 @@ jobs:
 
     steps:
       - name: Pull and restart on VPS
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: deploy
-          key: ${{ secrets.VPS_SSH_KEY }}
-          # The key is pinned to this command in authorized_keys; whatever is sent here is ignored.
-          script: /usr/local/bin/knobel-manager-deploy
+        env:
+          KEY: ${{ secrets.VPS_SSH_KEY }}
+          HOST: ${{ secrets.VPS_HOST }}
+        # The key is pinned in authorized_keys to the deploy script, so the command sent here is ignored.
+        run: |
+          mkdir -p ~/.ssh && printf '%s\n' "$KEY" >~/.ssh/id && chmod 600 ~/.ssh/id
+          ssh -i ~/.ssh/id -o StrictHostKeyChecking=accept-new "deploy@$HOST" true
