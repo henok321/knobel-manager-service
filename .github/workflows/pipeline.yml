@@ -194,17 +194,11 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: Trigger Coolify deployment
-        env:
-          API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
-          DEPLOYMENT_URL: ${{ vars.COOLIFY_DEPLOYMENT_URL }}
-        run: |
-          response=$(curl -s -w "\n%{http_code}" -X GET \
-            -H "Authorization: Bearer ${API_TOKEN}" \
-            "${DEPLOYMENT_URL}")
-
-          http_code=$(echo "$response" | tail -1)
-          if [ "$http_code" -ne 200 ]; then
-            echo "Failed to trigger deployment: HTTP $http_code"
-            exit 1
-          fi
+      - name: Pull and restart on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.VPS_SSH_KEY }}
+          # The key is pinned to this command in authorized_keys; whatever is sent here is ignored.
+          script: /usr/local/bin/knobel-manager-deploy

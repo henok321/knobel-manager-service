@@ -377,7 +377,9 @@ Single workflow runs on push to main with dependent jobs:
     - Builds multi-arch Docker image (amd64/arm64)
     - Pushes to GitHub Container Registry (`ghcr.io`)
 3. **Deploy** - Triggers after successful build:
-    - Triggers Coolify deployment via webhook
+    - SSHes into the VPS as `deploy`, whose key is pinned to `/usr/local/bin/knobel-manager-deploy`
+      (`docker compose pull` + `up -d --wait` in `/srv/knobel-manager`)
+    - Server-side files live in `deploy/`; setup, TLS, backups and rollback are documented in `DEPLOYMENT.md`
     - Tracked via GitHub Environments (production)
 
 **On Pull Requests:** Only validation, lint, and test jobs run (build/deploy are skipped)
@@ -402,14 +404,14 @@ Single workflow runs on push to main with dependent jobs:
 ### Health Verification
 
 ```bash
-curl https://knobel-manager.com/health
-curl https://knobel-manager.com/metrics
+curl https://api.knobel-manager.de/health/live
+curl https://api.knobel-manager.de/health/ready
 ```
 
 ### Required GitHub Secrets & Variables
 
-- **Secret:** `COOLIFY_API_TOKEN`
-- **Variable:** `COOLIFY_DEPLOYMENT_URL`
+- **Secret:** `VPS_HOST` - server IP or hostname
+- **Secret:** `VPS_SSH_KEY` - private key for the `deploy` user on the VPS
 
 ---
 

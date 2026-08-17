@@ -96,7 +96,8 @@ set +a
 ./knobel-manager-service    # Run binary (requires sourced .env)
 ```
 
-Deployment happens automatically via GitHub Actions on push to main.
+Deployment happens automatically via GitHub Actions on push to main. Server setup, TLS, backups and
+rollback are documented in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Maintenance
 
