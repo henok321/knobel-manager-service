@@ -198,7 +198,6 @@ jobs:
         env:
           KEY: ${{ secrets.VPS_SSH_KEY }}
           HOST: ${{ secrets.VPS_HOST }}
-        # The key is pinned in authorized_keys to the deploy script, so the command sent here is ignored.
         run: |
           mkdir -p ~/.ssh && printf '%s\n' "$KEY" >~/.ssh/id && chmod 600 ~/.ssh/id
           ssh -i ~/.ssh/id -o StrictHostKeyChecking=accept-new "deploy@$HOST" true
