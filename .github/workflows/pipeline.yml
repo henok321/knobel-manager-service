@@ -194,17 +194,10 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: Trigger Coolify deployment
+      - name: Pull and restart on VPS
         env:
-          API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
-          DEPLOYMENT_URL: ${{ vars.COOLIFY_DEPLOYMENT_URL }}
+          KEY: ${{ secrets.VPS_SSH_KEY }}
+          HOST: ${{ secrets.VPS_HOST }}
         run: |
-          response=$(curl -s -w "\n%{http_code}" -X GET \
-            -H "Authorization: Bearer ${API_TOKEN}" \
-            "${DEPLOYMENT_URL}")
-
-          http_code=$(echo "$response" | tail -1)
-          if [ "$http_code" -ne 200 ]; then
-            echo "Failed to trigger deployment: HTTP $http_code"
-            exit 1
-          fi
+          mkdir -p ~/.ssh && printf '%s\n' "$KEY" >~/.ssh/id && chmod 600 ~/.ssh/id
+          ssh -i ~/.ssh/id -o StrictHostKeyChecking=accept-new "deploy@$HOST" true
