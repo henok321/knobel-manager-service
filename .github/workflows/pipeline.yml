@@ -197,7 +197,7 @@ jobs:
       - name: Pull and restart on VPS
         env:
           KEY: ${{ secrets.VPS_SSH_KEY }}
-          HOST: ${{ secrets.VPS_HOST }}
+          HOST: ${{ vars.VPS_HOST }}
         run: |
           mkdir -p ~/.ssh && printf '%s\n' "$KEY" >~/.ssh/id && chmod 600 ~/.ssh/id
           ssh -i ~/.ssh/id -o StrictHostKeyChecking=accept-new "deploy@$HOST" true
