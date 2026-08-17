@@ -21,7 +21,8 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}?sslmode=disable
+      # keyword/value DSN, not a URL: passwords with @ / # % survive unmangled
+      DATABASE_URL: "host=db port=5432 user=${DB_USER} password='${DB_PASSWORD}' dbname=${DB_NAME} sslmode=disable"
     depends_on:
       db:
         condition: service_healthy
@@ -45,9 +46,6 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data
-    depends_on:
-      app:
-        condition: service_healthy
 
 volumes:
   db-data:

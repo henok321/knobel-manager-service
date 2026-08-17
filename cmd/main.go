@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -41,7 +42,10 @@ func init() {
 }
 
 func setupAuthClient() (*auth.Client, error) {
-	firebaseSecret, err := base64.RawStdEncoding.DecodeString(os.Getenv("FIREBASE_SECRET"))
+	// tolerate padding and line wrapping, which every base64 CLI emits by default
+	encoded := strings.NewReplacer("=", "", "\n", "", "\r", "").Replace(os.Getenv("FIREBASE_SECRET"))
+
+	firebaseSecret, err := base64.RawStdEncoding.DecodeString(encoded)
 	if err != nil {
 		slog.Error("Starting application failed, cannot decode FIREBASE_SECRET", "error", err)
 		return nil, err

@@ -135,7 +135,10 @@ anyway: `environment:` wins over `env_file:`.
 - **Readable by root and the `docker` group** via `docker inspect` or `/proc/<pid>/environ`. That group is
   root-equivalent anyway, which is why the CI key is pinned to a single command.
 
-Rotate by editing `.env` and running `docker compose up -d` — changed env recreates the container.
+Rotate by editing `.env` and running `docker compose up -d` in `/srv/knobel-manager` — changed env
+recreates the container. Editing `compose.yaml` or the `Caddyfile` is different: `up -d` compares the
+mount spec, not the file behind it, so a Caddyfile change needs `docker compose restart caddy`. Neither
+file is shipped by CI — copy them from the repo yourself when they change.
 
 **Postgres gotcha:** `DB_USER`, `DB_PASSWORD` and `DB_NAME` only create anything on first start, when the
 data volume is initialised. Editing them later does not rename the user or change the password on an
@@ -143,7 +146,8 @@ existing database — it only changes what the app tries to connect with, which 
 password, change it in Postgres first, then in `.env`:
 
 ```bash
-docker compose exec db sh -c 'psql -U "$POSTGRES_USER"'
+cd /srv/knobel-manager
+docker compose exec db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 # at the psql prompt:  ALTER USER knobel PASSWORD 'new-password';
 # then update DB_PASSWORD in .env, and:
 docker compose up -d
@@ -232,6 +236,7 @@ Keeps 7 daily dumps in `/var/backups/knobel-manager`. A backup on the same disk 
 that directory somewhere else. Restore:
 
 ```bash
+cd /srv/knobel-manager
 gunzip -c /var/backups/knobel-manager/knobel-manager-2026-08-17.sql.gz \
   | docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
@@ -243,11 +248,17 @@ apt install unattended-upgrades
 dpkg-reconfigure -plow unattended-upgrades
 ```
 
-Container images are updated by Renovate + the CI pipeline.
+Container images are updated by Renovate + the CI pipeline. Postgres major bumps in `deploy/compose.yaml`
+are excluded from that: the new major refuses to start on the old data directory, so it needs a dump,
+restore and volume swap, done by hand.
 
 ## Rollback
 
-Set `IMAGE_TAG` in `.env` to a specific build (e.g. `main-1a2b3c4`), then `docker compose up -d --wait`.
+```bash
+cd /srv/knobel-manager
+# set IMAGE_TAG in .env to a specific build, e.g. main-1a2b3c4
+docker compose up -d --wait
+```
 
 ## GitHub secrets
 

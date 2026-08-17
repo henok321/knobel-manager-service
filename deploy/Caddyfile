@@ -4,5 +4,13 @@
 
 {$DOMAIN} {
 	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
-	reverse_proxy app:8080
+
+	# health_uri makes the app's graceful drain effective: Caddy stops routing to a
+	# draining container instead of 502ing until the replacement is healthy
+	reverse_proxy app:8080 {
+		health_uri /health/ready
+		health_interval 5s
+		health_timeout 2s
+		lb_try_duration 10s
+	}
 }

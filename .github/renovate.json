@@ -41,6 +41,19 @@
         "indirect"
       ],
       "enabled": false
+    },
+    {
+      "description": "A postgres major bump needs pg_upgrade on the server, never an automerge",
+      "matchFileNames": [
+        "deploy/compose.yaml"
+      ],
+      "matchPackageNames": [
+        "postgres"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "enabled": false
     }
   ]
 }
