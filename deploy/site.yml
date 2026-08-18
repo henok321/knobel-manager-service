@@ -1,6 +1,9 @@
 - name: Provision knobel-manager-service on a single VPS
   hosts: all
   become: true
+  # a notified handler is discarded when a later task fails, and the idempotent copy
+  # that notified it never notifies again
+  force_handlers: true
 
   vars:
     ansible_python_interpreter: /usr/bin/python3
@@ -44,11 +47,24 @@
           - firebase_secret | length > 0
         fail_msg: Export ACME_EMAIL, DB_PASSWORD and FIREBASE_SECRET before running the playbook
 
+    # .env is Compose's interpolation source as well as the app's env_file, so a $ is
+    # expanded away and only the first line of a wrapped value survives -- silently,
+    # with the correct value still readable in the file on the box
+    - name: Secrets survive Compose interpolation
+      ansible.builtin.assert:
+        that:
+          - "'$' not in db_password"
+          - "'\n' not in db_password"
+          - "\"'\" not in db_password"
+          - "'\n' not in firebase_secret | trim"
+        fail_msg: >-
+          DB_PASSWORD must not contain $, a single quote or a newline, and FIREBASE_SECRET
+          must be unwrapped base64 (pipe it through `base64 -w0` or `tr -d '\n'`)
+
     - name: Base packages
       ansible.builtin.apt:
         name:
           - ca-certificates
-          - curl
           - unattended-upgrades
           - ufw
           - python3-debian
@@ -92,21 +108,16 @@
     - name: Apply docker daemon config
       ansible.builtin.meta: flush_handlers
 
-    - name: Unattended upgrades enabled
+    # 99- sorts after 50unattended-upgrades and 20auto-upgrades, so these win whatever
+    # the package or dpkg-reconfigure wrote; without the reboot a kernel or libc update
+    # installs but never takes effect
+    - name: Unattended upgrades
       ansible.builtin.copy:
-        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        dest: /etc/apt/apt.conf.d/99-knobel-manager
         mode: "0644"
         content: |
           APT::Periodic::Update-Package-Lists "1";
           APT::Periodic::Unattended-Upgrade "1";
-
-    # sorts after 50unattended-upgrades, so these win; without a reboot a kernel or
-    # libc update installs but never takes effect
-    - name: Reboot for kernel updates
-      ansible.builtin.copy:
-        dest: /etc/apt/apt.conf.d/99-unattended-reboot
-        mode: "0644"
-        content: |
           Unattended-Upgrade::Automatic-Reboot "true";
           Unattended-Upgrade::Automatic-Reboot-Time "04:45";
 
@@ -123,11 +134,17 @@
         group: root
         mode: "0600"
 
-    # gated on swap being off, not on "the file was created this run": an interrupted
-    # run would otherwise leave an unformatted swapfile in fstab forever
+    # asks about /swapfile, not about the host's total swap: an unrelated swap device
+    # would otherwise leave this file unformatted while fstab still points at it
+    - name: Swap file signature
+      ansible.builtin.command: blkid -p -s TYPE -o value /swapfile
+      register: swapfile_signature
+      changed_when: false
+      failed_when: false
+
     - name: Format swap file
       ansible.builtin.command: mkswap /swapfile
-      when: ansible_facts['swaptotal_mb'] | int == 0
+      when: swapfile_signature.stdout != "swap"
       changed_when: true
 
     - name: Swap file in fstab
@@ -139,8 +156,8 @@
         state: present
 
     - name: Activate swap
-      ansible.builtin.command: swapon -a
-      when: ansible_facts['swaptotal_mb'] | int == 0
+      ansible.builtin.command: swapon /swapfile
+      when: swapfile_signature.stdout != "swap"
       changed_when: true
 
     - name: Swappiness
@@ -258,9 +275,10 @@
         path: "{{ item }}"
         state: absent
       loop:
-        - /etc/apt/sources.list.d/docker.list     # superseded by docker.sources
-        - /etc/ssh/sshd_config.d/hardening.conf   # superseded by 10-hardening.conf
-        - /usr/local/bin/knobel-manager-deploy    # the script the pinned CI key ran
+        - /etc/apt/sources.list.d/docker.list      # superseded by docker.sources
+        - /etc/apt/apt.conf.d/99-unattended-reboot # folded into 99-knobel-manager
+        - /etc/ssh/sshd_config.d/hardening.conf    # superseded by 10-hardening.conf
+        - /usr/local/bin/knobel-manager-deploy     # the script the pinned CI key ran
       notify: Restart sshd
 
     - name: User the pinned CI key logged in as
@@ -268,6 +286,9 @@
         name: deploy
         state: absent
         remove: true
+        # userdel exits non-zero on a live session or an unremovable home, and this task
+        # sits one step before the container update
+        force: true
 
     - name: Pull and start stack
       ansible.builtin.command: docker compose up -d --wait --wait-timeout 180 --pull always --remove-orphans
