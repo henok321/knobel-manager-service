@@ -165,7 +165,10 @@ which the Postgres image trusts, so it needs no password:
 ssh -t <admin>@<vps> 'cd /srv/knobel-manager && docker compose exec db sh -c "psql -U \$POSTGRES_USER -d \$POSTGRES_DB"'
 ```
 
-Use your own admin login for both, not the CI key — that one is `root`'s and should stay in GitHub.
+Use your own admin login for both, not the CI key — that one is `root`'s and should stay in GitHub. The
+playbook creates that account (`admin_user`) with passwordless sudo and membership in `docker`, and installs
+whatever public keys the GitHub account in `admin_keys` publishes. Both are playbook vars; keys are managed
+exclusively, so one dropped on GitHub loses access here on the next deploy.
 
 ## Backups
 
@@ -180,7 +183,9 @@ gunzip -c /var/backups/knobel-manager/knobel-manager-2026-08-17.sql.gz \
 
 ## Upgrades
 
-Host packages come from `unattended-upgrades`, container images from Renovate plus the pipeline. Postgres
+Host packages come from `unattended-upgrades`, which reboots the box at 04:45 when an update needs it — a
+kernel or libc update that is installed but never activated is not applied. Container images come from
+Renovate plus the pipeline. Postgres
 majors in `deploy/compose.yaml` are excluded from Renovate: the new major refuses to start on the old data
 directory, so it needs a dump, restore and volume swap, done by hand.
 
@@ -199,6 +204,7 @@ the commit.
 | Name              | Kind     | Value                                              |
 |-------------------|----------|----------------------------------------------------|
 | `VPS_HOST`        | variable | server IP or hostname                              |
+| `VPS_HOST_KEY`    | variable | `ssh-keyscan -t ed25519 <host>` output, one line   |
 | `VPS_SSH_KEY`     | secret   | private key for `root` on the VPS                  |
 | `ACME_EMAIL`      | variable | contact address for Let's Encrypt                  |
 | `DB_PASSWORD`     | secret   | Postgres password (must match the existing volume) |

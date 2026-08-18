@@ -10,6 +10,8 @@
     db_name: knobel-manager
     image_tag: main
     swap_size: 2G
+    admin_user: hendrik
+    admin_keys: https://github.com/henok321.keys
     acme_email: "{{ lookup('env', 'ACME_EMAIL') }}"
     db_password: "{{ lookup('env', 'DB_PASSWORD') }}"
     firebase_secret: "{{ lookup('env', 'FIREBASE_SECRET') }}"
@@ -51,6 +53,7 @@
           - ufw
           - python3-debian
           - cron
+          - sudo
         update_cache: true
         cache_valid_time: 3600
         lock_timeout: 300
@@ -96,6 +99,16 @@
         content: |
           APT::Periodic::Update-Package-Lists "1";
           APT::Periodic::Unattended-Upgrade "1";
+
+    # sorts after 50unattended-upgrades, so these win; without a reboot a kernel or
+    # libc update installs but never takes effect
+    - name: Reboot for kernel updates
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/99-unattended-reboot
+        mode: "0644"
+        content: |
+          Unattended-Upgrade::Automatic-Reboot "true";
+          Unattended-Upgrade::Automatic-Reboot-Time "04:45";
 
     # created once: raising swap_size later does not resize an existing /swapfile
     - name: Swap file
@@ -148,6 +161,28 @@
           PasswordAuthentication no
           KbdInteractiveAuthentication no
       notify: Restart sshd
+
+    - name: Admin account
+      ansible.builtin.user:
+        name: "{{ admin_user }}"
+        groups: [sudo, docker]
+        append: true
+        shell: /bin/bash
+
+    # exclusive: a key dropped from the GitHub account loses access here on the next run
+    - name: Admin keys
+      ansible.posix.authorized_key:
+        user: "{{ admin_user }}"
+        key: "{{ admin_keys }}"
+        exclusive: true
+
+    # the account has no password to type, so sudo cannot ask for one
+    - name: Passwordless sudo for the admin
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/010-{{ admin_user }}
+        mode: "0440"
+        content: "{{ admin_user }} ALL=(ALL) NOPASSWD:ALL\n"
+        validate: visudo -cf %s
 
     - name: Firewall rules
       community.general.ufw:
