@@ -45,21 +45,21 @@
           - acme_email | length > 0
           - db_password | length > 0
           - firebase_secret | length > 0
+          - image_tag | length > 0
         fail_msg: Export ACME_EMAIL, DB_PASSWORD and FIREBASE_SECRET before running the playbook
 
-    # .env is Compose's interpolation source as well as the app's env_file, so a $ is
-    # expanded away and only the first line of a wrapped value survives -- silently,
-    # with the correct value still readable in the file on the box
+    # .env is Compose's interpolation source as well as the app's env_file, and it eats
+    # more than the $ it is famous for: a leading " swallows the rest of the file, " #"
+    # truncates, a wrapped value loses everything after the first line. All silently, with
+    # the correct value still readable in the file on the box — so whitelist instead
     - name: Secrets survive Compose interpolation
       ansible.builtin.assert:
         that:
-          - "'$' not in db_password"
-          - "'\n' not in db_password"
-          - "\"'\" not in db_password"
+          - db_password is match('^[A-Za-z0-9_.:@+~-]+$')
           - "'\n' not in firebase_secret | trim"
         fail_msg: >-
-          DB_PASSWORD must not contain $, a single quote or a newline, and FIREBASE_SECRET
-          must be unwrapped base64 (pipe it through `base64 -w0` or `tr -d '\n'`)
+          DB_PASSWORD must be letters, digits or _.:@+~- and FIREBASE_SECRET must be
+          unwrapped base64 (pipe it through `base64 -w0` or `tr -d '\n'`)
 
     - name: Base packages
       ansible.builtin.apt:
@@ -110,7 +110,9 @@
 
     # 99- sorts after 50unattended-upgrades and 20auto-upgrades, so these win whatever
     # the package or dpkg-reconfigure wrote; without the reboot a kernel or libc update
-    # installs but never takes effect
+    # installs but never takes effect. "now" means right after the upgrade run
+    # (apt-daily-upgrade.timer, 06:00 + up to an hour): any fixed hh:mm earlier than that
+    # is already past when shutdown is called, so it slips to the following day
     - name: Unattended upgrades
       ansible.builtin.copy:
         dest: /etc/apt/apt.conf.d/99-knobel-manager
@@ -119,7 +121,7 @@
           APT::Periodic::Update-Package-Lists "1";
           APT::Periodic::Unattended-Upgrade "1";
           Unattended-Upgrade::Automatic-Reboot "true";
-          Unattended-Upgrade::Automatic-Reboot-Time "04:45";
+          Unattended-Upgrade::Automatic-Reboot-Time "now";
 
     # created once: raising swap_size later does not resize an existing /swapfile
     - name: Swap file
@@ -155,9 +157,16 @@
         opts: sw
         state: present
 
+    # not gated on the signature like the format above: a formatted but inactive swapfile
+    # (interrupted run, or a hand-run swapoff) would never be switched back on
+    - name: Swap in use
+      ansible.builtin.command: swapon --noheadings --show=NAME
+      register: active_swap
+      changed_when: false
+
     - name: Activate swap
       ansible.builtin.command: swapon /swapfile
-      when: swapfile_signature.stdout != "swap"
+      when: "'/swapfile' not in active_swap.stdout"
       changed_when: true
 
     - name: Swappiness
@@ -249,8 +258,10 @@
         src: env.j2
         dest: "{{ app_dir }}/.env"
         owner: root
-        group: root
-        mode: "0600"
+        # Compose reads .env before anything else, so the admin needs it too; that group is
+        # root-equivalent through the socket anyway
+        group: docker
+        mode: "0640"
         backup: true
       no_log: true
 

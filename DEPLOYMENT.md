@@ -34,8 +34,9 @@ Settings are `vars` at the top of the playbook, overridable per run: `-e image_t
 - **ufw does not cover published container ports.** Docker's iptables rules in the `DOCKER` chain are
   evaluated first, so `"5432:5432"` is world-open even with `ufw deny`. The `127.0.0.1:` prefix is what
   keeps a port private.
-- **Keep `DB_PASSWORD` alphanumeric.** `.env` is Compose's interpolation source, so `pa$word` reaches
-  Postgres as `pa`.
+- **`DB_PASSWORD` is restricted to `A-Za-z0-9_.:@+~-`** and the playbook refuses anything else. `.env` is
+  Compose's interpolation source: `$` expands, a leading `"` swallows the rest of the file, and a space
+  followed by `#` truncates — all silently, with the right value still sitting in the file.
 - **HSTS belongs in the `Caddyfile`.** The app only emits it when `r.TLS != nil`, which is never true behind
   the proxy.
 
