@@ -1,0 +1,308 @@
+- name: Provision knobel-manager-service on a single VPS
+  hosts: all
+  become: true
+  # a notified handler is discarded when a later task fails, and the idempotent copy
+  # that notified it never notifies again
+  force_handlers: true
+
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    app_dir: /srv/knobel-manager
+    domain: api.knobel-manager.de
+    db_user: knobel-manager
+    db_name: knobel-manager
+    image_tag: main
+    swap_size: 2G
+    admin_user: hendrik
+    admin_keys: https://github.com/henok321.keys
+    acme_email: "{{ lookup('env', 'ACME_EMAIL') }}"
+    db_password: "{{ lookup('env', 'DB_PASSWORD') }}"
+    firebase_secret: "{{ lookup('env', 'FIREBASE_SECRET') }}"
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
+
+    - name: Restart Docker
+      ansible.builtin.service:
+        name: docker
+        state: restarted
+
+    # up -d compares the mount spec, not the file behind it, so a changed Caddyfile
+    # needs an explicit restart
+    - name: Restart Caddy
+      ansible.builtin.command: docker compose restart caddy
+      args:
+        chdir: "{{ app_dir }}"
+      changed_when: true
+
+  tasks:
+    - name: Secrets are provided
+      ansible.builtin.assert:
+        that:
+          - acme_email | length > 0
+          - db_password | length > 0
+          - firebase_secret | length > 0
+          - image_tag | length > 0
+        fail_msg: Export ACME_EMAIL, DB_PASSWORD and FIREBASE_SECRET before running the playbook
+
+    # .env is Compose's interpolation source as well as the app's env_file, and it eats
+    # more than the $ it is famous for: a leading " swallows the rest of the file, " #"
+    # truncates, a wrapped value loses everything after the first line. All silently, with
+    # the correct value still readable in the file on the box — so whitelist instead
+    - name: Secrets survive Compose interpolation
+      ansible.builtin.assert:
+        that:
+          - db_password is match('^[A-Za-z0-9_.:@+~-]+$')
+          - "'\n' not in firebase_secret | trim"
+        fail_msg: >-
+          DB_PASSWORD must be letters, digits or _.:@+~- and FIREBASE_SECRET must be
+          unwrapped base64 (pipe it through `base64 -w0` or `tr -d '\n'`)
+
+    - name: Base packages
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - unattended-upgrades
+          - ufw
+          - python3-debian
+          - cron
+          - sudo
+        update_cache: true
+        cache_valid_time: 3600
+        lock_timeout: 300
+
+    - name: Docker apt repo
+      ansible.builtin.deb822_repository:
+        name: docker
+        types: deb
+        uris: https://download.docker.com/linux/debian
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: stable
+        signed_by: https://download.docker.com/linux/debian/gpg
+
+    - name: Docker engine
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        update_cache: true
+        lock_timeout: 300
+
+    - name: Docker daemon config
+      ansible.builtin.copy:
+        dest: /etc/docker/daemon.json
+        mode: "0644"
+        content: |
+          {
+            "log-driver": "json-file",
+            "log-opts": { "max-size": "10m", "max-file": "3" }
+          }
+      notify: Restart Docker
+
+    # before the stack comes up, so the restart does not interrupt a fresh deploy
+    - name: Apply docker daemon config
+      ansible.builtin.meta: flush_handlers
+
+    # 99- sorts after 50unattended-upgrades and 20auto-upgrades, so these win whatever
+    # the package or dpkg-reconfigure wrote; without the reboot a kernel or libc update
+    # installs but never takes effect. "now" means right after the upgrade run
+    # (apt-daily-upgrade.timer, 06:00 + up to an hour): any fixed hh:mm earlier than that
+    # is already past when shutdown is called, so it slips to the following day
+    - name: Unattended upgrades
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/99-knobel-manager
+        mode: "0644"
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+          Unattended-Upgrade::Automatic-Reboot "true";
+          Unattended-Upgrade::Automatic-Reboot-Time "now";
+
+    # created once: raising swap_size later does not resize an existing /swapfile
+    - name: Swap file
+      ansible.builtin.command: fallocate -l {{ swap_size }} /swapfile
+      args:
+        creates: /swapfile
+
+    - name: Swap file permissions
+      ansible.builtin.file:
+        path: /swapfile
+        owner: root
+        group: root
+        mode: "0600"
+
+    # asks about /swapfile, not about the host's total swap: an unrelated swap device
+    # would otherwise leave this file unformatted while fstab still points at it
+    - name: Swap file signature
+      ansible.builtin.command: blkid -p -s TYPE -o value /swapfile
+      register: swapfile_signature
+      changed_when: false
+      failed_when: false
+
+    - name: Format swap file
+      ansible.builtin.command: mkswap /swapfile
+      when: swapfile_signature.stdout != "swap"
+      changed_when: true
+
+    - name: Swap file in fstab
+      ansible.posix.mount:
+        path: none
+        src: /swapfile
+        fstype: swap
+        opts: sw
+        state: present
+
+    # not gated on the signature like the format above: a formatted but inactive swapfile
+    # (interrupted run, or a hand-run swapoff) would never be switched back on
+    - name: Swap in use
+      ansible.builtin.command: swapon --noheadings --show=NAME
+      register: active_swap
+      changed_when: false
+
+    - name: Activate swap
+      ansible.builtin.command: swapon /swapfile
+      when: "'/swapfile' not in active_swap.stdout"
+      changed_when: true
+
+    - name: Swappiness
+      ansible.posix.sysctl:
+        name: vm.swappiness
+        value: "10"
+        sysctl_file: /etc/sysctl.d/99-knobel-manager.conf
+
+    # CI authenticates as root over SSH, so root stays permitted — key-only
+    # 10- so it wins: sshd takes the first value it obtains, drop-ins load in lexical order
+    - name: SSH hardening
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/10-hardening.conf
+        mode: "0644"
+        validate: /usr/sbin/sshd -t -f %s
+        content: |
+          PermitRootLogin prohibit-password
+          PasswordAuthentication no
+          KbdInteractiveAuthentication no
+      notify: Restart sshd
+
+    - name: Admin account
+      ansible.builtin.user:
+        name: "{{ admin_user }}"
+        groups: [sudo, docker]
+        append: true
+        shell: /bin/bash
+
+    # exclusive: a key dropped from the GitHub account loses access here on the next run
+    - name: Admin keys
+      ansible.posix.authorized_key:
+        user: "{{ admin_user }}"
+        key: "{{ admin_keys }}"
+        exclusive: true
+
+    # the account has no password to type, so sudo cannot ask for one
+    - name: Passwordless sudo for the admin
+      ansible.builtin.copy:
+        dest: /etc/sudoers.d/010-{{ admin_user }}
+        mode: "0440"
+        content: "{{ admin_user }} ALL=(ALL) NOPASSWD:ALL\n"
+        validate: visudo -cf %s
+
+    - name: Firewall rules
+      community.general.ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+      loop:
+        - { port: "22", proto: tcp }
+        - { port: "80", proto: tcp }
+        - { port: "443", proto: tcp }
+        - { port: "443", proto: udp }
+        - { port: "51820", proto: udp }
+
+    - name: Firewall enabled, incoming denied
+      community.general.ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+
+    - name: App directory
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Compose file
+      ansible.builtin.copy:
+        src: compose.yaml
+        dest: "{{ app_dir }}/compose.yaml"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Caddyfile
+      ansible.builtin.copy:
+        src: Caddyfile
+        dest: "{{ app_dir }}/Caddyfile"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart Caddy
+
+    - name: Environment file
+      ansible.builtin.template:
+        src: env.j2
+        dest: "{{ app_dir }}/.env"
+        owner: root
+        # Compose reads .env before anything else, so the admin needs it too; that group is
+        # root-equivalent through the socket anyway
+        group: docker
+        mode: "0640"
+        backup: true
+      no_log: true
+
+    - name: Backup script
+      ansible.builtin.copy:
+        src: backup.sh
+        dest: /usr/local/bin/knobel-manager-backup
+        mode: "0755"
+
+    # written outright rather than through the cron module, which would keep any
+    # hand-made line in the file beside the one it manages
+    - name: Nightly backup
+      ansible.builtin.copy:
+        dest: /etc/cron.d/knobel-manager-backup
+        mode: "0644"
+        content: |
+          15 3 * * * root /usr/local/bin/knobel-manager-backup
+
+    # the box was provisioned by hand before this playbook existed
+    - name: Files the old layout left behind
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/docker.list      # superseded by docker.sources
+        - /etc/apt/apt.conf.d/99-unattended-reboot # folded into 99-knobel-manager
+        - /etc/ssh/sshd_config.d/hardening.conf    # superseded by 10-hardening.conf
+        - /usr/local/bin/knobel-manager-deploy     # the script the pinned CI key ran
+      notify: Restart sshd
+
+    - name: User the pinned CI key logged in as
+      ansible.builtin.user:
+        name: deploy
+        state: absent
+        remove: true
+        # userdel exits non-zero on a live session or an unremovable home, and this task
+        # sits one step before the container update
+        force: true
+
+    - name: Pull and start stack
+      ansible.builtin.command: docker compose up -d --wait --wait-timeout 180 --pull always --remove-orphans
+      args:
+        chdir: "{{ app_dir }}"
+      changed_when: true

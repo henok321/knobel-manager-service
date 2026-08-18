@@ -376,11 +376,13 @@ Single workflow runs on push to main with dependent jobs:
 2. **Build** - Triggers after all validations pass:
     - Builds multi-arch Docker image (amd64/arm64)
     - Pushes to GitHub Container Registry (`ghcr.io`)
-3. **Deploy** - Triggers after successful build:
-    - SSHes into the VPS as `deploy`, whose key is pinned to `/usr/local/bin/knobel-manager-deploy`
-      (`docker compose pull` + `up -d --wait` in `/srv/knobel-manager`)
-    - Server-side files live in `deploy/`; setup, TLS, backups and rollback are documented in `DEPLOYMENT.md`
-    - Tracked via GitHub Environments (production)
+3. **Deploy** - Only from `main`, tracked via GitHub Environments (production):
+    - Runs `ansible-playbook deploy/site.yml` against the VPS as `root`. The playbook provisions the whole
+      host (Docker, swap, ufw, sshd, the admin account, unattended upgrades, backups,
+      `/srv/knobel-manager` files) and ends with `docker compose up -d --wait`, so the server never drifts
+      from the repo
+    - `deploy/site.yml` is the source of truth for server state; `DEPLOYMENT.md` covers only what it cannot
+      express (DNS, TLS reasoning, secret handling, manual operations)
 
 **On Pull Requests:** Only validation, lint, and test jobs run (build/deploy are skipped)
 
@@ -410,8 +412,16 @@ curl https://api.knobel-manager.de/health/ready
 
 ### Required GitHub Secrets & Variables
 
-- **Secret:** `VPS_HOST` - server IP or hostname
-- **Secret:** `VPS_SSH_KEY` - private key for the `deploy` user on the VPS
+- **Variables:** `VPS_HOST` (server IP or hostname), `VPS_HOST_KEY` (`ssh-keyscan` line, pinned into
+  `known_hosts`), `ACME_EMAIL` (Let's Encrypt contact address)
+- **Secrets:** `VPS_SSH_KEY` (private key for `root`), `DB_PASSWORD` and `FIREBASE_SECRET` (rendered into
+  `/srv/knobel-manager/.env` by the playbook)
+
+`DB_PASSWORD` must match the password already stored in the `db-data` volume: Postgres ignores
+`POSTGRES_PASSWORD` on an initialised data directory, so changing the secret alone leaves the app unable
+to authenticate and the deploy red. `ALTER USER` first, then the secret — see `DEPLOYMENT.md`. It also
+has to survive Compose interpolation: `.env` is Compose's own variable source, so a `$` in the value is
+expanded away and `FIREBASE_SECRET` must be unwrapped base64 (`base64 -w0`).
 
 ---
 
