@@ -185,6 +185,8 @@ jobs:
   deploy:
     name: Deploy to Production
     needs: build
+    # build accepts a workflow_dispatch from any ref; running this playbook as root must not
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions: { }
     environment:

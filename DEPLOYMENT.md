@@ -192,7 +192,19 @@ The box was set up by hand before the playbook existed. To hand it over:
 1. Copy the live values out of `/srv/knobel-manager/.env` into the `ACME_EMAIL`, `DB_PASSWORD` and
    `FIREBASE_SECRET` GitHub secrets. `DB_PASSWORD` **must** be the one the data volume was initialised
    with, otherwise the app can no longer connect.
-2. Put the CI public key in `/root/.ssh/authorized_keys` and change `VPS_SSH_KEY` to the root key.
+2. Let root in. The box still carries `PermitRootLogin no` from the old runbook, and the playbook cannot
+   change that itself — it needs the login first:
+
+   ```bash
+   mkdir -p /root/.ssh && chmod 700 /root/.ssh
+   printf '%s\n' 'ssh-ed25519 AAAA... github-ci' >>/root/.ssh/authorized_keys
+   chmod 600 /root/.ssh/authorized_keys
+   sed -i 's/^PermitRootLogin no$/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config.d/hardening.conf
+   systemctl restart ssh
+   ```
+
+   Then set `VPS_SSH_KEY` to that key pair's private half. Verify from your machine before pushing:
+   `ssh -i <ci-key> root@<vps> true`.
 3. `rm /etc/cron.d/knobel-manager-backup` on the box. The playbook writes its own entry with an Ansible
    marker and would otherwise leave the hand-written line next to it, running the backup twice.
 4. Push. The playbook adopts the existing containers and volumes — the compose project name comes from the
