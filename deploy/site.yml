@@ -207,14 +207,31 @@
         dest: /usr/local/bin/knobel-manager-backup
         mode: "0755"
 
+    # written outright rather than through the cron module, which would keep any
+    # hand-made line in the file beside the one it manages
     - name: Nightly backup
-      ansible.builtin.cron:
-        name: knobel-manager-backup
-        cron_file: knobel-manager-backup
-        user: root
-        minute: "15"
-        hour: "3"
-        job: /usr/local/bin/knobel-manager-backup
+      ansible.builtin.copy:
+        dest: /etc/cron.d/knobel-manager-backup
+        mode: "0644"
+        content: |
+          15 3 * * * root /usr/local/bin/knobel-manager-backup
+
+    # the box was provisioned by hand before this playbook existed
+    - name: Files the old layout left behind
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/apt/sources.list.d/docker.list     # superseded by docker.sources
+        - /etc/ssh/sshd_config.d/hardening.conf   # superseded by 10-hardening.conf
+        - /usr/local/bin/knobel-manager-deploy    # the script the pinned CI key ran
+      notify: Restart sshd
+
+    - name: User the pinned CI key logged in as
+      ansible.builtin.user:
+        name: deploy
+        state: absent
+        remove: true
 
     - name: Pull and start stack
       ansible.builtin.command: docker compose up -d --wait --wait-timeout 180 --pull always --remove-orphans

@@ -194,42 +194,6 @@ ansible-playbook -i "<vps>," -u root deploy/site.yml -e image_tag=main-1a2b3c4
 This lasts until the next push to `main`, which redeploys the `main` tag. To make a rollback stick, revert
 the commit.
 
-## Migrating the existing VPS
-
-The box was set up by hand before the playbook existed. To hand it over:
-
-1. Copy the live values out of `/srv/knobel-manager/.env` into the `DB_PASSWORD` and `FIREBASE_SECRET`
-   secrets and the `ACME_EMAIL` variable, and check `DB_USER` and `DB_NAME` against `db_user`/`db_name` in the
-   playbook. All three DB values **must** match what the data volume was initialised with — the first
-   deploy rewrites `.env` and recreates the app container, so a mismatch is an outage, not a warning.
-2. Let root in. The box still carries `PermitRootLogin no` from the old runbook, and the playbook cannot
-   change that itself — it needs the login first:
-
-   ```bash
-   mkdir -p /root/.ssh && chmod 700 /root/.ssh
-   printf '%s\n' 'ssh-ed25519 AAAA... github-ci' >>/root/.ssh/authorized_keys
-   chmod 600 /root/.ssh/authorized_keys
-   sed -i 's/^PermitRootLogin no$/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config.d/hardening.conf
-   systemctl restart ssh
-   ```
-
-   Then set `VPS_SSH_KEY` to that key pair's private half. Verify from your machine before pushing:
-   `ssh -i <ci-key> root@<vps> true`.
-3. Remove the hand-made files the playbook now owns under different names:
-
-   ```bash
-   rm /etc/cron.d/knobel-manager-backup      # any whitespace drift from the Ansible-rendered line
-                                             # duplicates it, and two concurrent dumps share one .part file
-   rm /etc/apt/sources.list.d/docker.list    # replaced by docker.sources, else apt warns on every update
-   ```
-
-4. Push. The playbook adopts the existing containers and volumes — the compose project name comes from the
-   directory, which does not change, so `compose.yaml`, the `Caddyfile` and the data survive.
-5. Retire the old path: `userdel -r deploy`, `rm /usr/local/bin/knobel-manager-deploy` and
-   `rm /etc/ssh/sshd_config.d/hardening.conf` — the playbook writes `10-hardening.conf`, which wins on
-   precedence, but the old file lingers as drift. The playbook chowns `/srv/knobel-manager` to `root`, so
-   confirm with `ls -l` that nothing there is still owned by `deploy` before you delete the user.
-
 ## GitHub secrets and variables
 
 | Name              | Kind     | Value                                              |
