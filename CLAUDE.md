@@ -376,13 +376,13 @@ Single workflow runs on push to main with dependent jobs:
 2. **Build** - Triggers after all validations pass:
     - Builds multi-arch Docker image (amd64/arm64)
     - Pushes to GitHub Container Registry (`ghcr.io`)
-3. **Deploy** - Triggers after successful build:
+3. **Deploy** - Only from `main`, tracked via GitHub Environments (production):
     - Runs `ansible-playbook deploy/site.yml` against the VPS as `root`. The playbook provisions the whole
-      host (Docker, swap, ufw, sshd, backups, `/srv/knobel-manager` files) and ends with
-      `docker compose pull` + `up -d --wait`, so the server never drifts from the repo
-    - Server-side files live in `deploy/`; bootstrap, TLS, secrets, backups and rollback are documented in
-      `DEPLOYMENT.md`
-    - Tracked via GitHub Environments (production)
+      host (Docker, swap, ufw, sshd, the admin account, unattended upgrades, backups,
+      `/srv/knobel-manager` files) and ends with `docker compose up -d --wait`, so the server never drifts
+      from the repo
+    - `deploy/site.yml` is the source of truth for server state; `DEPLOYMENT.md` covers only what it cannot
+      express (DNS, TLS reasoning, secret handling, manual operations)
 
 **On Pull Requests:** Only validation, lint, and test jobs run (build/deploy are skipped)
 
@@ -412,10 +412,10 @@ curl https://api.knobel-manager.de/health/ready
 
 ### Required GitHub Secrets & Variables
 
-- **Variable:** `VPS_HOST` - server IP or hostname
-- **Secret:** `VPS_SSH_KEY` - private key for `root` on the VPS
-- **Variable:** `ACME_EMAIL` - Let's Encrypt contact address
-- **Secrets:** `DB_PASSWORD`, `FIREBASE_SECRET` - rendered into `/srv/knobel-manager/.env` by the playbook
+- **Variables:** `VPS_HOST` (server IP or hostname), `VPS_HOST_KEY` (`ssh-keyscan` line, pinned into
+  `known_hosts`), `ACME_EMAIL` (Let's Encrypt contact address)
+- **Secrets:** `VPS_SSH_KEY` (private key for `root`), `DB_PASSWORD` and `FIREBASE_SECRET` (rendered into
+  `/srv/knobel-manager/.env` by the playbook)
 
 ---
 
