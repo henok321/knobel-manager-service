@@ -1,7 +1,6 @@
 - name: knobel-manager-service on a single VPS
   hosts: all
   become: true
-  gather_facts: false
 
   vars:
     app_dir: /srv/knobel-manager
@@ -13,22 +12,6 @@
     acme_email: "{{ lookup('env', 'ACME_EMAIL') }}"
     db_password: "{{ lookup('env', 'DB_PASSWORD') }}"
     firebase_secret: "{{ lookup('env', 'FIREBASE_SECRET') }}"
-
-  pre_tasks:
-    - name: Bootstrap python for Ansible
-      ansible.builtin.raw: test -x /usr/bin/python3 || (apt-get update && apt-get install -y python3)
-      changed_when: false
-
-    - name: Gather facts
-      ansible.builtin.setup:
-
-    - name: Secrets are provided
-      ansible.builtin.assert:
-        that:
-          - acme_email | length > 0
-          - db_password | length > 0
-          - firebase_secret | length > 0
-        fail_msg: Export ACME_EMAIL, DB_PASSWORD and FIREBASE_SECRET before running the playbook
 
   handlers:
     - name: Restart sshd
@@ -45,6 +28,14 @@
       changed_when: true
 
   tasks:
+    - name: Secrets are provided
+      ansible.builtin.assert:
+        that:
+          - acme_email | length > 0
+          - db_password | length > 0
+          - firebase_secret | length > 0
+        fail_msg: Export ACME_EMAIL, DB_PASSWORD and FIREBASE_SECRET before running the playbook
+
     - name: Base packages
       ansible.builtin.apt:
         name:
@@ -143,14 +134,11 @@
         - { port: "443", proto: udp }
         - { port: "51820", proto: udp }
 
-    - name: Deny incoming by default
-      community.general.ufw:
-        direction: incoming
-        policy: deny
-
-    - name: Firewall enabled
+    - name: Firewall enabled, incoming denied
       community.general.ufw:
         state: enabled
+        policy: deny
+        direction: incoming
 
     - name: App directory
       ansible.builtin.file:
@@ -192,14 +180,8 @@
         hour: "3"
         job: /usr/local/bin/knobel-manager-backup
 
-    - name: Pull images
-      ansible.builtin.command: docker compose pull
-      args:
-        chdir: "{{ app_dir }}"
-      changed_when: true
-
-    - name: Start stack
-      ansible.builtin.command: docker compose up -d --wait
+    - name: Pull and start stack
+      ansible.builtin.command: docker compose up -d --wait --pull always
       args:
         chdir: "{{ app_dir }}"
       changed_when: true
