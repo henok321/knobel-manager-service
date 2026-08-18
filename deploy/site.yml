@@ -1,4 +1,4 @@
-- name: knobel-manager-service on a single VPS
+- name: Provision knobel-manager-service on a single VPS
   hosts: all
   become: true
 

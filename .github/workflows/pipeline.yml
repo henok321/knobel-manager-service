@@ -96,11 +96,6 @@ jobs:
         with:
           extra_args: --all-files
 
-      - name: Validate Ansible playbook
-        run: |
-          pipx install --include-deps ansible==14.2.0
-          ansible-playbook --syntax-check deploy/site.yml
-
   test:
     name: Run Tests
     runs-on: ubuntu-latest

@@ -56,6 +56,22 @@ repos:
     rev: v3.13.1-1
     hooks:
       - id: shfmt
+  - repo: https://github.com/ansible/ansible-lint
+    rev: v26.6.0
+    hooks:
+      - id: ansible-lint
+        # the bundle, not ansible-core: the playbook uses ansible.posix and community.general
+        additional_dependencies: [ "ansible==14.2.0" ]
+        always_run: false
+        files: ^deploy/site\.yml$
+        args: [ "deploy/site.yml" ]
+  - repo: local
+    hooks:
+      - id: caddy-fmt
+        name: caddy fmt
+        language: docker_image
+        entry: caddy:2-alpine caddy fmt --overwrite
+        files: ^deploy/Caddyfile$
   - repo: https://github.com/hadolint/hadolint
     rev: v2.15.1
     hooks:
