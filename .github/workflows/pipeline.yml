@@ -185,7 +185,9 @@ jobs:
   deploy:
     name: Deploy to Production
     needs: build
-    if: github.ref == 'refs/heads/main'
+    # skipChecks skips the lint job, the only place the playbook is linted and
+    # syntax-checked, and this job runs it against the host as root
+    if: github.ref == 'refs/heads/main' && github.event.inputs.skipChecks != 'true'
     runs-on: ubuntu-latest
     permissions: { }
     environment:

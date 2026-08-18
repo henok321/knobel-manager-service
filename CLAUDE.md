@@ -417,6 +417,12 @@ curl https://api.knobel-manager.de/health/ready
 - **Secrets:** `VPS_SSH_KEY` (private key for `root`), `DB_PASSWORD` and `FIREBASE_SECRET` (rendered into
   `/srv/knobel-manager/.env` by the playbook)
 
+`DB_PASSWORD` must match the password already stored in the `db-data` volume: Postgres ignores
+`POSTGRES_PASSWORD` on an initialised data directory, so changing the secret alone leaves the app unable
+to authenticate and the deploy red. `ALTER USER` first, then the secret — see `DEPLOYMENT.md`. It also
+has to survive Compose interpolation: `.env` is Compose's own variable source, so a `$` in the value is
+expanded away and `FIREBASE_SECRET` must be unwrapped base64 (`base64 -w0`).
+
 ---
 
 ## Code Review Standards
