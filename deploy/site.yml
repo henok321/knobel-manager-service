@@ -1,0 +1,204 @@
+- name: knobel-manager-service on a single VPS
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars:
+    app_dir: /srv/knobel-manager
+    domain: api.knobel-manager.de
+    db_user: knobel-manager
+    db_name: knobel-manager
+    image_tag: main
+    swap_size: 2G
+    acme_email: "{{ lookup('env', 'ACME_EMAIL') }}"
+    db_password: "{{ lookup('env', 'DB_PASSWORD') }}"
+    firebase_secret: "{{ lookup('env', 'FIREBASE_SECRET') }}"
+
+  pre_tasks:
+    - name: Bootstrap python for Ansible
+      ansible.builtin.raw: test -x /usr/bin/python3 || (apt-get update && apt-get install -y python3)
+      changed_when: false
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+    - name: Secrets are provided
+      ansible.builtin.assert:
+        that:
+          - acme_email | length > 0
+          - db_password | length > 0
+          - firebase_secret | length > 0
+        fail_msg: Export ACME_EMAIL, DB_PASSWORD and FIREBASE_SECRET before running the playbook
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
+
+    # up -d compares the mount spec, not the file behind it, so a changed Caddyfile
+    # needs an explicit restart
+    - name: Restart Caddy
+      ansible.builtin.command: docker compose restart caddy
+      args:
+        chdir: "{{ app_dir }}"
+      changed_when: true
+
+  tasks:
+    - name: Base packages
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - unattended-upgrades
+          - ufw
+          - python3-debian
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Docker apt repo
+      ansible.builtin.deb822_repository:
+        name: docker
+        types: deb
+        uris: https://download.docker.com/linux/debian
+        suites: "{{ ansible_distribution_release }}"
+        components: stable
+        signed_by: https://download.docker.com/linux/debian/gpg
+
+    - name: Docker engine
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        update_cache: true
+
+    - name: Unattended upgrades enabled
+      ansible.builtin.copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        mode: "0644"
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+
+    - name: Swap file
+      ansible.builtin.command: fallocate -l {{ swap_size }} /swapfile
+      args:
+        creates: /swapfile
+      register: swapfile
+
+    - name: Swap file permissions
+      ansible.builtin.file:
+        path: /swapfile
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Format swap file
+      ansible.builtin.command: mkswap /swapfile
+      when: swapfile is changed
+      changed_when: true
+
+    - name: Swap file in fstab
+      ansible.posix.mount:
+        path: none
+        src: /swapfile
+        fstype: swap
+        opts: sw
+        state: present
+
+    - name: Activate swap
+      ansible.builtin.command: swapon -a
+      when: swapfile is changed
+      changed_when: true
+
+    - name: Swappiness
+      ansible.posix.sysctl:
+        name: vm.swappiness
+        value: "10"
+        sysctl_file: /etc/sysctl.d/99-knobel-manager.conf
+
+    # CI authenticates as root over SSH, so root stays permitted — key-only
+    - name: SSH hardening
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/hardening.conf
+        mode: "0644"
+        content: |
+          PermitRootLogin prohibit-password
+          PasswordAuthentication no
+          KbdInteractiveAuthentication no
+      notify: Restart sshd
+
+    - name: Firewall rules
+      community.general.ufw:
+        rule: allow
+        port: "{{ item.port }}"
+        proto: "{{ item.proto }}"
+      loop:
+        - { port: "22", proto: tcp }
+        - { port: "80", proto: tcp }
+        - { port: "443", proto: tcp }
+        - { port: "443", proto: udp }
+        - { port: "51820", proto: udp }
+
+    - name: Deny incoming by default
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Firewall enabled
+      community.general.ufw:
+        state: enabled
+
+    - name: App directory
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Compose file
+      ansible.builtin.copy:
+        src: compose.yaml
+        dest: "{{ app_dir }}/compose.yaml"
+        mode: "0644"
+
+    - name: Caddyfile
+      ansible.builtin.copy:
+        src: Caddyfile
+        dest: "{{ app_dir }}/Caddyfile"
+        mode: "0644"
+      notify: Restart Caddy
+
+    - name: Environment file
+      ansible.builtin.template:
+        src: env.j2
+        dest: "{{ app_dir }}/.env"
+        mode: "0600"
+
+    - name: Backup script
+      ansible.builtin.copy:
+        src: backup.sh
+        dest: /usr/local/bin/knobel-manager-backup
+        mode: "0755"
+
+    - name: Nightly backup
+      ansible.builtin.cron:
+        name: knobel-manager-backup
+        cron_file: knobel-manager-backup
+        user: root
+        minute: "15"
+        hour: "3"
+        job: /usr/local/bin/knobel-manager-backup
+
+    - name: Pull images
+      ansible.builtin.command: docker compose pull
+      args:
+        chdir: "{{ app_dir }}"
+      changed_when: true
+
+    - name: Start stack
+      ansible.builtin.command: docker compose up -d --wait
+      args:
+        chdir: "{{ app_dir }}"
+      changed_when: true

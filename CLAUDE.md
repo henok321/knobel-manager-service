@@ -377,9 +377,11 @@ Single workflow runs on push to main with dependent jobs:
     - Builds multi-arch Docker image (amd64/arm64)
     - Pushes to GitHub Container Registry (`ghcr.io`)
 3. **Deploy** - Triggers after successful build:
-    - SSHes into the VPS as `deploy`, whose key is pinned to `/usr/local/bin/knobel-manager-deploy`
-      (`docker compose pull` + `up -d --wait` in `/srv/knobel-manager`)
-    - Server-side files live in `deploy/`; setup, TLS, backups and rollback are documented in `DEPLOYMENT.md`
+    - Runs `ansible-playbook deploy/site.yml` against the VPS as `root`. The playbook provisions the whole
+      host (Docker, swap, ufw, sshd, backups, `/srv/knobel-manager` files) and ends with
+      `docker compose pull` + `up -d --wait`, so the server never drifts from the repo
+    - Server-side files live in `deploy/`; bootstrap, TLS, secrets, backups and rollback are documented in
+      `DEPLOYMENT.md`
     - Tracked via GitHub Environments (production)
 
 **On Pull Requests:** Only validation, lint, and test jobs run (build/deploy are skipped)
@@ -410,8 +412,10 @@ curl https://api.knobel-manager.de/health/ready
 
 ### Required GitHub Secrets & Variables
 
-- **Secret:** `VPS_HOST` - server IP or hostname
-- **Secret:** `VPS_SSH_KEY` - private key for the `deploy` user on the VPS
+- **Variable:** `VPS_HOST` - server IP or hostname
+- **Secret:** `VPS_SSH_KEY` - private key for `root` on the VPS
+- **Secrets:** `ACME_EMAIL`, `DB_PASSWORD`, `FIREBASE_SECRET` - rendered into `/srv/knobel-manager/.env`
+  by the playbook
 
 ---
 

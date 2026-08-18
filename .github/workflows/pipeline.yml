@@ -194,10 +194,20 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: Pull and restart on VPS
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Install Ansible
+        run: pipx install --include-deps ansible
+
+      - name: Provision and deploy
         env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
           KEY: ${{ secrets.VPS_SSH_KEY }}
           HOST: ${{ vars.VPS_HOST }}
+          ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
         run: |
           mkdir -p ~/.ssh && printf '%s\n' "$KEY" >~/.ssh/id && chmod 600 ~/.ssh/id
-          ssh -i ~/.ssh/id -o StrictHostKeyChecking=accept-new "deploy@$HOST" true
+          ansible-playbook -i "$HOST," -u root --private-key ~/.ssh/id deploy/site.yml
