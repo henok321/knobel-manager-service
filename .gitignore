@@ -31,3 +31,6 @@ firebaseServiceAccount.json
 # claude config
 !CLAUDE.md
 /.claude
+
+# ansible collection cache
+.ansible/

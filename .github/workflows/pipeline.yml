@@ -96,6 +96,11 @@ jobs:
         with:
           extra_args: --all-files
 
+      - name: Validate Ansible playbook
+        run: |
+          pipx install --include-deps ansible==14.2.0
+          ansible-playbook --syntax-check deploy/site.yml
+
   test:
     name: Run Tests
     runs-on: ubuntu-latest
@@ -199,8 +204,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      # pinned: this runs as root on production, and Renovate has no pip manager enabled
       - name: Install Ansible
-        run: pipx install --include-deps ansible
+        run: pipx install --include-deps ansible==14.2.0
 
       - name: Provision and deploy
         env:
@@ -211,5 +217,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
         run: |
+          # an empty inventory makes ansible-playbook exit 0 without touching anything
+          [ -n "$HOST" ] || { echo "VPS_HOST is not set"; exit 1; }
           mkdir -p ~/.ssh && printf '%s\n' "$KEY" >~/.ssh/id && chmod 600 ~/.ssh/id
           ansible-playbook -i "$HOST," -u root --private-key ~/.ssh/id deploy/site.yml
