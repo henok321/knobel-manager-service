@@ -3,6 +3,7 @@
   become: true
 
   vars:
+    ansible_python_interpreter: /usr/bin/python3
     app_dir: /srv/knobel-manager
     domain: api.knobel-manager.de
     db_user: knobel-manager
@@ -59,7 +60,7 @@
         name: docker
         types: deb
         uris: https://download.docker.com/linux/debian
-        suites: "{{ ansible_distribution_release }}"
+        suites: "{{ ansible_facts['distribution_release'] }}"
         components: stable
         signed_by: https://download.docker.com/linux/debian/gpg
 
@@ -113,7 +114,7 @@
     # run would otherwise leave an unformatted swapfile in fstab forever
     - name: Format swap file
       ansible.builtin.command: mkswap /swapfile
-      when: ansible_swaptotal_mb | int == 0
+      when: ansible_facts['swaptotal_mb'] | int == 0
       changed_when: true
 
     - name: Swap file in fstab
@@ -126,7 +127,7 @@
 
     - name: Activate swap
       ansible.builtin.command: swapon -a
-      when: ansible_swaptotal_mb | int == 0
+      when: ansible_facts['swaptotal_mb'] | int == 0
       changed_when: true
 
     - name: Swappiness
