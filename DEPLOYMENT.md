@@ -12,7 +12,7 @@ reasoning, the parts that live outside this repo, and the few things you still d
 
 1. Debian 13 image with a root SSH key installed — the provider's "SSH key" field at create time
 2. DNS `A` record pointing at it (see [DNS](#dns-inwx))
-3. GitHub: the `VPS_HOST` variable and the secrets in [the table below](#github-secrets-and-variables)
+3. GitHub: the variables and secrets in [the table below](#github-secrets-and-variables)
 4. Push to `main`
 
 Database migrations run at app startup (goose), so there is no migration step. The playbook is idempotent
@@ -78,8 +78,9 @@ behind the proxy the app speaks plain HTTP, so that condition is never true in p
 
 ## Secrets
 
-Three secrets live in GitHub (`ACME_EMAIL`, `DB_PASSWORD`, `FIREBASE_SECRET`); the playbook renders them
-into `/srv/knobel-manager/.env` from `deploy/env.j2`, mode `600`. Compose reads that file for interpolation
+`DB_PASSWORD` and `FIREBASE_SECRET` are GitHub secrets, `ACME_EMAIL` a plain variable — it is a contact
+address, not a credential. The playbook renders all three into `/srv/knobel-manager/.env` from
+`deploy/env.j2`, mode `600`. Compose reads that file for interpolation
 (`DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DOMAIN`, `ACME_EMAIL`) and hands it to the app as `env_file`.
 
 Rotate by changing the GitHub secret and re-running the pipeline. Editing `.env` on the VPS is pointless —
@@ -197,8 +198,8 @@ the commit.
 
 The box was set up by hand before the playbook existed. To hand it over:
 
-1. Copy the live values out of `/srv/knobel-manager/.env` into the `ACME_EMAIL`, `DB_PASSWORD` and
-   `FIREBASE_SECRET` GitHub secrets, and check `DB_USER` and `DB_NAME` against `db_user`/`db_name` in the
+1. Copy the live values out of `/srv/knobel-manager/.env` into the `DB_PASSWORD` and `FIREBASE_SECRET`
+   secrets and the `ACME_EMAIL` variable, and check `DB_USER` and `DB_NAME` against `db_user`/`db_name` in the
    playbook. All three DB values **must** match what the data volume was initialised with — the first
    deploy rewrites `.env` and recreates the app container, so a mismatch is an outage, not a warning.
 2. Let root in. The box still carries `PermitRootLogin no` from the old runbook, and the playbook cannot
@@ -235,6 +236,6 @@ The box was set up by hand before the playbook existed. To hand it over:
 |-------------------|----------|----------------------------------------------------|
 | `VPS_HOST`        | variable | server IP or hostname                              |
 | `VPS_SSH_KEY`     | secret   | private key for `root` on the VPS                  |
-| `ACME_EMAIL`      | secret   | contact address for Let's Encrypt                  |
+| `ACME_EMAIL`      | variable | contact address for Let's Encrypt                  |
 | `DB_PASSWORD`     | secret   | Postgres password (must match the existing volume) |
 | `FIREBASE_SECRET` | secret   | base64-encoded Firebase service account JSON       |

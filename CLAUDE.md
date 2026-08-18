@@ -414,8 +414,8 @@ curl https://api.knobel-manager.de/health/ready
 
 - **Variable:** `VPS_HOST` - server IP or hostname
 - **Secret:** `VPS_SSH_KEY` - private key for `root` on the VPS
-- **Secrets:** `ACME_EMAIL`, `DB_PASSWORD`, `FIREBASE_SECRET` - rendered into `/srv/knobel-manager/.env`
-  by the playbook
+- **Variable:** `ACME_EMAIL` - Let's Encrypt contact address
+- **Secrets:** `DB_PASSWORD`, `FIREBASE_SECRET` - rendered into `/srv/knobel-manager/.env` by the playbook
 
 ---
 
