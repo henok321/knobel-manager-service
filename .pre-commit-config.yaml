@@ -57,7 +57,7 @@ repos:
     hooks:
       - id: shfmt
   - repo: https://github.com/ansible/ansible-lint
-    rev: v26.6.0
+    rev: v26.8.0
     hooks:
       - id: ansible-lint
         # the bundle, not ansible-core: the playbook uses ansible.posix and community.general
