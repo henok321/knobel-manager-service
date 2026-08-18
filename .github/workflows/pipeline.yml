@@ -208,7 +208,7 @@ jobs:
           ANSIBLE_HOST_KEY_CHECKING: "False"
           KEY: ${{ secrets.VPS_SSH_KEY }}
           HOST: ${{ vars.VPS_HOST }}
-          ACME_EMAIL: ${{ secrets.ACME_EMAIL }}
+          ACME_EMAIL: ${{ vars.ACME_EMAIL }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
         run: |
