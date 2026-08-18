@@ -82,6 +82,7 @@
           APT::Periodic::Update-Package-Lists "1";
           APT::Periodic::Unattended-Upgrade "1";
 
+    # created once: raising swap_size later does not resize an existing /swapfile
     - name: Swap file
       ansible.builtin.command: fallocate -l {{ swap_size }} /swapfile
       args:

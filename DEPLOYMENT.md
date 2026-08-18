@@ -1,11 +1,37 @@
 # Deployment
 
-Single small VPS (2 GB RAM, Debian 13), Docker Compose, no Coolify. CI builds the image and pushes it to
-`ghcr.io`, then runs the Ansible playbook in [`deploy/`](deploy) against the VPS. The playbook is the whole
-server configuration — the box is not edited by hand.
+Single small VPS (2 GB RAM, Debian 13), Docker Compose. CI builds the image, pushes it to `ghcr.io`, then
+runs [`deploy/site.yml`](deploy/site.yml) against the server as `root`.
 
-Everything server-side lives in [`deploy/`](deploy): `site.yml` (the playbook), `compose.yaml`, `Caddyfile`,
-`env.j2` (the `.env` template) and `backup.sh`.
+That playbook is the server documentation. Docker, swap, the firewall, sshd, unattended upgrades, the files
+in `/srv/knobel-manager`, the backup cron and the container update itself are all tasks in it, and they run
+on every deploy — so this file does not repeat them. What is left here is what the code cannot say: the
+reasoning, the parts that live outside this repo, and the few things you still do by hand.
+
+## Bootstrap a new VPS
+
+1. Debian 13 image with a root SSH key installed — the provider's "SSH key" field at create time
+2. DNS `A` record pointing at it (see [DNS](#dns-inwx))
+3. GitHub: the `VPS_HOST` variable and the secrets in [the table below](#github-secrets-and-variables)
+4. Push to `main`
+
+Database migrations run at app startup (goose), so there is no migration step. The playbook is idempotent
+and has nothing deploy-specific in it, so running it yourself is safe:
+
+```bash
+pipx install --include-deps ansible
+export ACME_EMAIL=... DB_PASSWORD=... FIREBASE_SECRET=...
+ansible-playbook -i "<vps>," -u root deploy/site.yml
+```
+
+Domain, DB user and name, swap size and image tag are `vars:` at the top of the playbook; override one for a
+single run with `-e`, e.g. `-e image_tag=main-1a2b3c4`.
+
+CI authenticates as `root`: configuring a host cannot be pinned to a forced `command=` in `authorized_keys`
+the way the old restart-only deploy key was. So use a dedicated CI key pair
+(`ssh-keygen -t ed25519 -C github-ci`) — revoking it is then one line and your own admin key is unaffected —
+and treat push access to `main` as root access to the server. Protect the branch and the `production`
+environment, not just the key.
 
 ## DNS (INWX)
 
@@ -36,72 +62,19 @@ fails.
 
 ## TLS / Let's Encrypt
 
-Caddy handles it. On first start it requests a certificate from Let's Encrypt via the HTTP-01 challenge, then
-renews it automatically (~30 days before expiry). No certbot, no cron, no renewal hook.
-
-Requirements:
-
-- `domain` in the playbook resolves (A/AAAA record) to the VPS
-- ports 80 **and** 443 reachable from the internet — port 80 is the ACME challenge, not just a redirect
-- the `ACME_EMAIL` secret set, so Let's Encrypt can warn about expiry problems
+Caddy handles it: HTTP-01 challenge on first start, renewal ~30 days before expiry. No certbot, no cron, no
+renewal hook. It needs the domain to resolve to the VPS and ports 80 **and** 443 reachable from the internet
+— port 80 is the challenge, not just the redirect.
 
 Certificates live in the `caddy-data` volume. Don't delete that volume casually — Let's Encrypt rate-limits
 new certs (5 per domain per week). Backing it up is optional; a lost volume just means a re-issue.
 
-HTTP→HTTPS redirect and HTTP/2 are Caddy defaults, nothing to configure. HTTP/3 comes along for free
-(hence `443/udp` in the compose ports and the firewall); to serve strictly HTTP/1.1 + HTTP/2, add
+HTTP→HTTPS redirect and HTTP/2 are Caddy defaults, nothing to configure. HTTP/3 comes along for free (hence
+`443/udp` in the compose ports and the firewall); to serve strictly HTTP/1.1 + HTTP/2, add
 `servers { protocols h1 h2 }` to the global block in the `Caddyfile`.
 
 HSTS is set in the `Caddyfile`, not by the app: `SecurityHeaders` only emits it when `r.TLS != nil`, and
 behind the proxy the app speaks plain HTTP, so that condition is never true in production.
-
-## Provisioning
-
-`deploy/site.yml` is the server: Docker from the official apt repo, swap, firewall, sshd hardening,
-unattended upgrades, the files in `/srv/knobel-manager`, the backup cron — and the container update itself.
-CI runs it on every deploy, so the VPS cannot drift from the repo: anything changed by hand on the box is
-put back on the next push.
-
-It is idempotent and has no deploy-specific step, so running it yourself is safe:
-
-```bash
-pipx install --include-deps ansible
-export ACME_EMAIL=... DB_PASSWORD=... FIREBASE_SECRET=...
-ansible-playbook -i "<vps>," -u root deploy/site.yml
-```
-
-Non-secret settings (domain, DB user and name, swap size, image tag) are `vars:` at the top of the
-playbook; override one for a single run with `-e`, e.g. `-e image_tag=main-1a2b3c4`.
-
-### Bootstrap a new VPS
-
-1. Debian 13 image with a root SSH key installed — the provider's "SSH key" field at create time
-2. DNS `A` record pointing at it (see [DNS](#dns-inwx))
-3. GitHub: `VPS_HOST` variable plus the `VPS_SSH_KEY`, `ACME_EMAIL`, `DB_PASSWORD` and `FIREBASE_SECRET`
-   secrets
-4. Push to `main`
-
-That is the complete manual part. Database migrations run at app startup (goose), so there is no separate
-migration step.
-
-## SSH access
-
-CI authenticates as `root`, because configuring a host is not something that can be pinned to one command.
-The old `deploy` user with a forced `command=` in `authorized_keys` is gone, and with it the guarantee that
-a stolen CI key could only restart containers. What replaces it:
-
-- a dedicated key pair for CI (`ssh-keygen -t ed25519 -C github-ci`), private half in `VPS_SSH_KEY`, public
-  half in `/root/.ssh/authorized_keys` — revoking CI is then one line, and your own admin key is unaffected
-- branch protection on `main` and the `production` GitHub environment, since push access is now root access
-
-Key-only auth is what makes the login name itself uninteresting to an attacker. The playbook writes
-`/etc/ssh/sshd_config.d/hardening.conf`:
-
-```text
-PermitRootLogin prohibit-password
-PasswordAuthentication no
-KbdInteractiveAuthentication no
-```
 
 ## Secrets
 
@@ -142,19 +115,16 @@ revoke it under Firebase Console → Project settings → Service accounts, issu
 No Docker secrets, Vault or SOPS here: the app reads plain env vars, so a secrets store would mean code
 changes plus another moving part on a 2 GB box.
 
-## Firewall
-
-The playbook enables ufw with a default-deny inbound policy and opens `22/tcp`, `80/tcp`, `443/tcp`,
-`443/udp` (HTTP/3) and `51820/udp` (WireGuard).
-
-Metrics (9090) are not published at all — only reachable inside the compose network, via
-`docker compose exec app curl localhost:9090/metrics`. Postgres is published to `127.0.0.1:15432` for the
-SSH tunnel below.
+## Ports
 
 **ufw does not protect published container ports.** Docker writes its own iptables rules in the `DOCKER`
 chain, which are evaluated before ufw's, so a port published as `"5432:5432"` is open to the internet even
 with `ufw deny` in place. Binding to `127.0.0.1:` is what keeps it private — never drop that prefix from a
 `ports:` entry and assume the firewall covers you.
+
+Metrics (9090) are therefore not published at all — only reachable inside the compose network, via
+`docker compose exec app curl localhost:9090/metrics`. Postgres is published to `127.0.0.1:15432` for the
+SSH tunnel below.
 
 ## Database access
 
@@ -188,18 +158,10 @@ ssh -t <admin>@<vps> 'cd /srv/knobel-manager && docker compose exec db sh -c "ps
 
 Use your own admin login for both, not the CI key — that one is `root`'s and should stay in GitHub.
 
-## Swap
-
-2 GB RAM with no swap kills the container on the first spike, so the playbook creates `/swapfile`
-(`swap_size`, default 2G), adds the `fstab` entry and sets `vm.swappiness=10` in
-`/etc/sysctl.d/99-knobel-manager.conf`. It is created once; changing `swap_size` later does not resize an
-existing file.
-
 ## Backups
 
-The playbook installs `deploy/backup.sh` as `/usr/local/bin/knobel-manager-backup` and a `03:15` cron
-entry. It keeps 7 daily dumps in `/var/backups/knobel-manager`. A backup on the same disk is not a backup —
-rsync that directory somewhere else. Restore:
+Nightly dumps in `/var/backups/knobel-manager`, 7 kept. A backup on the same disk is not a backup — rsync
+that directory somewhere else. Restore:
 
 ```bash
 cd /srv/knobel-manager
@@ -207,12 +169,11 @@ gunzip -c /var/backups/knobel-manager/knobel-manager-2026-08-17.sql.gz \
   | docker compose exec -T db sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
 ```
 
-## Host updates
+## Upgrades
 
-`unattended-upgrades` is installed and enabled by the playbook (`/etc/apt/apt.conf.d/20auto-upgrades`).
-Container images are updated by Renovate plus the pipeline. Postgres major bumps in `deploy/compose.yaml`
-are excluded from that: the new major refuses to start on the old data directory, so it needs a dump,
-restore and volume swap, done by hand.
+Host packages come from `unattended-upgrades`, container images from Renovate plus the pipeline. Postgres
+majors in `deploy/compose.yaml` are excluded from Renovate: the new major refuses to start on the old data
+directory, so it needs a dump, restore and volume swap, done by hand.
 
 ## Rollback
 
@@ -223,16 +184,6 @@ ansible-playbook -i "<vps>," -u root deploy/site.yml -e image_tag=main-1a2b3c4
 
 This lasts until the next push to `main`, which redeploys the `main` tag. To make a rollback stick, revert
 the commit.
-
-## GitHub secrets and variables
-
-| Name              | Kind     | Value                                              |
-|-------------------|----------|----------------------------------------------------|
-| `VPS_HOST`        | variable | server IP or hostname                              |
-| `VPS_SSH_KEY`     | secret   | private key for `root` on the VPS                  |
-| `ACME_EMAIL`      | secret   | contact address for Let's Encrypt                  |
-| `DB_PASSWORD`     | secret   | Postgres password (must match the existing volume) |
-| `FIREBASE_SECRET` | secret   | base64-encoded Firebase service account JSON       |
 
 ## Migrating the existing VPS
 
@@ -247,3 +198,13 @@ The box was set up by hand before the playbook existed. To hand it over:
 4. Push. The playbook adopts the existing containers and volumes — the compose project name comes from the
    directory, which does not change, so `compose.yaml`, the `Caddyfile` and the data survive.
 5. Retire the old path: `userdel -r deploy` and `rm /usr/local/bin/knobel-manager-deploy`.
+
+## GitHub secrets and variables
+
+| Name              | Kind     | Value                                              |
+|-------------------|----------|----------------------------------------------------|
+| `VPS_HOST`        | variable | server IP or hostname                              |
+| `VPS_SSH_KEY`     | secret   | private key for `root` on the VPS                  |
+| `ACME_EMAIL`      | secret   | contact address for Let's Encrypt                  |
+| `DB_PASSWORD`     | secret   | Postgres password (must match the existing volume) |
+| `FIREBASE_SECRET` | secret   | base64-encoded Firebase service account JSON       |
