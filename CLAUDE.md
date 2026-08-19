@@ -377,12 +377,14 @@ Single workflow runs on push to main with dependent jobs:
     - Builds multi-arch Docker image (amd64/arm64)
     - Pushes to GitHub Container Registry (`ghcr.io`)
 3. **Deploy** - Only from `main`, tracked via GitHub Environments (production):
-    - Runs `ansible-playbook deploy/site.yml` against the VPS as `root`. The playbook provisions the whole
-      host (Docker, swap, ufw, sshd, the admin account, unattended upgrades, backups,
-      `/srv/knobel-manager` files) and ends with `docker compose up -d --wait`, so the server never drifts
-      from the repo
-    - `deploy/site.yml` is the source of truth for server state; `DEPLOYMENT.md` covers only what it cannot
-      express (DNS, TLS reasoning, secret handling, manual operations)
+    - Runs `ansible-playbook deploy/deploy.yml` against the VPS as `root`. It writes
+      `/srv/knobel-manager/{compose.yaml,.env}` plus `/srv/edge/sites/knobel-manager.caddy`, then
+      `docker compose up -d --wait`, so the server never drifts from the repo
+    - The **host** is not this repo's job. Docker, firewall, swap, SSH, backups and the shared Caddy
+      come from [henok321/homelab](https://github.com/henok321/homelab); `deploy.yml` asserts
+      `/srv/edge` exists and refuses to run otherwise
+    - `deploy/deploy.yml` is the source of truth for this service's server state; `DEPLOYMENT.md`
+      covers only what it cannot express (routing contract, secret handling, manual operations)
 
 **On Pull Requests:** Only validation, lint, and test jobs run (build/deploy are skipped)
 
@@ -413,9 +415,11 @@ curl https://api.knobel-manager.de/health/ready
 ### Required GitHub Secrets & Variables
 
 - **Variables:** `VPS_HOST` (server IP or hostname), `VPS_HOST_KEY` (`ssh-keyscan` line, pinned into
-  `known_hosts`), `ACME_EMAIL` (Let's Encrypt contact address)
+  `known_hosts`)
 - **Secrets:** `VPS_SSH_KEY` (private key for `root`), `DB_PASSWORD` and `FIREBASE_SECRET` (rendered into
   `/srv/knobel-manager/.env` by the playbook)
+
+`ACME_EMAIL` moved to the homelab repo along with Caddy.
 
 `DB_PASSWORD` must match the password already stored in the `db-data` volume: Postgres ignores
 `POSTGRES_PASSWORD` on an initialised data directory, so changing the secret alone leaves the app unable

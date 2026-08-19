@@ -1,13 +1,9 @@
-{
-	email {$ACME_EMAIL}
-}
-
-{$DOMAIN} {
-	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+api.knobel-manager.de {
+	import common
 
 	# health_uri makes the app's graceful drain effective: Caddy stops routing to a
 	# draining container instead of 502ing until the replacement is healthy
-	reverse_proxy app:8080 {
+	reverse_proxy knobel-manager:8080 {
 		health_uri /health/ready
 		health_interval 5s
 		health_timeout 2s

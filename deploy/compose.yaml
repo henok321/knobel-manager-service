@@ -32,21 +32,16 @@ services:
       timeout: 3s
       retries: 6
       start_period: 20s
-
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    environment:
-      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
-      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data
+    networks:
+      # db has no networks key, so it stays on default and is unreachable from edge
+      default:
+      edge:
+        # what the Caddyfile addresses: unique across the box, unlike "app"
+        aliases: [ knobel-manager ]
 
 volumes:
   db-data:
-  caddy-data:
+
+networks:
+  edge:
+    external: true

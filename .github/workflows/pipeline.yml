@@ -208,7 +208,6 @@ jobs:
           KEY: ${{ secrets.VPS_SSH_KEY }}
           HOST: ${{ vars.VPS_HOST }}
           HOST_KEY: ${{ vars.VPS_HOST_KEY }}
-          ACME_EMAIL: ${{ vars.ACME_EMAIL }}
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           FIREBASE_SECRET: ${{ secrets.FIREBASE_SECRET }}
         run: |
@@ -218,4 +217,4 @@ jobs:
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           printf '%s\n' "$KEY" >~/.ssh/id && chmod 600 ~/.ssh/id
           printf '%s\n' "$HOST_KEY" >~/.ssh/known_hosts
-          ansible-playbook -i "$HOST," -u root --private-key ~/.ssh/id deploy/site.yml
+          ansible-playbook -i "$HOST," -u root --private-key ~/.ssh/id deploy/deploy.yml

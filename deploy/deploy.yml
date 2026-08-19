@@ -1,0 +1,112 @@
+- name: Deploy knobel-manager-service
+  hosts: all
+  become: true
+  # a notified handler is discarded when a later task fails, and the idempotent copy
+  # that notified it never notifies again
+  force_handlers: true
+
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+    service_name: knobel-manager
+    app_dir: /srv/{{ service_name }}
+    edge_dir: /srv/edge
+    db_user: knobel-manager
+    db_name: knobel-manager
+    image_tag: main
+    db_password: "{{ lookup('env', 'DB_PASSWORD') }}"
+    firebase_secret: "{{ lookup('env', 'FIREBASE_SECRET') }}"
+
+  handlers:
+    # up -d compares the mount spec, not the file behind it, so a changed site file needs
+    # an explicit reload. Caddy keeps the running config if the new one is invalid, so a
+    # broken snippet here cannot take the other services off the air
+    - name: Reload Caddy
+      ansible.builtin.command: docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+      args:
+        chdir: "{{ edge_dir }}"
+      changed_when: true
+
+  tasks:
+    - name: Secrets are provided
+      ansible.builtin.assert:
+        that:
+          - db_password | length > 0
+          - firebase_secret | length > 0
+          - image_tag | length > 0
+        fail_msg: Export DB_PASSWORD and FIREBASE_SECRET before running the playbook
+
+    # .env is Compose's interpolation source as well as the app's env_file, and it eats
+    # more than the $ it is famous for: a leading " swallows the rest of the file, " #"
+    # truncates, a wrapped value loses everything after the first line. All silently, with
+    # the correct value still readable in the file on the box — so whitelist instead
+    - name: Secrets survive Compose interpolation
+      ansible.builtin.assert:
+        that:
+          - db_password is match('^[A-Za-z0-9_.:@+~-]+$')
+          - "'\n' not in firebase_secret | trim"
+        fail_msg: >-
+          DB_PASSWORD must be letters, digits or _.:@+~- and FIREBASE_SECRET must be
+          unwrapped base64 (pipe it through `base64 -w0` or `tr -d '\n'`)
+
+    - name: Edge stack
+      ansible.builtin.stat:
+        path: "{{ edge_dir }}/compose.yaml"
+      register: edge_stack
+
+    # the host, the edge network and Caddy come from the homelab playbook; without it there
+    # is nothing to attach to and the failure downstream would be an opaque compose error
+    - name: Host is provisioned
+      ansible.builtin.assert:
+        that: edge_stack.stat.exists
+        fail_msg: >-
+          {{ edge_dir }} is missing — run https://github.com/henok321/homelab
+          against this host first
+
+    - name: App directory
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Compose file
+      ansible.builtin.copy:
+        src: compose.yaml
+        dest: "{{ app_dir }}/compose.yaml"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Environment file
+      ansible.builtin.template:
+        src: env.j2
+        dest: "{{ app_dir }}/.env"
+        owner: root
+        # Compose reads .env before anything else, so the admin needs it too; that group is
+        # root-equivalent through the socket anyway
+        group: docker
+        mode: "0640"
+        backup: true
+      no_log: true
+
+    - name: Caddy site
+      ansible.builtin.copy:
+        src: site.caddy
+        dest: "{{ edge_dir }}/sites/{{ service_name }}.caddy"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Reload Caddy
+
+    # this stack terminated its own TLS before the split
+    - name: Caddyfile the old layout left behind
+      ansible.builtin.file:
+        path: "{{ app_dir }}/Caddyfile"
+        state: absent
+
+    - name: Pull and start stack
+      ansible.builtin.command: docker compose up -d --wait --wait-timeout 180 --pull always --remove-orphans
+      args:
+        chdir: "{{ app_dir }}"
+      changed_when: true
