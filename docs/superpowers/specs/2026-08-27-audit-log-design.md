@@ -1,7 +1,8 @@
 # Audit Log Design
 
-Per-game audit trail recording who created, changed, or deleted something, plus a read endpoint
-for the frontend.
+Per-game audit trail recording who created, changed, or deleted something, a read endpoint, and an
+Audit tab in the game view. Spans two repos: `knobel-manager-service` (everything up to "Module
+layout") and `knobel-manager-app` (the "Frontend" section).
 
 ## Goal
 
@@ -315,6 +316,81 @@ interfaces:
 `*game.GamesService`: the ownership check for the read endpoint happens in `AuditHandler`, which
 holds `*game.GamesService` the way `TablesHandler` does.
 
+## Frontend (knobel-manager-app)
+
+A fifth tab in the game detail view, rendering the audit log as a table.
+
+### Ordering dependency — read this first
+
+`src/store/openapi-config.cjs` pulls the schema from
+`https://raw.githubusercontent.com/henok321/knobel-manager-service/main/openapi/openapi.yaml` — the
+service repo's **main branch**. So `pnpm api:gen` cannot produce `useGetAuditLogQuery` until the
+backend spec change is merged to `main`. CI's `validate-client` job re-runs codegen against that same
+URL and fails on any diff, so the frontend branch stays red until the backend lands. This is a fact
+of the setup, not a choice: **backend merges first, frontend second.**
+
+### Cache wiring — no new tag type
+
+`baseApi.ts` declares exactly two tag types, `Game` and `Tables`. The audit log needs neither a third
+one nor a single edit to any existing mutation. `getAuditLog` *provides* both of the game's tags:
+
+```ts
+getAuditLog: {
+  providesTags: (_result, _error, arg) => [
+    { type: 'Game', id: arg.gameId },
+    { type: 'Tables', id: gameTablesTag(arg.gameId) },
+  ],
+},
+```
+
+Every mutation that can produce an audit event already invalidates `{ Game, id: gameId }` (team,
+player, owner, game, setup) or `{ Tables, id: game:gameId }` (scores, setup), so the audit log
+refetches on its own. This follows the repo's stated rule that tag granularity tracks the client's
+read model — and the audit log's read model is *everything about this game*.
+
+### Tab
+
+`src/pages/games/GameDetail/GameViewContent.tsx`: add `'audit'` to `GAME_TABS`, plus a `Tabs.Tab` and
+a `Tabs.Panel`. Two things fall out for free — `isGameTab` is derived from the const array so it
+accepts the new value without change, and `getDefaultTab` switches over `GameStatus` rather than
+`GameTab`, so its `assertNever` is unaffected. Existing `selected_tab_for_game_*` values in
+localStorage stay valid.
+
+### Panel
+
+`src/pages/games/panels/AuditPanel/AuditPanel.tsx`, following `RankingsPanel`:
+
+- Mantine `Table`, newest first, columns **When / Who / Action / Entity / Changes**
+- `CenterLoader` while loading, `EmptyStateCard` when the log is empty
+- Timestamps via `Intl.DateTimeFormat(i18n.language, { dateStyle: 'short', timeStyle: 'medium' })` —
+  native, so no date library is added
+- No `useMemo`/`useCallback`/`React.memo`; React Compiler is enabled
+
+`action` and `entity` arrive as string unions from `generatedApi.ts`, so their labels **must not** be
+looked up with a template literal — the repo forbids dynamic `t()` keys. A sibling
+`auditLabels.ts` maps each union member to a static literal key through a `switch` ending in
+`assertNever`, which makes a new backend enum value a compile error until the label is wired up. That
+file is pure, so it gets `auditLabels.test.ts` under `node --test`, matching `rankingsMapper.test.ts`.
+
+### Rows are flat, not grouped
+
+One table row per audit event, ordered by `id DESC`. Events from the same request share a timestamp
+and consecutive ids, so they already render adjacent. Grouping by `requestId` into a single visual
+entry is deliberately skipped; add it when a real request routinely emits enough rows to be confusing.
+
+### i18n
+
+New keys in **both** `en/` and `de/` `gameDetail.json`: `tabs.audit`, and an `audit.*` block for the
+column headers, the action labels, the entity labels, the empty state, and the `field: from → to`
+change line. EN is the source of truth for type augmentation; DE must be filled in the same commit or
+`pnpm check` fails on `i18next-cli status`.
+
+### Gate
+
+`pnpm check` (`tsc --noEmit`, `biome ci`, and the three `i18next-cli` passes) plus `pnpm knip` and
+`pnpm test`. Note the repo's own git rules differ from the service repo: never commit without asking,
+never push without explicit permission, and **no Claude co-author trailer**.
+
 ## Deliberate simplifications
 
 Each is marked in the code with a `ponytail:` comment naming its ceiling and upgrade path.
@@ -353,3 +429,12 @@ existing files in that directory:
 | `pkg/audit/diff_test.go` | `gen/api/api.gen.go` (regenerated) |
 | `api/handlers/audit_handler.go` | `CLAUDE.md` (audit module + middleware chain) |
 | `integrationtests/audit_test.go` | |
+
+And in `knobel-manager-app`, after the backend is on `main`:
+
+| New | Touched |
+| --- | --- |
+| `src/pages/games/panels/AuditPanel/AuditPanel.tsx` | `src/pages/games/GameDetail/GameViewContent.tsx` |
+| `src/pages/games/panels/AuditPanel/auditLabels.ts` | `src/store/api.ts` (providesTags + hook export) |
+| `src/pages/games/panels/AuditPanel/auditLabels.test.ts` | `src/store/generatedApi.ts` (`pnpm api:gen`) |
+| | `src/i18n/locales/{en,de}/gameDetail.json` |
