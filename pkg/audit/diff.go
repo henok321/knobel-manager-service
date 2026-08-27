@@ -1,24 +1,27 @@
 package audit
 
 import (
-	"cmp"
+	"maps"
 	"slices"
 	"strconv"
 
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
 
-type FieldChange struct {
+// The persisted shape of a change. Deliberately separate from api.AuditChange:
+// coupling stored history to a regenerated type would let a spec edit rewrite
+// the meaning of rows already on disk.
+type fieldChange struct {
 	Field string  `json:"field"`
 	From  *string `json:"from"`
 	To    *string `json:"to"`
 }
 
-type EntityChange struct {
+type entityChange struct {
 	Entity   entity.AuditEntity
 	EntityID string
 	Action   entity.AuditAction
-	Changes  []FieldChange
+	Changes  []fieldChange
 }
 
 type recordKey struct {
@@ -74,59 +77,39 @@ func flatten(game entity.Game) map[recordKey]fields {
 	return records
 }
 
-func diff(before, after map[recordKey]fields) []EntityChange {
-	changes := make([]EntityChange, 0)
+func diff(before, after map[recordKey]fields) []entityChange {
+	changes := make([]entityChange, 0)
 
 	for key, afterFields := range after {
 		beforeFields, existed := before[key]
 
 		if !existed {
-			changes = append(changes, EntityChange{key.Entity, key.ID, entity.AuditActionCreate, fieldDiff(nil, afterFields)})
+			changes = append(changes, entityChange{key.Entity, key.ID, entity.AuditActionCreate, fieldDiff(nil, afterFields)})
 			continue
 		}
 
-		if fieldChanges := fieldDiff(beforeFields, afterFields); len(fieldChanges) > 0 {
-			changes = append(changes, EntityChange{key.Entity, key.ID, entity.AuditActionUpdate, fieldChanges})
+		if changed := fieldDiff(beforeFields, afterFields); len(changed) > 0 {
+			changes = append(changes, entityChange{key.Entity, key.ID, entity.AuditActionUpdate, changed})
 		}
 	}
 
 	for key, beforeFields := range before {
 		if _, survived := after[key]; !survived {
-			changes = append(changes, EntityChange{key.Entity, key.ID, entity.AuditActionDelete, fieldDiff(beforeFields, nil)})
+			changes = append(changes, entityChange{key.Entity, key.ID, entity.AuditActionDelete, fieldDiff(beforeFields, nil)})
 		}
 	}
-
-	// ponytail: map iteration is random, so sort to keep output stable. Lexical id
-	// order puts "10" before "9"; harmless, since events from one request are
-	// explicitly unordered. Sort numerically if that ever needs to read well.
-	slices.SortFunc(changes, func(a, b EntityChange) int {
-		return cmp.Or(
-			cmp.Compare(a.Entity, b.Entity),
-			cmp.Compare(a.EntityID, b.EntityID),
-		)
-	})
 
 	return changes
 }
 
-func fieldDiff(before, after fields) []FieldChange {
-	names := make([]string, 0, len(before)+len(after))
+func fieldDiff(before, after fields) []fieldChange {
+	union := make(fields, len(before)+len(after))
+	maps.Copy(union, before)
+	maps.Copy(union, after)
 
-	for name := range before {
-		names = append(names, name)
-	}
+	changes := make([]fieldChange, 0, len(union))
 
-	for name := range after {
-		if _, seen := before[name]; !seen {
-			names = append(names, name)
-		}
-	}
-
-	slices.Sort(names)
-
-	changes := make([]FieldChange, 0, len(names))
-
-	for _, name := range names {
+	for _, name := range slices.Sorted(maps.Keys(union)) {
 		fromValue, hadBefore := before[name]
 		toValue, hasAfter := after[name]
 
@@ -134,7 +117,7 @@ func fieldDiff(before, after fields) []FieldChange {
 			continue
 		}
 
-		change := FieldChange{Field: name}
+		change := fieldChange{Field: name}
 
 		if hadBefore {
 			change.From = &fromValue

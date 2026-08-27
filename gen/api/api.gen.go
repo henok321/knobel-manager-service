@@ -130,10 +130,10 @@ type AuditChange struct {
 	Field string `json:"field"`
 
 	// From Example: Team A
-	From *string `json:"from,omitempty"`
+	From *string `json:"from"`
 
 	// To Example: Die Knobelkoenige
-	To *string `json:"to,omitempty"`
+	To *string `json:"to"`
 }
 
 // AuditEntity Example: team

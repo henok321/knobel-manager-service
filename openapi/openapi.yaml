@@ -968,7 +968,7 @@ components:
           type: string
           nullable: true
           example: Die Knobelkoenige
-      required: [ field ]
+      required: [ field, from, to ]
     AuditAction:
       type: string
       enum: [ create, update, delete, setup ]

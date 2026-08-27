@@ -340,14 +340,26 @@ Things worth knowing before changing it:
 - **It lives in `pkg/audit`, not `api/middleware`.** `pkg/game` imports `api/middleware` for the
   `FirebaseAuth` interface, so the reverse direction is an import cycle.
 - **Best effort, not transactional.** The mutation is already committed when the audit write runs, so
-  a failure is logged and never returned. A broken audit table must not break a tournament.
+  a failure is logged and never returned. A broken audit table must not break a tournament. For the
+  same reason the post-handler work uses `context.WithoutCancel`: a client hanging up must not erase
+  the record of a change that already committed.
+- **A failed snapshot aborts auditing; it never yields an empty one.** Only `gorm.ErrRecordNotFound`
+  counts as "no game". Any other query error must skip the write, because an empty after-snapshot
+  would diff into a fabricated "everything was deleted" trail that commits successfully.
 - **Rounds, tables and table players are excluded from the diff** — they are output of the assignment
   algorithm, not human edits, and one setup call would emit 130+ rows. Setup is recorded as a single
   `action=setup` event. Scores stay in the diff so a setup re-run leaves a trail of the wiped scores.
 - **`DELETE /games/{id}` records nothing.** `audit_events.game_id` cascades, so the rows are gone
   before the middleware runs and the foreign key would reject a new one.
-- **New mutating endpoints are audited automatically** — no wiring needed. Only `POST /games` is
-  special-cased, since it is the one mutating route without `{gameID}` in its path.
+- **New mutating endpoints are audited automatically** — no wiring needed, *provided the path
+  `gameID` is real*. Three routes are special-cased: `POST /games` (no path `gameID`, so the new id
+  comes from the response body), a successful game deletion (nothing to write), and setup (one
+  synthetic event). Only the last matches on the route, and on the `/setup` suffix rather than the
+  whole pattern, so setting `BaseURL` or renaming a path cannot silently disable it.
+- **The path `gameID` must be authoritative.** The middleware attributes events by it, so a handler
+  that ignores it makes changes invisible to the log. This bit the player routes, which authorized
+  against the player's real game and accepted any `gameID` in the URL — `PlayersService` now checks
+  the team or player really belongs to the path game.
 
 ### Scores Architecture Note
 

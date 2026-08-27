@@ -61,6 +61,10 @@ forget. Kept as the documented upgrade path if the mis-attribution window below 
   credited with each other's change. Upgrade path: service-level auditing.
 - **One wasted aggregate read on denied mutations.** The before-snapshot is taken before the handler
   decides on authorization. Nothing leaks, because rows are only written on 2xx.
+- **The snapshot loads more than the diff uses.** Reusing `GamesRepository.FindByID` also preloads
+  `Rounds.Tables.Players` and `Rounds.Tables.Scores`, which `flatten` discards, twice per mutating
+  request. Deliberately not optimised: there is no measured problem, and a dedicated narrower query is
+  the upgrade path if live score entry ever shows up in a profile.
 
 ## Data model
 
@@ -183,6 +187,11 @@ Flattened fields per entity:
 - **delete** — every field, `to: null`
 - **update** — changed fields only
 
+`from` and `to` are declared `required` *and* `nullable: true` in the OpenAPI schema. Nullable alone
+makes oapi-codegen emit `omitempty`, which drops the nulls and gives a create event a structurally
+different shape from an update event — the client would then have to treat absent and null as the same
+thing. Required-and-nullable keeps the explicit `null` on the wire.
+
 All values are stringified. This keeps the OpenAPI schema concrete (`from` and `to` as nullable
 strings) instead of `map[string]interface{}`, which the project's anti-patterns list forbids, and the
 frontend renders strings anyway.
@@ -245,22 +254,46 @@ SecurityHeaders → Metrics → RequestLogging → Authentication → Audit
 Audit must come last: it needs the actor from `Authentication` and the request id from
 `RequestLogging`.
 
-`Snapshot` returns an empty `entity.Game` both when the path has no `gameID` (`POST /games`) and
-when the id names a game that does not exist — the handler will answer 404 in that case and the 2xx
-guard means nothing is written.
+`snapshot` distinguishes two failures that look alike and must not be conflated:
+
+- **Game not found** (`gorm.ErrRecordNotFound`) is a legitimate empty snapshot. It happens for
+  `POST /games`, which has no `gameID` at all, and for a mutation naming a game that does not exist —
+  the handler answers 404 and the 2xx guard means nothing is written either way.
+- **Any other query failure** is reported as an error and aborts auditing for that request. Returning
+  an empty map instead would make the diff read as though every team, player and score had just been
+  deleted, and that fabricated trail would commit happily, because the game row still exists so the
+  foreign key holds. No event is far better than an inverted one.
+
+The audit work after the handler runs on `context.WithoutCancel(ctx)` plus a 5s timeout. `net/http`
+cancels the request context the moment the client hangs up, and by that point the mutation is already
+committed — without this, a dropped connection loses the record of a change that really happened.
+
+The post-handler work is `defer`red, so a handler that commits and then panics still leaves a trail.
+The repo installs no `recover` middleware, so without the defer the mutation would be durable with
+nothing recording it.
 
 Two small mechanical pieces:
 
 - A `ResponseWriter` wrapper capturing the status code (~12 lines; nothing reusable exists in the
-  repo — `metrics.go` delegates to `promhttp`).
+  repo — `metrics.go` delegates to `promhttp`). It implements `Unwrap`, without which it would hide
+  `http.Flusher` and `http.Hijacker` from everything further in and break `http.ResponseController`.
 - Response-body capture, needed **only** for `POST /games`, the single mutating operation without
-  `{gameID}` in its path. A two-field struct and one `json.Unmarshal` to recover the created id.
+  `{gameID}` in its path — keyed off the *absence of a path `gameID`*, not a hardcoded route string.
+  A two-field struct and one `json.Unmarshal` to recover the created id. That route gets no special
+  event: with no before-snapshot the ordinary diff already emits a create for the game and its
+  owner.
 
 ### Game deletion
 
 `DELETE /games/{gameID}` on success writes nothing. The middleware runs after the handler, by which
 point the game row is gone and `game_id` would violate the foreign key. This is the accepted
 consequence of cascading audit rows with the game.
+
+Detected from the data, not the route: a game that still exists always yields at least its own record,
+so an empty after-snapshot means the game is gone. Matching the literal pattern `DELETE
+/games/{gameID}` would silently break if `BaseURL` were ever set or the path renamed, and the failure
+mode is ugly — every deletion would then attempt an insert the foreign key rejects, forever. The setup
+event matches on the `/setup` suffix for the same reason.
 
 ## Read endpoint
 
@@ -391,6 +424,19 @@ change line. EN is the source of truth for type augmentation; DE must be filled 
 `pnpm test`. Note the repo's own git rules differ from the service repo: never commit without asking,
 never push without explicit permission, and **no Claude co-author trailer**.
 
+### A path gameID that was decorative
+
+Review turned up a pre-existing defect that this feature depends on: the player routes ignored the
+path `gameID` entirely (`players_handler.go` literally declared it as `_ /* gameID */`, and
+`PlayersService` authorized against the player's *real* game). So
+`PUT /games/999/teams/1/players/1` returned 200, renamed the player — and wrote **no audit event at
+all**, because both snapshots were of the nonexistent game 999.
+
+An audit log that is bypassed by editing the URL is not an audit log, so `PlayersService` now takes
+the `gameID` and checks that the team or player actually belongs to it, reporting
+`apperror.ErrPlayerNotFound` / `ErrTeamNotFound` on a mismatch rather than `ErrNotOwner` — a
+mismatched id must not reveal that the entity exists somewhere else.
+
 ## Deliberate simplifications
 
 Each is marked in the code with a `ponytail:` comment naming its ceiling and upgrade path.
@@ -401,6 +447,9 @@ Each is marked in the code with a `ponytail:` comment naming its ceiling and upg
    cursor once a game exceeds a few hundred events.
 3. **`actor_email` snapshotted at write time.** Historical truth, and no Firebase lookup on read.
    Empty string when the token carries no email claim.
+4. **`request_id` is `varchar(64)`, not `varchar(32)`.** The current id is 16 random bytes hex-encoded,
+   exactly 32 characters. Since audit writes are log-only, a zero-headroom column means any future
+   change to the id format would stop auditing silently rather than loudly.
 
 ## Testing
 

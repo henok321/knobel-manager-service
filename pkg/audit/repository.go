@@ -24,6 +24,9 @@ func (r *EventsRepository) Insert(ctx context.Context, events []entity.AuditEven
 	return r.db.WithContext(ctx).Create(&events).Error
 }
 
+// ponytail: returns a game's whole history, unbounded. Fine at tournament size; the
+// (game_id, id DESC) index already supports adding limit plus a keyset cursor when a
+// game outgrows a few hundred events.
 func (r *EventsRepository) FindByGameID(ctx context.Context, gameID int) ([]entity.AuditEvent, error) {
 	var events []entity.AuditEvent
 

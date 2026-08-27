@@ -8,7 +8,7 @@ CREATE TABLE audit_events
 (
     id bigserial PRIMARY KEY,
     game_id integer NOT NULL REFERENCES games (id) ON DELETE CASCADE,
-    request_id varchar(32) NOT NULL,
+    request_id varchar(64) NOT NULL,
     actor_sub varchar(255) NOT NULL,
     actor_email varchar(255) NOT NULL,
     -- noqa: disable=RF04

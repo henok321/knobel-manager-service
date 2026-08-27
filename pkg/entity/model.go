@@ -125,7 +125,7 @@ const (
 type AuditEvent struct {
 	ID         int64       `gorm:"primaryKey"`
 	GameID     int         `gorm:"not null"`
-	RequestID  string      `gorm:"size:32;not null"`
+	RequestID  string      `gorm:"size:64;not null"`
 	ActorSub   string      `gorm:"size:255;not null"`
 	ActorEmail string      `gorm:"size:255;not null"`
 	Action     AuditAction `gorm:"size:20;not null"`

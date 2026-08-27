@@ -39,8 +39,20 @@ func (a *AuditHandler) GetAuditLog(writer http.ResponseWriter, request *http.Req
 	}
 
 	apiEvents := make([]api.AuditEvent, len(events))
+
 	for i, event := range events {
-		apiEvents[i] = entityAuditEventToAPIAuditEvent(event)
+		changes := make([]api.AuditChange, 0)
+
+		// changes is written only by pkg/audit and never edited, so unreadable JSON
+		// means a corrupted row. Degrade that one event to an empty diff rather than
+		// failing the whole log.
+		if err := json.Unmarshal([]byte(event.Changes), &changes); err != nil {
+			slog.ErrorContext(ctx, "Could not decode audit changes", "auditEventID", event.ID, "error", err)
+
+			changes = make([]api.AuditChange, 0)
+		}
+
+		apiEvents[i] = entityAuditEventToAPIAuditEvent(event, changes)
 	}
 
 	response := api.AuditResponse{Events: apiEvents}

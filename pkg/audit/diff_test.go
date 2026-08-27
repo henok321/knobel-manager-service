@@ -26,7 +26,7 @@ func gameFixture() entity.Game {
 	}
 }
 
-func changeByKey(t *testing.T, changes []EntityChange, kind entity.AuditEntity, id string) EntityChange {
+func changeByKey(t *testing.T, changes []entityChange, kind entity.AuditEntity, id string) entityChange {
 	t.Helper()
 
 	for _, change := range changes {
@@ -37,7 +37,7 @@ func changeByKey(t *testing.T, changes []EntityChange, kind entity.AuditEntity, 
 
 	t.Fatalf("no change for %s %s in %+v", kind, id, changes)
 
-	return EntityChange{}
+	return entityChange{}
 }
 
 func value(t *testing.T, pointer *string) string {
@@ -314,27 +314,55 @@ func TestDiffGameCreatedFromNothing(t *testing.T) {
 	}
 }
 
-func TestDiffIsDeterministic(t *testing.T) {
-	before := flatten(gameFixture())
+func TestDiffPlayerAndScoreCreated(t *testing.T) {
+	before := gameFixture()
 
 	after := gameFixture()
-	after.Name = "Finale"
-	after.Teams[0].Name = "Team Z"
-	after.Teams[0].Players[0].Name = "Annika"
+	after.Teams[0].Players = append(after.Teams[0].Players, &entity.Player{ID: 101, Name: "Bert", TeamID: 10})
+	after.Teams[0].Players[0].Scores = []*entity.Score{{ID: 500, PlayerID: 100, TableID: 7, Score: 9}}
 
-	first := diff(before, flatten(after))
+	changes := diff(flatten(before), flatten(after))
 
-	for range 20 {
-		next := diff(before, flatten(after))
+	if len(changes) != 2 {
+		t.Fatalf("expected a player and a score creation, got %+v", changes)
+	}
 
-		if len(next) != len(first) {
-			t.Fatalf("length differs between runs: %d vs %d", len(next), len(first))
+	player := changeByKey(t, changes, entity.AuditEntityPlayer, "101")
+	if player.Action != entity.AuditActionCreate {
+		t.Errorf("player action = %q, want create", player.Action)
+	}
+
+	if got := value(t, changeByKey(t, changes, entity.AuditEntityPlayer, "101").Changes[0].To); got != "Bert" {
+		t.Errorf("player name = %q, want %q", got, "Bert")
+	}
+
+	score := changeByKey(t, changes, entity.AuditEntityScore, "500")
+	if score.Action != entity.AuditActionCreate {
+		t.Errorf("score action = %q, want create", score.Action)
+	}
+
+	if len(score.Changes) != 3 {
+		t.Errorf("expected score, player_id and table_id, got %+v", score.Changes)
+	}
+}
+
+// The whole game vanishing is what the middleware sees when a snapshot fails, which
+// is exactly why a failed snapshot must never be mistaken for an empty one.
+func TestDiffWholeGameDeleted(t *testing.T) {
+	changes := diff(flatten(gameFixture()), nil)
+
+	if len(changes) != 4 {
+		t.Fatalf("expected game, owner, team and player deletions, got %+v", changes)
+	}
+
+	for _, change := range changes {
+		if change.Action != entity.AuditActionDelete {
+			t.Errorf("%s %s action = %q, want delete", change.Entity, change.EntityID, change.Action)
 		}
 
-		for i := range first {
-			if next[i].Entity != first[i].Entity || next[i].EntityID != first[i].EntityID {
-				t.Fatalf("order differs between runs at %d: %v/%v vs %v/%v",
-					i, next[i].Entity, next[i].EntityID, first[i].Entity, first[i].EntityID)
+		for _, field := range change.Changes {
+			if field.To != nil {
+				t.Errorf("%s %s field %q has to = %q, want nil", change.Entity, change.EntityID, field.Field, *field.To)
 			}
 		}
 	}
