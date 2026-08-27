@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
+	"log/slog"
+
 	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
@@ -113,4 +116,30 @@ func entityGameToAPIGame(gameEntity entity.Game) api.Game {
 	}
 
 	return apiGame
+}
+
+func entityAuditEventToAPIAuditEvent(e entity.AuditEvent) api.AuditEvent {
+	changes := make([]api.AuditChange, 0)
+
+	// Changes is written by pkg/audit and never edited, so unreadable JSON means a
+	// corrupted row: surface it as an empty diff rather than failing the whole log.
+	if err := json.Unmarshal([]byte(e.Changes), &changes); err != nil {
+		slog.Error("Could not decode audit changes", "auditEventID", e.ID, "error", err)
+
+		changes = make([]api.AuditChange, 0)
+	}
+
+	return api.AuditEvent{
+		Id:        e.ID,
+		Timestamp: e.CreatedAt.UTC(),
+		RequestID: e.RequestID,
+		Actor: api.AuditActor{
+			Sub:   e.ActorSub,
+			Email: e.ActorEmail,
+		},
+		Action:   api.AuditAction(e.Action),
+		Entity:   api.AuditEntity(e.Entity),
+		EntityID: e.EntityID,
+		Changes:  changes,
+	}
 }

@@ -8,9 +8,61 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
 )
+
+// Defines values for AuditAction.
+const (
+	AuditActionCreate AuditAction = "create"
+	AuditActionDelete AuditAction = "delete"
+	AuditActionSetup  AuditAction = "setup"
+	AuditActionUpdate AuditAction = "update"
+)
+
+// Valid indicates whether the value is a known member of the AuditAction enum.
+func (e AuditAction) Valid() bool {
+	switch e {
+	case AuditActionCreate:
+		return true
+	case AuditActionDelete:
+		return true
+	case AuditActionSetup:
+		return true
+	case AuditActionUpdate:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AuditEntity.
+const (
+	AuditEntityGame   AuditEntity = "game"
+	AuditEntityOwner  AuditEntity = "owner"
+	AuditEntityPlayer AuditEntity = "player"
+	AuditEntityScore  AuditEntity = "score"
+	AuditEntityTeam   AuditEntity = "team"
+)
+
+// Valid indicates whether the value is a known member of the AuditEntity enum.
+func (e AuditEntity) Valid() bool {
+	switch e {
+	case AuditEntityGame:
+		return true
+	case AuditEntityOwner:
+		return true
+	case AuditEntityPlayer:
+		return true
+	case AuditEntityScore:
+		return true
+	case AuditEntityTeam:
+		return true
+	default:
+		return false
+	}
+}
 
 // Defines values for GameStatus.
 const (
@@ -58,6 +110,59 @@ func (e RoundStatus) Valid() bool {
 type AddOwnerRequest struct {
 	// Email Example: owner@example.org
 	Email string `json:"email"`
+}
+
+// AuditAction Example: update
+type AuditAction string
+
+// AuditActor defines model for AuditActor.
+type AuditActor struct {
+	// Email Example: owner@example.com
+	Email string `json:"email"`
+
+	// Sub Example: firebase-uid-abc
+	Sub string `json:"sub"`
+}
+
+// AuditChange defines model for AuditChange.
+type AuditChange struct {
+	// Field Example: name
+	Field string `json:"field"`
+
+	// From Example: Team A
+	From *string `json:"from,omitempty"`
+
+	// To Example: Die Knobelkoenige
+	To *string `json:"to,omitempty"`
+}
+
+// AuditEntity Example: team
+type AuditEntity string
+
+// AuditEvent defines model for AuditEvent.
+type AuditEvent struct {
+	// Action Example: update
+	Action  AuditAction   `json:"action"`
+	Actor   AuditActor    `json:"actor"`
+	Changes []AuditChange `json:"changes"`
+
+	// Entity Example: team
+	Entity AuditEntity `json:"entity"`
+
+	// EntityID Example: 5
+	EntityID string `json:"entityID"`
+
+	// Id Example: 42
+	Id int64 `json:"id"`
+
+	// RequestID Example: 9f2c1ab4de5f60718293a4b5c6d7e8f9
+	RequestID string    `json:"requestID"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+// AuditResponse defines model for AuditResponse.
+type AuditResponse struct {
+	Events []AuditEvent `json:"events"`
 }
 
 // Error defines model for Error.
@@ -282,6 +387,9 @@ type ServerInterface interface {
 	// UpdateGame Update an existing game
 	// (PUT /games/{gameID})
 	UpdateGame(w http.ResponseWriter, r *http.Request, gameID int)
+	// GetAuditLog List audit events for a game, newest first
+	// (GET /games/{gameID}/audit)
+	GetAuditLog(w http.ResponseWriter, r *http.Request, gameID int)
 	// AddOwner Add an owner to a game by email
 	// (POST /games/{gameID}/owners)
 	AddOwner(w http.ResponseWriter, r *http.Request, gameID int)
@@ -429,6 +537,32 @@ func (siw *ServerInterfaceWrapper) UpdateGame(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateGame(w, r, gameID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAuditLog operation middleware
+func (siw *ServerInterfaceWrapper) GetAuditLog(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "gameID" -------------
+	var gameID int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAuditLog(w, r, gameID)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1031,6 +1165,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables", wrapper.GetTables)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", wrapper.GetTable)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores", wrapper.UpdateScores)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/audit", wrapper.GetAuditLog)
 
 	return m
 }

@@ -178,6 +178,7 @@ pkg/                   # Domain modules (independent, reusable)
   team/                # Team management
   player/              # Player management
   table/               # Table/round management (also handles scores)
+  audit/               # Per-game audit log (diff, middleware, read service)
   setup/               # Game setup algorithms (table assignments)
   entity/              # Shared database models
   apperror/            # Application sentinel errors
@@ -247,6 +248,7 @@ type apiServer struct {
     *handlers.TeamsHandler
     *handlers.PlayersHandler
     *handlers.TablesHandler
+    *handlers.AuditHandler
 }
 var _ api.ServerInterface = (*apiServer)(nil)
 ```
@@ -320,7 +322,32 @@ String enums are simple, JSON-compatible, database-friendly, and easy to debug. 
 Configured in `api/routes/routes.go`:
 
 - Public endpoints: `SecurityHeaders → Metrics → RequestLogging`
-- Authenticated endpoints: `SecurityHeaders → Metrics → RequestLogging → Authentication`
+- Authenticated endpoints: `SecurityHeaders → Metrics → RequestLogging → Authentication → Audit`
+
+`audit.Middleware` must stay last: it needs the actor from `Authentication` and the request id from
+`RequestLogging`.
+
+### Audit Log
+
+`pkg/audit` records who changed what per game, without a single call site in the services. The
+middleware snapshots the whole game aggregate (`GamesRepository.FindByID`) before the handler runs,
+snapshots it again after a 2xx, diffs the two, and writes one `audit_events` row per changed entity.
+Read back via `GET /games/{gameID}/audit` (`AuditHandler`, ownership checked through
+`GamesService.FindByID`).
+
+Things worth knowing before changing it:
+
+- **It lives in `pkg/audit`, not `api/middleware`.** `pkg/game` imports `api/middleware` for the
+  `FirebaseAuth` interface, so the reverse direction is an import cycle.
+- **Best effort, not transactional.** The mutation is already committed when the audit write runs, so
+  a failure is logged and never returned. A broken audit table must not break a tournament.
+- **Rounds, tables and table players are excluded from the diff** — they are output of the assignment
+  algorithm, not human edits, and one setup call would emit 130+ rows. Setup is recorded as a single
+  `action=setup` event. Scores stay in the diff so a setup re-run leaves a trail of the wiped scores.
+- **`DELETE /games/{id}` records nothing.** `audit_events.game_id` cascades, so the rows are gone
+  before the middleware runs and the foreign key would reject a new one.
+- **New mutating endpoints are audited automatically** — no wiring needed. Only `POST /games` is
+  special-cased, since it is the one mutating route without `{gameID}` in its path.
 
 ### Scores Architecture Note
 
