@@ -68,6 +68,10 @@ forget. Kept as the documented upgrade path if the mis-attribution window below 
 ```sql
 -- +goose Up
 
+CREATE TYPE audit_action AS ENUM ('create', 'update', 'delete', 'setup');
+
+CREATE TYPE audit_entity AS ENUM ('game', 'owner', 'team', 'player', 'score');
+
 CREATE TABLE audit_events
 (
     id bigserial PRIMARY KEY,
@@ -75,8 +79,8 @@ CREATE TABLE audit_events
     request_id varchar(32) NOT NULL,
     actor_sub varchar(255) NOT NULL,
     actor_email varchar(255) NOT NULL,
-    action varchar(10) NOT NULL,
-    entity varchar(20) NOT NULL,
+    action audit_action NOT NULL,
+    entity audit_entity NOT NULL,
     entity_id varchar(255) NOT NULL,
     changes jsonb NOT NULL,
     created_at timestamp with time zone NOT NULL DEFAULT NOW()
@@ -91,9 +95,15 @@ Notes on the column choices:
   a deliberate decision — see "Game deletion" below.
 - `entity_id` is `varchar(255)`, not `integer`: an owner's identity is a Firebase sub, and 255
   matches `game_owners.owner_sub` so a long UID can never truncate.
-- `action` and `entity` are `varchar`, not Postgres `ENUM` types (unlike `game_status` in
-  `0001_init.sql`). A log table gains new action kinds over time, and a varchar avoids a migration
-  each time.
+- `action` and `entity` are Postgres `ENUM` types, matching `game_status` in `0001_init.sql`. The
+  table is append-only and there is no update path in this design, so a bad value would be permanent
+  and would render as garbage in the frontend forever — the database is the right place to reject it.
+  Adding a value later is `ALTER TYPE audit_action ADD VALUE 'x'`, which runs inside goose's
+  per-migration transaction on Postgres 18 (the value is unusable until commit, which does not matter
+  for a migration that only adds it). **Removing or renaming a value has no `DROP VALUE`** — it means
+  creating a replacement type, altering the column, and dropping the old type. Accepted: both sets
+  only ever grow, and the one plausible growth is adding `round` and `table` to `audit_entity` if the
+  exclusion below is ever reversed.
 - `changes` is `jsonb`, mapped to a Go `string` with `gorm:"type:jsonb"`. pgx sends a Go string as
   text and Postgres casts it to `jsonb` on insert into a `jsonb` column, so **no new dependency**
   (`gorm.io/datatypes` is not needed).
@@ -128,13 +138,16 @@ type AuditEvent struct {
     RequestID  string `gorm:"size:32;not null"`
     ActorSub   string `gorm:"size:255;not null"`
     ActorEmail string `gorm:"size:255;not null"`
-    Action     AuditAction `gorm:"size:10;not null"`
+    Action     AuditAction `gorm:"size:20;not null"`
     Entity     AuditEntity `gorm:"size:20;not null"`
     EntityID   string      `gorm:"size:255;not null"`
     Changes    string      `gorm:"type:jsonb;not null"`
     CreatedAt  time.Time
 }
 ```
+
+The `size:` tags on `Action` and `Entity` are cosmetic, matching how `Game.Status` is declared for
+its `game_status` enum column. goose owns the schema; GORM never automigrates here.
 
 ## Scope: what is audited
 
