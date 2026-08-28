@@ -40,7 +40,7 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	createPlayer, err := h.playersService.CreatePlayer(ctx, playersRequest, teamID, sub)
+	createPlayer, err := h.playersService.CreatePlayer(ctx, playersRequest, gameID, teamID, sub)
 	if err != nil {
 		respondError(writer, err)
 		return
@@ -59,7 +59,7 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 	}
 }
 
-func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
+func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request, gameID, _ /* teamID */, playerID int) {
 	ctx := request.Context()
 
 	sub, ok := userSub(writer, request)
@@ -79,7 +79,7 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 		return
 	}
 
-	updatePlayer, err := h.playersService.UpdatePlayer(ctx, playerID, playersRequest, sub)
+	updatePlayer, err := h.playersService.UpdatePlayer(ctx, gameID, playerID, playersRequest, sub)
 	if err != nil {
 		respondError(writer, err)
 		return
@@ -97,13 +97,13 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 	}
 }
 
-func (h *PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
+func (h *PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request, gameID, _ /* teamID */, playerID int) {
 	sub, ok := userSub(writer, request)
 	if !ok {
 		return
 	}
 
-	if err := h.playersService.DeletePlayer(request.Context(), playerID, sub); err != nil {
+	if err := h.playersService.DeletePlayer(request.Context(), gameID, playerID, sub); err != nil {
 		respondError(writer, err)
 		return
 	}

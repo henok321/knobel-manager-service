@@ -102,3 +102,35 @@ type TablePlayer struct {
 func (TablePlayer) TableName() string {
 	return "table_players"
 }
+
+type AuditAction string
+
+const (
+	AuditActionCreate AuditAction = "create"
+	AuditActionUpdate AuditAction = "update"
+	AuditActionDelete AuditAction = "delete"
+	AuditActionSetup  AuditAction = "setup"
+)
+
+type AuditEntity string
+
+const (
+	AuditEntityGame   AuditEntity = "game"
+	AuditEntityOwner  AuditEntity = "owner"
+	AuditEntityTeam   AuditEntity = "team"
+	AuditEntityPlayer AuditEntity = "player"
+	AuditEntityScore  AuditEntity = "score"
+)
+
+type AuditEvent struct {
+	ID         int64       `gorm:"primaryKey"`
+	GameID     int         `gorm:"not null"`
+	RequestID  string      `gorm:"size:64;not null"`
+	ActorSub   string      `gorm:"size:255;not null"`
+	ActorEmail string      `gorm:"size:255;not null"`
+	Action     AuditAction `gorm:"size:20;not null"`
+	Entity     AuditEntity `gorm:"size:20;not null"`
+	EntityID   string      `gorm:"size:255;not null"`
+	Changes    string      `gorm:"type:jsonb;not null"`
+	CreatedAt  time.Time
+}
