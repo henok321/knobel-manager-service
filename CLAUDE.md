@@ -178,7 +178,6 @@ pkg/                   # Domain modules (independent, reusable)
   team/                # Team management
   player/              # Player management
   table/               # Table/round management (also handles scores)
-  audit/               # Per-game audit log (diff, middleware, read service)
   setup/               # Game setup algorithms (table assignments)
   entity/              # Shared database models
   apperror/            # Application sentinel errors
@@ -248,7 +247,6 @@ type apiServer struct {
     *handlers.TeamsHandler
     *handlers.PlayersHandler
     *handlers.TablesHandler
-    *handlers.AuditHandler
 }
 var _ api.ServerInterface = (*apiServer)(nil)
 ```
@@ -322,44 +320,7 @@ String enums are simple, JSON-compatible, database-friendly, and easy to debug. 
 Configured in `api/routes/routes.go`:
 
 - Public endpoints: `SecurityHeaders → Metrics → RequestLogging`
-- Authenticated endpoints: `SecurityHeaders → Metrics → RequestLogging → Authentication → Audit`
-
-`audit.Middleware` must stay last: it needs the actor from `Authentication` and the request id from
-`RequestLogging`.
-
-### Audit Log
-
-`pkg/audit` records who changed what per game, without a single call site in the services. The
-middleware snapshots the whole game aggregate (`GamesRepository.FindByID`) before the handler runs,
-snapshots it again after a 2xx, diffs the two, and writes one `audit_events` row per changed entity.
-Read back via `GET /games/{gameID}/audit` (`AuditHandler`, ownership checked through
-`GamesService.FindByID`).
-
-Things worth knowing before changing it:
-
-- **It lives in `pkg/audit`, not `api/middleware`.** `pkg/game` imports `api/middleware` for the
-  `FirebaseAuth` interface, so the reverse direction is an import cycle.
-- **Best effort, not transactional.** The mutation is already committed when the audit write runs, so
-  a failure is logged and never returned. A broken audit table must not break a tournament. For the
-  same reason the post-handler work uses `context.WithoutCancel`: a client hanging up must not erase
-  the record of a change that already committed.
-- **A failed snapshot aborts auditing; it never yields an empty one.** Only `gorm.ErrRecordNotFound`
-  counts as "no game". Any other query error must skip the write, because an empty after-snapshot
-  would diff into a fabricated "everything was deleted" trail that commits successfully.
-- **Rounds, tables and table players are excluded from the diff** — they are output of the assignment
-  algorithm, not human edits, and one setup call would emit 130+ rows. Setup is recorded as a single
-  `action=setup` event. Scores stay in the diff so a setup re-run leaves a trail of the wiped scores.
-- **`DELETE /games/{id}` records nothing.** `audit_events.game_id` cascades, so the rows are gone
-  before the middleware runs and the foreign key would reject a new one.
-- **New mutating endpoints are audited automatically** — no wiring needed, *provided the path
-  `gameID` is real*. Three routes are special-cased: `POST /games` (no path `gameID`, so the new id
-  comes from the response body), a successful game deletion (nothing to write), and setup (one
-  synthetic event). Only the last matches on the route, and on the `/setup` suffix rather than the
-  whole pattern, so setting `BaseURL` or renaming a path cannot silently disable it.
-- **The path `gameID` must be authoritative.** The middleware attributes events by it, so a handler
-  that ignores it makes changes invisible to the log. This bit the player routes, which authorized
-  against the player's real game and accepted any `gameID` in the URL — `PlayersService` now checks
-  the team or player really belongs to the path game.
+- Authenticated endpoints: `SecurityHeaders → Metrics → RequestLogging → Authentication`
 
 ### Scores Architecture Note
 

@@ -585,32 +585,6 @@ paths:
           description: Not owner of the game
         '404':
           description: Game, round, or table not found
-  /games/{gameID}/audit:
-    parameters:
-      - name: gameID
-        in: path
-        required: true
-        schema:
-          type: integer
-    get:
-      operationId: getAuditLog
-      tags: [ Audit ]
-      summary: List audit events for a game, newest first
-      security:
-        - bearerAuth: [ ]
-      responses:
-        '200':
-          description: Audit events found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AuditResponse'
-        '400':
-          description: Invalid gameID
-        '403':
-          description: Not owner of the game
-        '404':
-          description: Game not found
 tags:
   - name: Health
     description: Health check
@@ -624,8 +598,6 @@ tags:
     description: Tables per round
   - name: Scores
     description: Table scores
-  - name: Audit
-    description: Per-game audit log
 components:
   securitySchemes:
     bearerAuth:
@@ -909,74 +881,6 @@ components:
         table:
           $ref: '#/components/schemas/Table'
       required: [ table ]
-    AuditResponse:
-      type: object
-      properties:
-        events:
-          type: array
-          items:
-            $ref: '#/components/schemas/AuditEvent'
-      required: [ events ]
-    AuditEvent:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-          example: 42
-        timestamp:
-          type: string
-          format: date-time
-        requestID:
-          type: string
-          example: 9f2c1ab4de5f60718293a4b5c6d7e8f9
-        actor:
-          $ref: '#/components/schemas/AuditActor'
-        action:
-          $ref: '#/components/schemas/AuditAction'
-        entity:
-          $ref: '#/components/schemas/AuditEntity'
-        entityID:
-          type: string
-          example: '5'
-        changes:
-          type: array
-          items:
-            $ref: '#/components/schemas/AuditChange'
-      required: [ id, timestamp, requestID, actor, action, entity, entityID, changes ]
-    AuditActor:
-      type: object
-      properties:
-        sub:
-          type: string
-          example: firebase-uid-abc
-        email:
-          type: string
-          example: owner@example.com
-      required: [ sub, email ]
-    AuditChange:
-      type: object
-      properties:
-        field:
-          type: string
-          example: name
-        from:
-          type: string
-          nullable: true
-          example: Team A
-        to:
-          type: string
-          nullable: true
-          example: Die Knobelkoenige
-      required: [ field, from, to ]
-    AuditAction:
-      type: string
-      enum: [ create, update, delete, setup ]
-      example: update
-    AuditEntity:
-      type: string
-      enum: [ game, owner, team, player, score ]
-      example: team
     GameStatus:
       type: string
       enum: [ setup, in_progress, completed ]
