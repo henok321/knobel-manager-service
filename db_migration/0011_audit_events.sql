@@ -1,0 +1,95 @@
+-- +goose Up
+
+CREATE TABLE audit_events
+(
+    id bigserial PRIMARY KEY,
+    game_id integer,
+    table_name text NOT NULL,
+    row_id text NOT NULL,
+    -- noqa: disable=RF04
+    action text NOT NULL,
+    actor_sub text NOT NULL,
+    actor_email text NOT NULL,
+    old_row jsonb,
+    new_row jsonb,
+    created_at timestamp with time zone NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_audit_events_game_id_id ON audit_events (game_id, id DESC);
+
+-- +goose StatementBegin
+CREATE FUNCTION AUDIT_ROW() RETURNS trigger AS
+$$
+DECLARE
+    row_data         jsonb;
+    resolved_game_id integer;
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        row_data := to_jsonb(OLD);
+    ELSE
+        row_data := to_jsonb(NEW);
+    END IF;
+
+    resolved_game_id := CASE TG_TABLE_NAME
+                            WHEN 'games' THEN (row_data ->> 'id')::integer
+                            WHEN 'game_owners' THEN (row_data ->> 'game_id')::integer
+                            WHEN 'teams' THEN (row_data ->> 'game_id')::integer
+                            WHEN 'players' THEN (SELECT game_id FROM teams WHERE id = (row_data ->> 'team_id')::integer)
+                            WHEN 'scores' THEN (SELECT r.game_id
+                                                FROM game_tables gt
+                                                         JOIN rounds r ON r.id = gt.round_id
+                                                WHERE gt.id = (row_data ->> 'table_id')::integer)
+        END;
+
+    -- Cascade suppression. A child deleted by ON DELETE CASCADE can no longer reach a
+    -- live game because its parent row is already gone; a directly deleted child can.
+    -- pg_trigger_depth() cannot make this distinction: RI cascades run at depth 1.
+    IF TG_OP = 'DELETE' AND TG_TABLE_NAME <> 'games'
+        AND NOT EXISTS (SELECT 1 FROM games WHERE id = resolved_game_id) THEN
+        RETURN NULL;
+    END IF;
+
+    INSERT INTO audit_events (game_id, table_name, row_id, action, actor_sub, actor_email, old_row, new_row)
+    VALUES (resolved_game_id,
+            TG_TABLE_NAME,
+            COALESCE(row_data ->> 'id', row_data ->> 'owner_sub'),
+            lower(TG_OP),
+            COALESCE(NULLIF(current_setting('app.actor_sub', true), ''), 'system'),
+            COALESCE(NULLIF(current_setting('app.actor_email', true), ''), ''),
+            CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE to_jsonb(OLD) END,
+            CASE WHEN TG_OP = 'DELETE' THEN NULL ELSE to_jsonb(NEW) END);
+
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+-- +goose StatementEnd
+
+CREATE TRIGGER audit
+AFTER INSERT OR UPDATE OR DELETE
+ON games
+FOR EACH ROW
+EXECUTE FUNCTION AUDIT_ROW();
+
+CREATE TRIGGER audit
+AFTER INSERT OR UPDATE OR DELETE
+ON game_owners
+FOR EACH ROW
+EXECUTE FUNCTION AUDIT_ROW();
+
+CREATE TRIGGER audit
+AFTER INSERT OR UPDATE OR DELETE
+ON teams
+FOR EACH ROW
+EXECUTE FUNCTION AUDIT_ROW();
+
+CREATE TRIGGER audit
+AFTER INSERT OR UPDATE OR DELETE
+ON players
+FOR EACH ROW
+EXECUTE FUNCTION AUDIT_ROW();
+
+CREATE TRIGGER audit
+AFTER INSERT OR UPDATE OR DELETE
+ON scores
+FOR EACH ROW
+EXECUTE FUNCTION AUDIT_ROW();
