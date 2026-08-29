@@ -71,6 +71,27 @@ cascade rule below that score wipe records nothing. This is the most audit-worth
 and it is deliberately invisible. Making it visible requires denormalising `game_id` onto `scores`,
 because the parent rows are gone by the time the trigger runs — deferred until someone asks.
 
+## Requests that change nothing
+
+`GamesRepository.CreateOrUpdateGame` calls `db.Save`, which emits an `UPDATE` unconditionally —
+GORM does not diff against the database — and bumps the GORM-managed `updated_at` that migration
+`0004` put on `games`, `teams`, `players` and `scores`. Postgres fires row triggers on that update
+even when every column value is identical, because MVCC writes a new tuple regardless.
+
+Left alone, re-submitting an unchanged form would therefore write an audit event whose `old_row` and
+`new_row` differ only in `updated_at` — indistinguishable, to a reader, from a real change. Score
+entry is the highest-frequency mutation in the app, so this would be the common case rather than the
+edge case.
+
+The trigger suppresses it by comparing the rows with `updated_at` removed. `jsonb - text` on a table
+without that column is a harmless no-op, so one expression covers all five audited tables. A change
+that sets a field back to its previous value in the same statement is correctly suppressed too.
+
+Failed requests are a different matter and remain unrecorded: validation (400), authorization (403)
+and missing-row (404) failures never reach a write, so no trigger fires. A repeated attempt to alter
+someone else's game leaves no trace. Recording those needs an application-level write, not a trigger,
+and is out of scope until someone asks for it.
+
 ## Retention
 
 `audit_events.game_id` is a plain nullable integer with no foreign key.
@@ -136,6 +157,13 @@ BEGIN
     -- pg_trigger_depth() cannot make this distinction: RI cascades run at depth 1.
     IF TG_OP = 'DELETE' AND TG_TABLE_NAME <> 'games'
        AND NOT EXISTS (SELECT 1 FROM games WHERE id = resolved_game_id) THEN
+        RETURN NULL;
+    END IF;
+
+    -- GORM's Save always emits an UPDATE and always bumps updated_at, and Postgres fires
+    -- this trigger even when no column value differs. Without this guard, re-saving an
+    -- unchanged form writes an event indistinguishable from a real change.
+    IF TG_OP = 'UPDATE' AND to_jsonb(OLD) - 'updated_at' = to_jsonb(NEW) - 'updated_at' THEN
         RETURN NULL;
     END IF;
 
