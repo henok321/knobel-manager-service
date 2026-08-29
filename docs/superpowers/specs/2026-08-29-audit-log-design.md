@@ -71,6 +71,15 @@ cascade rule below that score wipe records nothing. This is the most audit-worth
 and it is deliberately invisible. Making it visible requires denormalising `game_id` onto `scores`,
 because the parent rows are gone by the time the trigger runs — deferred until someone asks.
 
+The cascade rule is broader than "a deleted game takes its trail with it", and the wording above
+originally hid that. The guard suppresses any delete whose row can no longer reach a live game,
+which includes children orphaned by a delete one level up: deleting a team records one `teams`
+event, not that event plus one per player it removed. The log is therefore one event per user
+action, which is the intended shape — a 60-player game deleted in one request should not produce
+hundreds of rows nobody reads — but it means child-level questions ("when did player P disappear?")
+are answerable only through the parent event. `TestAuditActor` pins both directions: deleting a team
+records exactly one event, and deleting a player directly still records its own.
+
 ## Requests that change nothing
 
 `GamesRepository.CreateOrUpdateGame` calls `db.Save`, which emits an `UPDATE` unconditionally —

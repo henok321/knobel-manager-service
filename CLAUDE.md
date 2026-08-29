@@ -332,19 +332,28 @@ The Scores operations are part of the unified `gen/api` package, but **scores ar
 
 ### Audit Log
 
-Every change to `games`, `game_owners`, `teams`, `players` and `scores` is recorded in `audit_events` by Postgres row
+Changes to `games`, `game_owners`, `teams`, `players` and `scores` are recorded in `audit_events` by Postgres row
 triggers (`db_migration/0011_audit_events.sql`). There is no application code on the audit write path and no diffing:
 `to_jsonb(OLD)` and `to_jsonb(NEW)` carry before and after.
 
 `rounds`, `game_tables` and `table_players` are deliberately not audited — they are produced by the setup algorithm,
 not edited by a human, and one setup run would write hundreds of rows.
 
+**The log records one event per user action, not one row per changed row.** Deletes that cascade are recorded only at
+the level the request acted on: deleting a game records one `games` event, and deleting a team records one `teams`
+event, not one per orphaned player or score. Two consequences are worth knowing before relying on the log:
+
+- "When did player P disappear?" is unanswerable if P went with its team. The parent event is the only trace, and its
+  `old_row` holds no child data.
+- Re-running setup calls `ResetGameTables` (`pkg/game/service.go`), which deletes `game_tables` and cascades to
+  `scores`. That score wipe is reachable from an ordinary request and leaves **no audit trace at all**.
+
 Three mechanics are not obvious, and the first two were measured to behave the opposite of the expectation:
 
 - `pkg/audit/actor.go` registers its callback at `Before("gorm:create")`, not `After("gorm:begin_transaction")`. At the
   latter, `Statement.ConnPool` is still the `*sql.DB` pool, so the setting lands on an arbitrary connection and every
   audit row records `system`.
-- Cascade deletes are suppressed by checking whether the row's game still exists, not by `pg_trigger_depth()`.
+- Cascade deletes are suppressed by checking whether the row can still reach a live game, not by `pg_trigger_depth()`.
   Referential-integrity cascades run at depth 1, exactly like a direct delete.
 - Updates that change nothing are suppressed by comparing the rows with `updated_at` removed. GORM's `Save` emits an
   `UPDATE` unconditionally and always bumps `updated_at`, and Postgres fires row triggers even when no value differs.

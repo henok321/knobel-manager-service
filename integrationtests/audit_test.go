@@ -293,6 +293,26 @@ func TestAuditActor(t *testing.T) {
 				assert.Contains(t, *updates[0].NewRow, "Game 1 updated")
 			},
 		},
+		"delete team records one event, not one per cascaded player": {
+			method:             http.MethodDelete,
+			endpoint:           "/games/1/teams/1",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusNoContent,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_team_player.sql")
+				resetAuditEvents(t, db)
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
+				rows := auditRows(t, db)
+				require.Len(t, rows, 1,
+					"one event per user action: the cascaded player deletion is deliberately not recorded")
+				assert.Equal(t, "teams", rows[0].Entity)
+				assert.Equal(t, "delete", rows[0].Action)
+				assert.Equal(t, "sub-1", rows[0].ActorSub)
+			},
+		},
 		"delete game records one event attributed to the caller": {
 			method:             http.MethodDelete,
 			endpoint:           "/games/1",
@@ -337,6 +357,44 @@ func TestAuditActor(t *testing.T) {
 			newTestRequest(t, tc, server, db)
 		})
 	}
+
+	// Scores are the highest-frequency mutation and the reason the no-op guard exists,
+	// and this is the only test that drives GORM's Save rather than hand-written SQL.
+	t.Run("score writes are attributed, and resubmitting the same scores records nothing", func(t *testing.T) {
+		executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+		resetAuditEvents(t, db)
+
+		defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+		submitScores := testCase{
+			method:             http.MethodPut,
+			endpoint:           "/games/1/rounds/1/tables/1/scores",
+			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusOK,
+		}
+
+		newTestRequest(t, submitScores, server, db)
+
+		rows := auditRows(t, db)
+		require.NotEmpty(t, rows, "submitting scores must be recorded")
+
+		for _, row := range rows {
+			assert.Equal(t, "scores", row.Entity)
+			assert.Equal(t, "sub-1", row.ActorSub)
+			assert.Equal(t, "sub-1@example.org", row.ActorEmail)
+			require.NotNil(t, row.GameID)
+			assert.Equal(t, 1, *row.GameID)
+		}
+
+		resetAuditEvents(t, db)
+
+		newTestRequest(t, submitScores, server, db)
+
+		assert.Empty(t, auditRows(t, db),
+			"resubmitting identical scores must record nothing: GORM's Save emits an UPDATE "+
+				"and bumps updated_at regardless, so only the trigger guard prevents a phantom event")
+	})
 
 	t.Run("actor does not persist across requests", func(t *testing.T) {
 		executeSQLFile(t, db, "./test_data/games_setup_two_owners.sql")
