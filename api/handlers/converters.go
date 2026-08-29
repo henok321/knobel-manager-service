@@ -114,3 +114,17 @@ func entityGameToAPIGame(gameEntity entity.Game) api.Game {
 
 	return apiGame
 }
+
+func entityAuditEventToAPIAuditEvent(event entity.AuditEvent, oldRow, newRow *map[string]any) api.AuditEvent {
+	return api.AuditEvent{
+		Id:         event.ID,
+		Entity:     event.Entity,
+		EntityID:   event.RowID,
+		Action:     api.AuditAction(event.Action),
+		ActorSub:   event.ActorSub,
+		ActorEmail: event.ActorEmail,
+		CreatedAt:  event.CreatedAt,
+		Old:        oldRow,
+		New:        newRow,
+	}
+}

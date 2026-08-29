@@ -8,9 +8,31 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/oapi-codegen/runtime"
 )
+
+// Defines values for AuditAction.
+const (
+	Delete AuditAction = "delete"
+	Insert AuditAction = "insert"
+	Update AuditAction = "update"
+)
+
+// Valid indicates whether the value is a known member of the AuditAction enum.
+func (e AuditAction) Valid() bool {
+	switch e {
+	case Delete:
+		return true
+	case Insert:
+		return true
+	case Update:
+		return true
+	default:
+		return false
+	}
+}
 
 // Defines values for GameStatus.
 const (
@@ -58,6 +80,48 @@ func (e RoundStatus) Valid() bool {
 type AddOwnerRequest struct {
 	// Email Example: owner@example.org
 	Email string `json:"email"`
+}
+
+// AuditAction Example: update
+type AuditAction string
+
+// AuditEvent defines model for AuditEvent.
+type AuditEvent struct {
+	// Action Example: update
+	Action AuditAction `json:"action"`
+
+	// ActorEmail Actor email as it was when the change was made, not resolved live.
+	//
+	// Example: owner@example.org
+	ActorEmail string `json:"actorEmail"`
+
+	// ActorSub Firebase UID of the actor, or "system" for changes made outside a request.
+	//
+	// Example: sub-1
+	ActorSub  string    `json:"actorSub"`
+	CreatedAt time.Time `json:"createdAt"`
+
+	// Entity Name of the changed database table.
+	//
+	// Example: scores
+	Entity string `json:"entity"`
+
+	// EntityID Example: 42
+	EntityID string `json:"entityID"`
+
+	// Id Example: 1
+	Id int64 `json:"id"`
+
+	// New The row after the change; null on delete.
+	New *map[string]interface{} `json:"new,omitempty"`
+
+	// Old The row before the change; null on insert.
+	Old *map[string]interface{} `json:"old,omitempty"`
+}
+
+// AuditResponse defines model for AuditResponse.
+type AuditResponse struct {
+	Events []AuditEvent `json:"events"`
 }
 
 // Error defines model for Error.
@@ -282,6 +346,9 @@ type ServerInterface interface {
 	// UpdateGame Update an existing game
 	// (PUT /games/{gameID})
 	UpdateGame(w http.ResponseWriter, r *http.Request, gameID int)
+	// GetAuditLog List audit events for a game, newest first
+	// (GET /games/{gameID}/audit)
+	GetAuditLog(w http.ResponseWriter, r *http.Request, gameID int)
 	// AddOwner Add an owner to a game by email
 	// (POST /games/{gameID}/owners)
 	AddOwner(w http.ResponseWriter, r *http.Request, gameID int)
@@ -429,6 +496,32 @@ func (siw *ServerInterfaceWrapper) UpdateGame(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateGame(w, r, gameID)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAuditLog operation middleware
+func (siw *ServerInterfaceWrapper) GetAuditLog(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "gameID" -------------
+	var gameID int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAuditLog(w, r, gameID)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1031,6 +1124,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables", wrapper.GetTables)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", wrapper.GetTable)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores", wrapper.UpdateScores)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/audit", wrapper.GetAuditLog)
 
 	return m
 }

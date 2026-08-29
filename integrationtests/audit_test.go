@@ -2,6 +2,7 @@ package integrationtests
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -358,5 +359,114 @@ func TestAuditActor(t *testing.T) {
 		assert.Equal(t, "sub-1", rows[0].ActorSub)
 		assert.Equal(t, "sub-2", rows[1].ActorSub,
 			"the second request must not inherit the first actor from the connection pool")
+	})
+}
+
+func TestAuditLogEndpoint(t *testing.T) {
+	tests := map[string]testCase{
+		"read audit log not owner": {
+			method:             http.MethodGet,
+			endpoint:           "/games/1/audit",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
+			expectedStatusCode: http.StatusForbidden,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
+			},
+		},
+		"read audit log game not found": {
+			method:             http.MethodGet,
+			endpoint:           "/games/999/audit",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusNotFound,
+		},
+		"read audit log invalid gameID": {
+			method:             http.MethodGet,
+			endpoint:           "/games/invalid/audit",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusBadRequest,
+		},
+	}
+
+	dbConn, teardownDatabase := setupTestDatabase(t)
+	defer teardownDatabase()
+
+	db, err := sql.Open("pgx", dbConn)
+	require.NoError(t, err)
+
+	defer db.Close()
+
+	runGooseUp(t, db)
+
+	server, teardown := setupTestServer(t)
+	defer teardown(server)
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			if tc.setup != nil {
+				tc.setup(db)
+			}
+
+			defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+			newTestRequest(t, tc, server, db)
+		})
+	}
+
+	// Reads the response body rather than only its status code, so it cannot use the
+	// shared testCase harness: assertions there receive no handle on the server.
+	t.Run("read audit log newest first", func(t *testing.T) {
+		executeSQLFile(t, db, "./test_data/games_setup.sql")
+		resetAuditEvents(t, db)
+
+		defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+		_, err := db.ExecContext(t.Context(),
+			`INSERT INTO teams (id, team_name, game_id) VALUES (1, 'Team 1', 1)`)
+		require.NoError(t, err)
+
+		_, err = db.ExecContext(t.Context(),
+			`UPDATE games SET game_name = 'Game 1 updated' WHERE id = 1`)
+		require.NoError(t, err)
+
+		request, err := http.NewRequestWithContext(t.Context(), http.MethodGet,
+			server.URL+"/games/1/audit", nil)
+		require.NoError(t, err)
+
+		request.Header.Set("Authorization", "Bearer sub-1")
+
+		resp, err := http.DefaultClient.Do(request)
+		require.NoError(t, err)
+
+		defer resp.Body.Close()
+
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		response := struct {
+			Events []struct {
+				ID         int64          `json:"id"`
+				Entity     string         `json:"entity"`
+				EntityID   string         `json:"entityID"`
+				Action     string         `json:"action"`
+				ActorSub   string         `json:"actorSub"`
+				ActorEmail string         `json:"actorEmail"`
+				Old        map[string]any `json:"old"`
+				New        map[string]any `json:"new"`
+			} `json:"events"`
+		}{}
+
+		require.NoError(t, json.NewDecoder(resp.Body).Decode(&response))
+		require.Len(t, response.Events, 2)
+
+		assert.Equal(t, "games", response.Events[0].Entity)
+		assert.Equal(t, "update", response.Events[0].Action)
+		assert.Equal(t, "1", response.Events[0].EntityID)
+		assert.Equal(t, "system", response.Events[0].ActorSub)
+		require.NotNil(t, response.Events[0].New)
+		assert.Equal(t, "Game 1 updated", response.Events[0].New["game_name"])
+		require.NotNil(t, response.Events[0].Old)
+		assert.Equal(t, "Game 1", response.Events[0].Old["game_name"])
+
+		assert.Equal(t, "teams", response.Events[1].Entity)
+		assert.Equal(t, "insert", response.Events[1].Action)
+		assert.Nil(t, response.Events[1].Old)
 	})
 }

@@ -102,3 +102,16 @@ type TablePlayer struct {
 func (TablePlayer) TableName() string {
 	return "table_players"
 }
+
+type AuditEvent struct {
+	ID         int64 `gorm:"primaryKey"`
+	GameID     *int
+	Entity     string `gorm:"column:table_name"`
+	RowID      string
+	Action     string
+	ActorSub   string
+	ActorEmail string
+	OldRow     *string `gorm:"type:jsonb"`
+	NewRow     *string `gorm:"type:jsonb"`
+	CreatedAt  time.Time
+}
