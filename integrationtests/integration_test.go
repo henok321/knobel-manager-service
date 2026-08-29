@@ -24,6 +24,7 @@ import (
 	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/routes"
 	"github.com/henok321/knobel-manager-service/integrationtests/mock"
+	"github.com/henok321/knobel-manager-service/pkg/audit"
 )
 
 type testCase struct {
@@ -128,6 +129,10 @@ func setupTestServer(t *testing.T) (*httptest.Server, func(*httptest.Server)) {
 	database, err := gorm.Open(pg.Open(url), &gorm.Config{})
 	if err != nil {
 		log.Fatalln("Starting application failed, cannot start connect to database", err)
+	}
+
+	if err := database.Use(audit.ActorPlugin{}); err != nil {
+		t.Fatal("Could not register audit actor plugin", err)
 	}
 
 	dbChecker := healthpkg.NewDatabaseChecker(database, 500*time.Millisecond)

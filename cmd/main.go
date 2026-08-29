@@ -26,6 +26,7 @@ import (
 	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/logging"
 	"github.com/henok321/knobel-manager-service/api/routes"
+	"github.com/henok321/knobel-manager-service/pkg/audit"
 )
 
 func init() {
@@ -77,6 +78,11 @@ func setupDatabase() (*gorm.DB, *sql.DB, error) {
 	gormDB, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
 		slog.Error("Starting application failed, cannot open gormDB", "error", err)
+		return nil, nil, err
+	}
+
+	if err := gormDB.Use(audit.ActorPlugin{}); err != nil {
+		slog.Error("Starting application failed, cannot register audit actor plugin", "error", err)
 		return nil, nil, err
 	}
 

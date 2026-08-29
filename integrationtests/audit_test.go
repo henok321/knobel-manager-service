@@ -2,6 +2,7 @@ package integrationtests
 
 import (
 	"database/sql"
+	"net/http"
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -209,4 +210,153 @@ func TestAuditTriggers(t *testing.T) {
 			run(t, db)
 		})
 	}
+}
+
+func TestAuditActor(t *testing.T) {
+	tests := map[string]testCase{
+		"create game records the game and its owner": {
+			method:             http.MethodPost,
+			endpoint:           "/games",
+			requestBody:        `{"name":"Game 1","numberOfRounds":2, "teamSize":4, "tableSize":4}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusCreated,
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
+				rows := auditRows(t, db)
+				require.Len(t, rows, 2)
+
+				byEntity := map[string]auditRow{}
+				for _, row := range rows {
+					byEntity[row.Entity] = row
+				}
+
+				require.Contains(t, byEntity, "games")
+				assert.Equal(t, "insert", byEntity["games"].Action)
+				assert.Equal(t, "sub-1", byEntity["games"].ActorSub)
+
+				require.Contains(t, byEntity, "game_owners")
+				assert.Equal(t, "sub-1", byEntity["game_owners"].RowID)
+				assert.Equal(t, "sub-1", byEntity["game_owners"].ActorSub)
+				require.NotNil(t, byEntity["game_owners"].GameID)
+				assert.Equal(t, 1, *byEntity["game_owners"].GameID)
+			},
+		},
+		"create team records the calling user": {
+			method:             http.MethodPost,
+			endpoint:           "/games/1/teams",
+			requestBody:        `{"name":"Team 1"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusCreated,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				resetAuditEvents(t, db)
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
+				rows := auditRows(t, db)
+				require.Len(t, rows, 1)
+				assert.Equal(t, "teams", rows[0].Entity)
+				assert.Equal(t, "insert", rows[0].Action)
+				assert.Equal(t, "sub-1", rows[0].ActorSub)
+				assert.Equal(t, "sub-1@example.org", rows[0].ActorEmail)
+				require.NotNil(t, rows[0].GameID)
+				assert.Equal(t, 1, *rows[0].GameID)
+			},
+		},
+		"update game records the calling user": {
+			method:             http.MethodPut,
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1 updated","numberOfRounds":2, "teamSize":4, "tableSize":4, "status":"setup"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusOK,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
+				resetAuditEvents(t, db)
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
+				var updates []auditRow
+
+				for _, row := range auditRows(t, db) {
+					if row.Entity == "games" && row.Action == "update" {
+						updates = append(updates, row)
+					}
+				}
+
+				require.Len(t, updates, 1)
+				assert.Equal(t, "sub-1", updates[0].ActorSub)
+				require.NotNil(t, updates[0].NewRow)
+				assert.Contains(t, *updates[0].NewRow, "Game 1 updated")
+			},
+		},
+		"delete game records one event attributed to the caller": {
+			method:             http.MethodDelete,
+			endpoint:           "/games/1",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusNoContent,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_team_player.sql")
+				resetAuditEvents(t, db)
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
+				rows := auditRows(t, db)
+				require.Len(t, rows, 1)
+				assert.Equal(t, "games", rows[0].Entity)
+				assert.Equal(t, "delete", rows[0].Action)
+				assert.Equal(t, "sub-1", rows[0].ActorSub)
+			},
+		},
+	}
+
+	dbConn, teardownDatabase := setupTestDatabase(t)
+	defer teardownDatabase()
+
+	db, err := sql.Open("pgx", dbConn)
+	require.NoError(t, err)
+
+	defer db.Close()
+
+	runGooseUp(t, db)
+
+	server, teardown := setupTestServer(t)
+	defer teardown(server)
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			if tc.setup != nil {
+				tc.setup(db)
+			}
+
+			defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+			newTestRequest(t, tc, server, db)
+		})
+	}
+
+	t.Run("actor does not persist across requests", func(t *testing.T) {
+		executeSQLFile(t, db, "./test_data/games_setup_two_owners.sql")
+		resetAuditEvents(t, db)
+
+		defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+		for _, sub := range []string{"sub-1", "sub-2"} {
+			newTestRequest(t, testCase{
+				method:             "POST",
+				endpoint:           "/games/1/teams",
+				requestBody:        `{"name":"Team ` + sub + `"}`,
+				requestHeaders:     map[string]string{"Authorization": "Bearer " + sub},
+				expectedStatusCode: http.StatusCreated,
+			}, server, db)
+		}
+
+		rows := auditRows(t, db)
+		require.Len(t, rows, 2)
+		assert.Equal(t, "sub-1", rows[0].ActorSub)
+		assert.Equal(t, "sub-2", rows[1].ActorSub,
+			"the second request must not inherit the first actor from the connection pool")
+	})
 }
