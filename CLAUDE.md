@@ -178,6 +178,7 @@ pkg/                   # Domain modules (independent, reusable)
   team/                # Team management
   player/              # Player management
   table/               # Table/round management (also handles scores)
+  audit/               # Audit log: actor propagation plugin, read repository and service
   setup/               # Game setup algorithms (table assignments)
   entity/              # Shared database models
   apperror/            # Application sentinel errors
@@ -328,6 +329,35 @@ The Scores operations are part of the unified `gen/api` package, but **scores ar
 (`api/handlers/tables_handler.go`), not a dedicated scores handler. There is no `pkg/scores` domain module.
 `TablesHandler` provides both the Tables and Scores methods of `api.ServerInterface`; it is embedded in the combined
 `apiServer` in `api/routes/routes.go`.
+
+### Audit Log
+
+Every change to `games`, `game_owners`, `teams`, `players` and `scores` is recorded in `audit_events` by Postgres row
+triggers (`db_migration/0011_audit_events.sql`). There is no application code on the audit write path and no diffing:
+`to_jsonb(OLD)` and `to_jsonb(NEW)` carry before and after.
+
+`rounds`, `game_tables` and `table_players` are deliberately not audited — they are produced by the setup algorithm,
+not edited by a human, and one setup run would write hundreds of rows.
+
+Three mechanics are not obvious, and the first two were measured to behave the opposite of the expectation:
+
+- `pkg/audit/actor.go` registers its callback at `Before("gorm:create")`, not `After("gorm:begin_transaction")`. At the
+  latter, `Statement.ConnPool` is still the `*sql.DB` pool, so the setting lands on an arbitrary connection and every
+  audit row records `system`.
+- Cascade deletes are suppressed by checking whether the row's game still exists, not by `pg_trigger_depth()`.
+  Referential-integrity cascades run at depth 1, exactly like a direct delete.
+- Updates that change nothing are suppressed by comparing the rows with `updated_at` removed. GORM's `Save` emits an
+  `UPDATE` unconditionally and always bumps `updated_at`, and Postgres fires row triggers even when no value differs.
+
+The plugin is registered at both `gorm.Open` sites: `cmd/main.go` and `integrationtests/integration_test.go`. A harness
+that forgets it records `system` for everything, which `TestAuditActor` fails on.
+
+Failed requests leave no trace: validation (400), authorization (403) and missing-row (404) failures never reach a
+write, so no trigger fires.
+
+Reads go through the normal layering: `GET /games/{gameID}/audit` → `AuditHandler` → `audit.EventsService` (ownership
+check) → `audit.EventsRepository`. The design rationale, including the rejected alternatives, is in
+`docs/superpowers/specs/2026-08-29-audit-log-design.md`.
 
 ## Test Setup
 
