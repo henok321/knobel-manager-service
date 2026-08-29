@@ -49,6 +49,13 @@ BEGIN
         RETURN NULL;
     END IF;
 
+    -- GORM's Save always emits an UPDATE and always bumps updated_at, and Postgres fires
+    -- this trigger even when no column value differs. Without this guard, re-saving an
+    -- unchanged form writes an event indistinguishable from a real change.
+    IF TG_OP = 'UPDATE' AND to_jsonb(OLD) - 'updated_at' = to_jsonb(NEW) - 'updated_at' THEN
+        RETURN NULL;
+    END IF;
+
     INSERT INTO audit_events (game_id, table_name, row_id, action, actor_sub, actor_email, old_row, new_row)
     VALUES (resolved_game_id,
             TG_TABLE_NAME,

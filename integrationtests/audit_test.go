@@ -124,6 +124,21 @@ func TestAuditTriggers(t *testing.T) {
 			assert.NotContains(t, *rows[0].OldRow, "Game 1 updated")
 			assert.Contains(t, *rows[0].NewRow, "Game 1 updated")
 		},
+		"unchanged update writes nothing": func(t *testing.T, db *sql.DB) {
+			t.Helper()
+
+			seedGameWithPlayerAndScore(t, db)
+			resetAuditEvents(t, db)
+
+			// What GORM's Save emits when a form is re-submitted unchanged: every
+			// column rewritten to its current value, updated_at bumped.
+			_, err := db.ExecContext(t.Context(), `UPDATE games
+                               SET game_name = game_name, status = status, updated_at = NOW()
+                               WHERE id = 1`)
+			require.NoError(t, err)
+
+			assert.Empty(t, auditRows(t, db))
+		},
 		"game_id resolves through parent tables": func(t *testing.T, db *sql.DB) {
 			t.Helper()
 
