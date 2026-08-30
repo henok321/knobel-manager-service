@@ -37,9 +37,12 @@ func (t *TablesRepository) FindTable(ctx context.Context, sub string, gameID, ro
 }
 
 func (t *TablesRepository) UpdateTable(ctx context.Context, table *entity.GameTable) (entity.GameTable, error) {
-	for _, score := range table.Scores {
-		err := t.db.WithContext(ctx).Save(score).Error
-		if err != nil {
+	// One batched upsert rather than a Save per score: a loop leaves earlier scores
+	// committed when a later one fails, which the audit log then records as a deliberate
+	// partial submission, and each Save would otherwise open its own transaction and pay
+	// for its own actor round trip.
+	if len(table.Scores) > 0 {
+		if err := t.db.WithContext(ctx).Save(table.Scores).Error; err != nil {
 			return entity.GameTable{}, err
 		}
 	}

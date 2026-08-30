@@ -585,6 +585,40 @@ paths:
           description: Not owner of the game
         '404':
           description: Game, round, or table not found
+  /games/{gameID}/audit:
+    parameters:
+      - name: gameID
+        in: path
+        required: true
+        schema:
+          type: integer
+    get:
+      operationId: getAuditLog
+      tags: [ Audit ]
+      summary: List audit events for a game, newest first
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '200':
+          description: Audit events found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditResponse'
+        '400':
+          description: Invalid gameID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 tags:
   - name: Health
     description: Health check
@@ -598,6 +632,8 @@ tags:
     description: Tables per round
   - name: Scores
     description: Table scores
+  - name: Audit
+    description: Per-game audit log
 components:
   securitySchemes:
     bearerAuth:
@@ -885,6 +921,59 @@ components:
       type: string
       enum: [ setup, in_progress, completed ]
       example: setup
+    AuditAction:
+      type: string
+      enum: [ insert, update, delete ]
+      x-enum-varnames: [ AuditActionInsert, AuditActionUpdate, AuditActionDelete ]
+      example: update
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        entity:
+          type: string
+          description: Name of the changed database table.
+          example: scores
+        entityID:
+          type: string
+          example: "42"
+        action:
+          $ref: '#/components/schemas/AuditAction'
+        actorSub:
+          type: string
+          description: Firebase UID of the actor, or "system" for changes made outside a request.
+          example: sub-1
+        actorEmail:
+          type: string
+          description: Actor email as it was when the change was made, not resolved live.
+          example: owner@example.org
+        createdAt:
+          type: string
+          format: date-time
+        old:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: The row before the change; null on insert.
+          x-go-type: json.RawMessage
+        new:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: The row after the change; null on delete.
+          x-go-type: json.RawMessage
+      required: [ id, entity, entityID, action, actorSub, actorEmail, createdAt, old, new ]
+    AuditResponse:
+      type: object
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEvent'
+      required: [ events ]
     RoundStatus:
       type: string
       enum: [ setup, in_progress, completed ]

@@ -12,6 +12,7 @@ import (
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/gen/health"
+	"github.com/henok321/knobel-manager-service/pkg/audit"
 	"github.com/henok321/knobel-manager-service/pkg/game"
 	"github.com/henok321/knobel-manager-service/pkg/player"
 	"github.com/henok321/knobel-manager-service/pkg/table"
@@ -23,6 +24,7 @@ type apiServer struct {
 	*handlers.TeamsHandler
 	*handlers.PlayersHandler
 	*handlers.TablesHandler
+	*handlers.AuditHandler
 }
 
 var _ api.ServerInterface = (*apiServer)(nil)
@@ -66,12 +68,14 @@ func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthSe
 	playerService := player.NewPlayersService(player.NewPlayersRepository(database), team.NewTeamsRepository(database))
 	tableService := table.NewTablesService(table.NewTablesRepository(database))
 	teamService := team.NewTeamsService(team.NewTeamsRepository(database), gameService)
+	auditService := audit.NewEventsService(audit.NewEventsRepository(database), game.NewGamesRepository(database))
 
 	healthHandler := handlers.NewHealthHandler(healthService)
 	gamesHandler := handlers.NewGamesHandler(gameService, authClient)
 	playersHandler := handlers.NewPlayersHandler(playerService)
 	tablesHandler := handlers.NewTablesHandler(gameService, tableService)
 	teamsHandler := handlers.NewTeamsHandler(teamService)
+	auditHandler := handlers.NewAuditHandler(auditService)
 
 	router := http.NewServeMux()
 
@@ -87,7 +91,7 @@ func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthSe
 		Middlewares: []health.MiddlewareFunc{public("default-src 'self'")},
 	})
 
-	api.HandlerWithOptions(&apiServer{gamesHandler, teamsHandler, playersHandler, tablesHandler}, api.StdHTTPServerOptions{
+	api.HandlerWithOptions(&apiServer{gamesHandler, teamsHandler, playersHandler, tablesHandler, auditHandler}, api.StdHTTPServerOptions{
 		BaseRouter:       router,
 		ErrorHandlerFunc: handleValidationErrors,
 		Middlewares:      []api.MiddlewareFunc{authenticated},

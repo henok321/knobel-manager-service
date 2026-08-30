@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"encoding/json"
 	"time"
 )
 
@@ -101,4 +102,17 @@ type TablePlayer struct {
 
 func (TablePlayer) TableName() string {
 	return "table_players"
+}
+
+type AuditEvent struct {
+	ID         int64 `gorm:"primaryKey"`
+	GameID     int
+	Entity     string `gorm:"column:table_name"`
+	RowID      string
+	Action     string
+	ActorSub   string
+	ActorEmail string
+	OldRow     json.RawMessage `gorm:"type:jsonb"`
+	NewRow     json.RawMessage `gorm:"type:jsonb"`
+	CreatedAt  time.Time
 }

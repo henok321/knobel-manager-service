@@ -106,6 +106,35 @@ Lasts until the next push to `main`. To make it stick, revert the commit.
 Postgres major bumps in `deploy/compose.yaml` are excluded from Renovate: the new major refuses to start on
 the old data directory, so it needs a dump, restore and volume swap by hand.
 
+Rolling the image back does **not** roll back the audit triggers. Migrations are up-only, so the triggers keep
+firing against an older binary that no longer sets the actor, and every change records `system`. If the triggers
+themselves are the problem — `audit_row: no game_id resolution for table X` in the Postgres log, or 5xx on
+create/update of one entity type right after a schema change — disable them without dropping the function:
+
+```sql
+ALTER TABLE games DISABLE TRIGGER audit;
+ALTER TABLE game_owners DISABLE TRIGGER audit;
+ALTER TABLE teams DISABLE TRIGGER audit;
+ALTER TABLE players DISABLE TRIGGER audit;
+ALTER TABLE scores DISABLE TRIGGER audit;
+```
+
+`ENABLE TRIGGER` reverses it. Changes made while disabled are never recorded and cannot be recovered.
+
+## Audit log health
+
+Broken attribution is silent — no error, no metric. Every event still gets written, but with the actor `system`,
+which looks like a complete log until someone reads it. It happens when a new entry point opens the database
+without `audit.OpenDatabase`, when `SkipDefaultTransaction` is set, or when a write goes through raw `Exec`.
+
+```sql
+SELECT actor_sub, count(*) FROM audit_events
+WHERE created_at > now() - interval '1 day' GROUP BY 1 ORDER BY 2 DESC;
+```
+
+`system` rows during request hours mean attribution is broken. `system` from a migration or a manual fix is
+expected and correct.
+
 ## GitHub secrets and variables
 
 | Name              | Kind     | Value                                              |

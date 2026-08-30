@@ -178,6 +178,7 @@ pkg/                   # Domain modules (independent, reusable)
   team/                # Team management
   player/              # Player management
   table/               # Table/round management (also handles scores)
+  audit/               # Audit log: actor propagation plugin, read repository and service
   setup/               # Game setup algorithms (table assignments)
   entity/              # Shared database models
   apperror/            # Application sentinel errors
@@ -328,6 +329,69 @@ The Scores operations are part of the unified `gen/api` package, but **scores ar
 (`api/handlers/tables_handler.go`), not a dedicated scores handler. There is no `pkg/scores` domain module.
 `TablesHandler` provides both the Tables and Scores methods of `api.ServerInterface`; it is embedded in the combined
 `apiServer` in `api/routes/routes.go`.
+
+### Audit Log
+
+Changes to `games`, `game_owners`, `teams`, `players` and `scores` are recorded in `audit_events` by Postgres row
+triggers (`db_migration/0011_audit_events.sql`). There is no application code on the audit write path and no diffing:
+`to_jsonb(OLD)` and `to_jsonb(NEW)` carry before and after.
+
+`rounds`, `game_tables` and `table_players` are deliberately not audited — they are produced by the setup algorithm,
+not edited by a human, and one setup run would write hundreds of rows.
+
+**The log records one event per user action, not one row per changed row.** Deletes that cascade are recorded only at
+the level the request acted on: deleting a game records one `games` event, and deleting a team records one `teams`
+event, not one per orphaned player or score. Two consequences are worth knowing before relying on the log:
+
+- "When did player P disappear?" is unanswerable if P went with its team. The parent event is the only trace, and its
+  `old_row` holds no child data.
+
+Re-running setup is the exception that proves the rule, and it is worth knowing why. `ResetGameTables`
+(`pkg/game/repository.go`) deletes `scores` **explicitly** before it drops `game_tables`, so each score still resolves
+its game through the parents that are still standing and is recorded and attributed to the caller. Had it relied on the
+cascade, the same rows would have been suppressed and a tournament's entire scoring history would have vanished
+silently. `TestAuditActor` pins this: a setup re-run records one `scores`/`delete` event per wiped score. Preserve the
+delete order if you touch that function.
+
+Three mechanics are not obvious, and the first two were measured to behave the opposite of the expectation:
+
+- `pkg/audit/actor.go` registers its callback at `Before("gorm:create")`, not `After("gorm:begin_transaction")`. At the
+  latter, `Statement.ConnPool` is still the `*sql.DB` pool, so the setting lands on an arbitrary connection and every
+  audit row records `system`.
+- Cascade deletes are suppressed by checking whether the row can still reach a live game, not by `pg_trigger_depth()`.
+  Referential-integrity cascades run at depth 1, exactly like a direct delete.
+- Updates that change nothing are suppressed by comparing the rows with `updated_at` removed. GORM's `Save` emits an
+  `UPDATE` unconditionally and always bumps `updated_at`, and Postgres fires row triggers even when no value differs.
+
+The plugin is registered at both `gorm.Open` sites: `cmd/main.go` and `integrationtests/integration_test.go`. A harness
+that forgets it records `system` for everything, which `TestAuditActor` fails on.
+
+Failed requests leave no trace: validation (400), authorization (403) and missing-row (404) failures never reach a
+write, so no trigger fires.
+
+Reads go through the normal layering: `GET /games/{gameID}/audit` → `AuditHandler` → `audit.EventsService` (ownership
+check) → `audit.EventsRepository`. The design rationale, including the rejected alternatives, is in
+`docs/superpowers/specs/2026-08-29-audit-log-design.md`.
+
+Authorization is in two halves because `audit_events.game_id` has no foreign key and a game's trail deliberately
+outlives the game. While the game exists, `game_owners` decides. Once it is gone, the trail authorizes itself against
+the `game_owners` events it recorded, so a former owner can still read the deletion. Anyone else gets 404 either way,
+learning nothing about whether the game ever existed.
+
+The response carries whole table rows in `old`/`new`, so **adding a column to an audited table publishes it to every
+owner of that game** with no code change. `TestAuditLogEndpoint` pins the exposed key set for all five audited tables,
+so widening fails a test rather than happening silently. The corollary is that **renaming or dropping a column in an
+audited table is a breaking API change**: the frontend reads `new.game_name` directly, and historical rows keep the old
+key forever, so a rename forces clients to handle both shapes indefinitely.
+
+Two limitations are known and deliberately not addressed:
+
+- **The log is not tamper-evident.** The application's database role owns `audit_events` and its triggers, so a
+  compromised service can rewrite or disable its own audit trail. `REVOKE UPDATE, DELETE, TRUNCATE` would fix it and
+  is the right move if this ever needs to prove anything to a third party; it is over-engineering for a tournament app.
+- **`game_id` is not tied to a game's incarnation.** There is no foreign key (by design, so trails outlive games) and
+  no immutable game key, so a `setval` or a `pg_restore` that rewinds the sequence could let a new game inherit a
+  deleted one's trail. Not reachable through the API — `nextval` never goes backwards on its own.
 
 ## Test Setup
 
