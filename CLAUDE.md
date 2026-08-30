@@ -178,7 +178,7 @@ pkg/                   # Domain modules (independent, reusable)
   team/                # Team management
   player/              # Player management
   table/               # Table/round management (also handles scores)
-  audit/               # Audit log: actor propagation plugin, read repository and service
+  audit/               # Audit log: connection setup with actor propagation, read repository and service
   setup/               # Game setup algorithms (table assignments)
   entity/              # Shared database models
   apperror/            # Application sentinel errors
@@ -355,7 +355,7 @@ delete order if you touch that function.
 
 Three mechanics are not obvious, and the first two were measured to behave the opposite of the expectation:
 
-- `pkg/audit/actor.go` registers its callback at `Before("gorm:create")`, not `After("gorm:begin_transaction")`. At the
+- `pkg/audit/open.go` registers its callback at `Before("gorm:create")`, not `After("gorm:begin_transaction")`. At the
   latter, `Statement.ConnPool` is still the `*sql.DB` pool, so the setting lands on an arbitrary connection and every
   audit row records `system`.
 - Cascade deletes are suppressed by checking whether the row can still reach a live game, not by `pg_trigger_depth()`.
@@ -363,8 +363,9 @@ Three mechanics are not obvious, and the first two were measured to behave the o
 - Updates that change nothing are suppressed by comparing the rows with `updated_at` removed. GORM's `Save` emits an
   `UPDATE` unconditionally and always bumps `updated_at`, and Postgres fires row triggers even when no value differs.
 
-The plugin is registered at both `gorm.Open` sites: `cmd/main.go` and `integrationtests/integration_test.go`. A harness
-that forgets it records `system` for everything, which `TestAuditActor` fails on.
+Both entry points — `cmd/main.go` and `integrationtests/integration_test.go` — open the connection through
+`audit.OpenDatabase`, which registers those callbacks. A harness that calls `gorm.Open` directly records `system` for
+everything, which `TestAuditActor` fails on.
 
 Failed requests leave no trace: validation (400), authorization (403) and missing-row (404) failures never reach a
 write, so no trigger fires.
