@@ -28,10 +28,6 @@ func (r *EventsRepository) FindByGameID(ctx context.Context, gameID int) ([]enti
 	return events, nil
 }
 
-// Ownership of a deleted game, recovered from the trail. Only the most recent
-// game_owners event counts: an owner who was revoked while the game was alive left a
-// delete event behind, and matching any event would let the game's later deletion hand
-// their access back.
 func (r *EventsRepository) WasOwner(ctx context.Context, gameID int, sub string) (bool, error) {
 	var action string
 
