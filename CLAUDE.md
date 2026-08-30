@@ -368,6 +368,15 @@ Reads go through the normal layering: `GET /games/{gameID}/audit` → `AuditHand
 check) → `audit.EventsRepository`. The design rationale, including the rejected alternatives, is in
 `docs/superpowers/specs/2026-08-29-audit-log-design.md`.
 
+Authorization is in two halves because `audit_events.game_id` has no foreign key and a game's trail deliberately
+outlives the game. While the game exists, `game_owners` decides. Once it is gone, the trail authorizes itself against
+the `game_owners` events it recorded, so a former owner can still read the deletion. Anyone else gets 404 either way,
+learning nothing about whether the game ever existed.
+
+The response carries whole table rows in `old`/`new`, so **adding a column to an audited table publishes it to every
+owner of that game** with no code change. `TestAuditLogEndpoint` pins the exposed key set for `games` so that widening
+fails a test rather than happening silently.
+
 ## Test Setup
 
 Integration tests (`integrationtests/`) use:

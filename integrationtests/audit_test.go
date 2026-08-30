@@ -3,12 +3,20 @@ package integrationtests
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	pg "gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
+	"github.com/henok321/knobel-manager-service/api/middleware"
+	"github.com/henok321/knobel-manager-service/pkg/audit"
+	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
 
 type auditRow struct {
@@ -75,6 +83,46 @@ func seedGameWithPlayerAndScore(t *testing.T, db *sql.DB) {
 		_, err := db.ExecContext(t.Context(), statement)
 		require.NoError(t, err)
 	}
+}
+
+type auditEvent struct {
+	ID         int64          `json:"id"`
+	Entity     string         `json:"entity"`
+	EntityID   string         `json:"entityID"`
+	Action     string         `json:"action"`
+	ActorSub   string         `json:"actorSub"`
+	ActorEmail string         `json:"actorEmail"`
+	Old        map[string]any `json:"old"`
+	New        map[string]any `json:"new"`
+}
+
+func readAuditLog(t *testing.T, server *httptest.Server, gameID int, sub string, expectedStatus int) []auditEvent {
+	t.Helper()
+
+	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet,
+		fmt.Sprintf("%s/games/%d/audit", server.URL, gameID), nil)
+	require.NoError(t, err)
+
+	request.Header.Set("Authorization", "Bearer "+sub)
+
+	resp, err := http.DefaultClient.Do(request)
+	require.NoError(t, err)
+
+	defer resp.Body.Close()
+
+	require.Equal(t, expectedStatus, resp.StatusCode)
+
+	if expectedStatus != http.StatusOK {
+		return nil
+	}
+
+	response := struct {
+		Events []auditEvent `json:"events"`
+	}{}
+
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&response))
+
+	return response.Events
 }
 
 func TestAuditTriggers(t *testing.T) {
@@ -377,7 +425,7 @@ func TestAuditActor(t *testing.T) {
 		newTestRequest(t, submitScores, server, db)
 
 		rows := auditRows(t, db)
-		require.NotEmpty(t, rows, "submitting scores must be recorded")
+		require.Len(t, rows, 4, "one event per score in the submission")
 
 		for _, row := range rows {
 			assert.Equal(t, "scores", row.Entity)
@@ -394,6 +442,52 @@ func TestAuditActor(t *testing.T) {
 		assert.Empty(t, auditRows(t, db),
 			"resubmitting identical scores must record nothing: GORM's Save emits an UPDATE "+
 				"and bumps updated_at regardless, so only the trigger guard prevents a phantom event")
+	})
+
+	t.Run("a deleted game's trail stays readable to its former owner", func(t *testing.T) {
+		executeSQLFile(t, db, "./test_data/games_setup.sql")
+
+		defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+		newTestRequest(t, testCase{
+			method:             http.MethodDelete,
+			endpoint:           "/games/1",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusNoContent,
+		}, server, db)
+
+		// The whole point of audit_events.game_id having no foreign key: the trail, and
+		// the deletion event itself, outlive the game they describe.
+		events := readAuditLog(t, server, 1, "sub-1", http.StatusOK)
+		require.NotEmpty(t, events)
+
+		var deletions int
+
+		for _, event := range events {
+			if event.Entity == "games" && event.Action == "delete" {
+				deletions++
+
+				assert.Equal(t, "sub-1", event.ActorSub)
+			}
+		}
+
+		assert.Equal(t, 1, deletions, "the deletion of the game must be readable after it is gone")
+	})
+
+	t.Run("a deleted game's trail is not readable to anyone else", func(t *testing.T) {
+		executeSQLFile(t, db, "./test_data/games_setup.sql")
+
+		defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+		newTestRequest(t, testCase{
+			method:             http.MethodDelete,
+			endpoint:           "/games/1",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusNoContent,
+		}, server, db)
+
+		// 404 rather than 403: a non-owner learns nothing about whether the game existed.
+		readAuditLog(t, server, 1, "sub-2", http.StatusNotFound)
 	})
 
 	t.Run("actor does not persist across requests", func(t *testing.T) {
@@ -485,46 +579,102 @@ func TestAuditLogEndpoint(t *testing.T) {
 			`UPDATE games SET game_name = 'Game 1 updated' WHERE id = 1`)
 		require.NoError(t, err)
 
-		request, err := http.NewRequestWithContext(t.Context(), http.MethodGet,
-			server.URL+"/games/1/audit", nil)
-		require.NoError(t, err)
+		events := readAuditLog(t, server, 1, "sub-1", http.StatusOK)
+		require.Len(t, events, 2)
 
-		request.Header.Set("Authorization", "Bearer sub-1")
+		assert.Equal(t, "games", events[0].Entity)
+		assert.Equal(t, "update", events[0].Action)
+		assert.Equal(t, "1", events[0].EntityID)
+		assert.Equal(t, "system", events[0].ActorSub)
+		require.NotNil(t, events[0].New)
+		assert.Equal(t, "Game 1 updated", events[0].New["game_name"])
+		require.NotNil(t, events[0].Old)
+		assert.Equal(t, "Game 1", events[0].Old["game_name"])
 
-		resp, err := http.DefaultClient.Do(request)
-		require.NoError(t, err)
+		assert.Equal(t, "teams", events[1].Entity)
+		assert.Equal(t, "insert", events[1].Action)
+		assert.Nil(t, events[1].Old)
 
-		defer resp.Body.Close()
+		// The endpoint publishes whole table rows, so adding a column to an audited table
+		// silently widens the public API. Pinning the key set makes that a failing test
+		// rather than a silent disclosure.
+		keys := make([]string, 0, len(events[0].New))
+		for key := range events[0].New {
+			keys = append(keys, key)
+		}
 
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-
-		response := struct {
-			Events []struct {
-				ID         int64          `json:"id"`
-				Entity     string         `json:"entity"`
-				EntityID   string         `json:"entityID"`
-				Action     string         `json:"action"`
-				ActorSub   string         `json:"actorSub"`
-				ActorEmail string         `json:"actorEmail"`
-				Old        map[string]any `json:"old"`
-				New        map[string]any `json:"new"`
-			} `json:"events"`
-		}{}
-
-		require.NoError(t, json.NewDecoder(resp.Body).Decode(&response))
-		require.Len(t, response.Events, 2)
-
-		assert.Equal(t, "games", response.Events[0].Entity)
-		assert.Equal(t, "update", response.Events[0].Action)
-		assert.Equal(t, "1", response.Events[0].EntityID)
-		assert.Equal(t, "system", response.Events[0].ActorSub)
-		require.NotNil(t, response.Events[0].New)
-		assert.Equal(t, "Game 1 updated", response.Events[0].New["game_name"])
-		require.NotNil(t, response.Events[0].Old)
-		assert.Equal(t, "Game 1", response.Events[0].Old["game_name"])
-
-		assert.Equal(t, "teams", response.Events[1].Entity)
-		assert.Equal(t, "insert", response.Events[1].Action)
-		assert.Nil(t, response.Events[1].Old)
+		assert.ElementsMatch(t, []string{
+			"id", "game_name", "team_size", "table_size", "number_of_rounds",
+			"status", "created_at", "updated_at",
+		}, keys, "a new column on games would be published to every owner without a code change")
 	})
+
+	t.Run("a game's log excludes another game's events", func(t *testing.T) {
+		executeSQLFile(t, db, "./test_data/games_setup.sql")
+
+		defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+		_, err := db.ExecContext(t.Context(),
+			`INSERT INTO games (id, game_name, team_size, table_size, number_of_rounds, status)
+			 VALUES (2, 'Game 2', 4, 4, 2, 'setup')`)
+		require.NoError(t, err)
+
+		_, err = db.ExecContext(t.Context(),
+			`INSERT INTO game_owners (game_id, owner_sub) VALUES (2, 'sub-1')`)
+		require.NoError(t, err)
+
+		for _, event := range readAuditLog(t, server, 1, "sub-1", http.StatusOK) {
+			assert.NotEqual(t, "Game 2", event.New["game_name"],
+				"game 1's log must not contain game 2's events")
+		}
+
+		assert.Len(t, readAuditLog(t, server, 2, "sub-1", http.StatusOK), 2,
+			"game 2 has exactly its own insert plus its owner")
+	})
+}
+
+// Regression guard for the callback anchor. GORM writes a belongs-to association before
+// the parent row, as its own nested create; this pins that such writes are attributed too,
+// which an anchor on "gorm:begin_transaction" would silently break.
+func TestAuditActorCoversAssociations(t *testing.T) {
+	dbConn, teardownDatabase := setupTestDatabase(t)
+	defer teardownDatabase()
+
+	db, err := sql.Open("pgx", dbConn)
+	require.NoError(t, err)
+
+	defer db.Close()
+
+	runGooseUp(t, db)
+
+	gormDB, err := gorm.Open(pg.Open(dbConn), &gorm.Config{})
+	require.NoError(t, err)
+	require.NoError(t, gormDB.Use(audit.ActorPlugin{}))
+
+	defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+	ctx := middleware.ContextWithUser(t.Context(), &middleware.User{
+		Sub:   "sub-1",
+		Email: "sub-1@example.org",
+	})
+
+	team := entity.Team{
+		Name: "Team 1",
+		Game: &entity.Game{
+			Name: "Game 1", TeamSize: 4, TableSize: 4, NumberOfRounds: 2, Status: entity.StatusSetup,
+		},
+	}
+	require.NoError(t, gormDB.WithContext(ctx).Create(&team).Error)
+
+	byEntity := map[string]auditRow{}
+	for _, row := range auditRows(t, db) {
+		byEntity[row.Entity] = row
+	}
+
+	require.Contains(t, byEntity, "games")
+	assert.Equal(t, "sub-1", byEntity["games"].ActorSub,
+		"the belongs-to game is written before the parent row; it must still be attributed")
+
+	require.Contains(t, byEntity, "teams")
+	assert.Equal(t, "sub-1", byEntity["teams"].ActorSub)
 }

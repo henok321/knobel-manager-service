@@ -29,6 +29,10 @@ func UserFromContext(ctx context.Context) (*User, bool) {
 	return user, ok
 }
 
+func ContextWithUser(ctx context.Context, user *User) context.Context {
+	return context.WithValue(ctx, userKey, user)
+}
+
 func Authentication(authClient FirebaseAuth) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {

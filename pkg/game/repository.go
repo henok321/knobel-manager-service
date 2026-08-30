@@ -132,3 +132,21 @@ func (r *GamesRepository) WithinTransaction(ctx context.Context, operation func(
 		return operation(ctx, txRepo)
 	})
 }
+
+func (r *GamesRepository) Exists(ctx context.Context, gameID int) (bool, error) {
+	var count int64
+
+	err := r.db.WithContext(ctx).Model(&entity.Game{}).Where("id = ?", gameID).Count(&count).Error
+
+	return count > 0, err
+}
+
+func (r *GamesRepository) IsOwner(ctx context.Context, gameID int, sub string) (bool, error) {
+	var count int64
+
+	err := r.db.WithContext(ctx).Model(&entity.GameOwner{}).
+		Where("game_id = ? AND owner_sub = ?", gameID, sub).
+		Count(&count).Error
+
+	return count > 0, err
+}

@@ -924,6 +924,7 @@ components:
     AuditAction:
       type: string
       enum: [ insert, update, delete ]
+      x-enum-varnames: [ AuditActionInsert, AuditActionUpdate, AuditActionDelete ]
       example: update
     AuditEvent:
       type: object
@@ -962,7 +963,7 @@ components:
           additionalProperties: true
           nullable: true
           description: The row after the change; null on delete.
-      required: [ id, entity, entityID, action, actorSub, actorEmail, createdAt ]
+      required: [ id, entity, entityID, action, actorSub, actorEmail, createdAt, old, new ]
     AuditResponse:
       type: object
       properties:

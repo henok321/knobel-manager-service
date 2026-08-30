@@ -68,7 +68,7 @@ func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthSe
 	playerService := player.NewPlayersService(player.NewPlayersRepository(database), team.NewTeamsRepository(database))
 	tableService := table.NewTablesService(table.NewTablesRepository(database))
 	teamService := team.NewTeamsService(team.NewTeamsRepository(database), gameService)
-	auditService := audit.NewEventsService(audit.NewEventsRepository(database), gameService)
+	auditService := audit.NewEventsService(audit.NewEventsRepository(database), game.NewGamesRepository(database))
 
 	healthHandler := handlers.NewHealthHandler(healthService)
 	gamesHandler := handlers.NewGamesHandler(gameService, authClient)

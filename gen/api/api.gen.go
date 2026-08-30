@@ -15,19 +15,19 @@ import (
 
 // Defines values for AuditAction.
 const (
-	Delete AuditAction = "delete"
-	Insert AuditAction = "insert"
-	Update AuditAction = "update"
+	AuditActionDelete AuditAction = "delete"
+	AuditActionInsert AuditAction = "insert"
+	AuditActionUpdate AuditAction = "update"
 )
 
 // Valid indicates whether the value is a known member of the AuditAction enum.
 func (e AuditAction) Valid() bool {
 	switch e {
-	case Delete:
+	case AuditActionDelete:
 		return true
-	case Insert:
+	case AuditActionInsert:
 		return true
-	case Update:
+	case AuditActionUpdate:
 		return true
 	default:
 		return false
@@ -113,10 +113,10 @@ type AuditEvent struct {
 	Id int64 `json:"id"`
 
 	// New The row after the change; null on delete.
-	New *map[string]interface{} `json:"new,omitempty"`
+	New *map[string]interface{} `json:"new"`
 
 	// Old The row before the change; null on insert.
-	Old *map[string]interface{} `json:"old,omitempty"`
+	Old *map[string]interface{} `json:"old"`
 }
 
 // AuditResponse defines model for AuditResponse.

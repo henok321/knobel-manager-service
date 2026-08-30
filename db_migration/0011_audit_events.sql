@@ -3,7 +3,7 @@
 CREATE TABLE audit_events
 (
     id bigserial PRIMARY KEY,
-    game_id integer,
+    game_id integer NOT NULL,
     table_name text NOT NULL,
     row_id text NOT NULL,
     -- noqa: disable=RF04
@@ -21,14 +21,11 @@ CREATE INDEX idx_audit_events_game_id_id ON audit_events (game_id, id DESC);
 CREATE FUNCTION AUDIT_ROW() RETURNS trigger AS
 $$
 DECLARE
-    row_data         jsonb;
+    old_data         jsonb := CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE to_jsonb(OLD) END;
+    new_data         jsonb := CASE WHEN TG_OP = 'DELETE' THEN NULL ELSE to_jsonb(NEW) END;
+    row_data         jsonb := COALESCE(new_data, old_data);
     resolved_game_id integer;
 BEGIN
-    IF TG_OP = 'DELETE' THEN
-        row_data := to_jsonb(OLD);
-    ELSE
-        row_data := to_jsonb(NEW);
-    END IF;
 
     resolved_game_id := CASE TG_TABLE_NAME
                             WHEN 'games' THEN (row_data ->> 'id')::integer
@@ -62,7 +59,7 @@ BEGIN
     -- GORM's Save always emits an UPDATE and always bumps updated_at, and Postgres fires
     -- this trigger even when no column value differs. Without this guard, re-saving an
     -- unchanged form writes an event indistinguishable from a real change.
-    IF TG_OP = 'UPDATE' AND to_jsonb(OLD) - 'updated_at' = to_jsonb(NEW) - 'updated_at' THEN
+    IF TG_OP = 'UPDATE' AND old_data - 'updated_at' = new_data - 'updated_at' THEN
         RETURN NULL;
     END IF;
 
@@ -73,8 +70,8 @@ BEGIN
             lower(TG_OP),
             COALESCE(NULLIF(current_setting('app.actor_sub', true), ''), 'system'),
             COALESCE(NULLIF(current_setting('app.actor_email', true), ''), ''),
-            CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE to_jsonb(OLD) END,
-            CASE WHEN TG_OP = 'DELETE' THEN NULL ELSE to_jsonb(NEW) END);
+            old_data,
+            new_data);
 
     RETURN NULL;
 END;
