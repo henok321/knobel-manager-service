@@ -35,7 +35,7 @@ func (s PlayersService) CreatePlayer(ctx context.Context, request api.PlayersReq
 		return entity.Player{}, apperror.ErrNotOwner
 	}
 
-	if err := game.EnsureRosterEditable(*teamByID.Game); err != nil {
+	if err := game.EnsureSetupNotAssigned(*teamByID.Game); err != nil {
 		return entity.Player{}, err
 	}
 
@@ -78,7 +78,7 @@ func (s PlayersService) DeletePlayer(ctx context.Context, id int, sub string) er
 		return err
 	}
 
-	if err := game.EnsureRosterEditable(*player.Team.Game); err != nil {
+	if err := game.EnsureSetupNotAssigned(*player.Team.Game); err != nil {
 		return err
 	}
 

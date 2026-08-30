@@ -95,7 +95,7 @@ func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, game 
 	return s.repo.CreateOrUpdateGame(ctx, &gameByID)
 }
 
-func EnsureRosterEditable(game entity.Game) error {
+func EnsureSetupNotAssigned(game entity.Game) error {
 	if game.Status != entity.StatusSetup {
 		return apperror.ErrGameNotEditable
 	}

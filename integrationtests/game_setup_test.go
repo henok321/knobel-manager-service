@@ -162,7 +162,7 @@ func TestGameSetupMultipleTimes(t *testing.T) {
 	})
 }
 
-func TestRosterChangeAfterSetup(t *testing.T) {
+func TestAddTeamAfterSetup(t *testing.T) {
 	dbConn, teardownDatabase := setupTestDatabase(t)
 	defer teardownDatabase()
 

@@ -330,16 +330,16 @@ The Scores operations are part of the unified `gen/api` package, but **scores ar
 `TablesHandler` provides both the Tables and Scores methods of `api.ServerInterface`; it is embedded in the combined
 `apiServer` in `api/routes/routes.go`.
 
-### Roster Changes and Matchmaking
+### Changing Teams and Players After Setup
 
-Creating or deleting a team or a player calls `game.EnsureRosterEditable`, which rejects the change with 409 unless
+Creating or deleting a team or a player calls `game.EnsureSetupNotAssigned`, which rejects the change with 409 unless
 the game is in `setup` (`apperror.ErrGameNotEditable`) **and** has no rounds yet (`apperror.ErrGameAlreadySetUp`).
-Without it a late-arriving team could be added after matchmaking and the game started with players assigned to no
-table. Nothing is discarded behind the owner's back: `DELETE /games/{gameID}/setup` drops the rounds and tables
-explicitly, so the way back is `DELETE setup → change roster → POST setup`. `TestRosterChangeAfterSetup` pins that
-sequence.
+Without it a late-arriving team could be added after the tables were assigned and the game started with players
+seated nowhere. Nothing is discarded behind the owner's back: `DELETE /games/{gameID}/setup` drops the rounds and
+tables explicitly, so the way back is `DELETE setup → add or remove the team → POST setup`. `TestAddTeamAfterSetup`
+pins that sequence.
 
-The guard reads `game.Rounds`, so every repository that loads a game for a roster mutation must preload them —
+The guard reads `game.Rounds`, so every repository that loads a game for such a change must preload them —
 `TeamsRepository.FindByID` and `PlayersRepository.FindPlayerByID` do. Renaming a team or player leaves the assignment
 intact and stays allowed in every status.
 
