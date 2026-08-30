@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -34,11 +33,7 @@ func (a *AuditHandler) GetAuditLog(writer http.ResponseWriter, request *http.Req
 
 	apiEvents := make([]api.AuditEvent, len(events))
 	for i, event := range events {
-		apiEvents[i] = entityAuditEventToAPIAuditEvent(
-			event,
-			decodeAuditRow(ctx, event.ID, event.OldRow),
-			decodeAuditRow(ctx, event.ID, event.NewRow),
-		)
+		apiEvents[i] = entityAuditEventToAPIAuditEvent(event)
 	}
 
 	writer.Header().Set("Content-Type", "application/json")
@@ -47,21 +42,4 @@ func (a *AuditHandler) GetAuditLog(writer http.ResponseWriter, request *http.Req
 	if err := json.NewEncoder(writer).Encode(api.AuditResponse{Events: apiEvents}); err != nil {
 		slog.InfoContext(ctx, "Could not write body", "error", err)
 	}
-}
-
-// The jsonb columns are written only by the audit trigger, so unreadable JSON means a
-// corrupted row rather than a normal case. Drop that one side of the event instead of
-// failing the whole log.
-func decodeAuditRow(ctx context.Context, eventID int64, raw *string) *map[string]any {
-	if raw == nil {
-		return nil
-	}
-
-	row := map[string]any{}
-	if err := json.Unmarshal([]byte(*raw), &row); err != nil {
-		slog.ErrorContext(ctx, "Could not decode audit row", "auditEventID", eventID, "error", err)
-		return nil
-	}
-
-	return &row
 }

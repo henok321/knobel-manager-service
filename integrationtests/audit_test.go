@@ -11,8 +11,6 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	pg "gorm.io/driver/postgres"
-	"gorm.io/gorm"
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/pkg/audit"
@@ -94,6 +92,29 @@ type auditEvent struct {
 	ActorEmail string         `json:"actorEmail"`
 	Old        map[string]any `json:"old"`
 	New        map[string]any `json:"new"`
+}
+
+// Fails when an audited table gains a column, because that column is published to every
+// owner of the game with no code change anywhere.
+func assertPublishedColumns(t *testing.T, events []auditEvent, entity string, expected []string) {
+	t.Helper()
+
+	for _, event := range events {
+		if event.Entity != entity || event.New == nil {
+			continue
+		}
+
+		keys := make([]string, 0, len(event.New))
+		for key := range event.New {
+			keys = append(keys, key)
+		}
+
+		assert.ElementsMatch(t, expected, keys, "published column set for %s changed", entity)
+
+		return
+	}
+
+	t.Fatalf("no %s event with a new row found; the pin asserts nothing", entity)
 }
 
 func readAuditLog(t *testing.T, server *httptest.Server, gameID int, sub string, expectedStatus int) []auditEvent {
@@ -215,7 +236,10 @@ func TestAuditTriggers(t *testing.T) {
 			_, err := db.ExecContext(t.Context(), `INSERT INTO table_players (game_table_id, player_id) VALUES (1, 1)`)
 			require.NoError(t, err)
 
-			for _, row := range auditRows(t, db) {
+			rows := auditRows(t, db)
+			require.NotEmpty(t, rows, "the seed writes audited rows; an empty result would pass this vacuously")
+
+			for _, row := range rows {
 				assert.NotContains(t, []string{"rounds", "game_tables", "table_players"}, row.Entity)
 			}
 		},
@@ -490,6 +514,71 @@ func TestAuditActor(t *testing.T) {
 		readAuditLog(t, server, 1, "sub-2", http.StatusNotFound)
 	})
 
+	t.Run("a revoked owner cannot read the trail after the game is deleted", func(t *testing.T) {
+		executeSQLFile(t, db, "./test_data/games_setup_two_owners.sql")
+
+		defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+		newTestRequest(t, testCase{
+			method:             http.MethodDelete,
+			endpoint:           "/games/1/owners/sub-2",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusOK,
+		}, server, db)
+
+		// sub-2 is out while the game lives.
+		readAuditLog(t, server, 1, "sub-2", http.StatusForbidden)
+
+		newTestRequest(t, testCase{
+			method:             http.MethodDelete,
+			endpoint:           "/games/1",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusNoContent,
+		}, server, db)
+
+		// Deleting the game must not hand that access back. Matching any game_owners
+		// event rather than the most recent one would: the revocation itself left a
+		// delete event carrying sub-2.
+		readAuditLog(t, server, 1, "sub-2", http.StatusNotFound)
+
+		require.NotEmpty(t, readAuditLog(t, server, 1, "sub-1", http.StatusOK),
+			"the remaining owner must still be able to read it")
+	})
+
+	t.Run("setup re-run records the scores it destroys", func(t *testing.T) {
+		executeSQLFile(t, db, "./test_data/games_setup_assigned_with_scores.sql")
+
+		// The seed leaves the game in progress; setup is only reachable from the setup state.
+		_, err := db.ExecContext(t.Context(), `UPDATE games SET status = 'setup' WHERE id = 1`)
+		require.NoError(t, err)
+
+		resetAuditEvents(t, db)
+
+		defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+		newTestRequest(t, testCase{
+			method:             http.MethodPost,
+			endpoint:           "/games/1/setup",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusNoContent,
+		}, server, db)
+
+		var scoreDeletes int
+
+		for _, row := range auditRows(t, db) {
+			if row.Entity == "scores" && row.Action == "delete" {
+				scoreDeletes++
+
+				assert.Equal(t, "sub-1", row.ActorSub)
+			}
+		}
+
+		// ResetGameTables deletes scores explicitly while game_tables and rounds still
+		// exist, so they resolve their game and are recorded rather than suppressed as
+		// cascades. Wiping a tournament's scores is the event this log most needs.
+		assert.Equal(t, 4, scoreDeletes, "every wiped score must be recorded and attributed")
+	})
+
 	t.Run("actor does not persist across requests", func(t *testing.T) {
 		executeSQLFile(t, db, "./test_data/games_setup_two_owners.sql")
 		resetAuditEvents(t, db)
@@ -595,18 +684,33 @@ func TestAuditLogEndpoint(t *testing.T) {
 		assert.Equal(t, "insert", events[1].Action)
 		assert.Nil(t, events[1].Old)
 
-		// The endpoint publishes whole table rows, so adding a column to an audited table
-		// silently widens the public API. Pinning the key set makes that a failing test
-		// rather than a silent disclosure.
-		keys := make([]string, 0, len(events[0].New))
-		for key := range events[0].New {
-			keys = append(keys, key)
-		}
-
-		assert.ElementsMatch(t, []string{
+		// The endpoint publishes whole table rows, so adding a column to any audited table
+		// widens the public API for every owner. Pinning each table's key set makes that a
+		// failing test rather than a silent disclosure.
+		assertPublishedColumns(t, events, "games", []string{
 			"id", "game_name", "team_size", "table_size", "number_of_rounds",
 			"status", "created_at", "updated_at",
-		}, keys, "a new column on games would be published to every owner without a code change")
+		})
+		assertPublishedColumns(t, events, "teams", []string{
+			"id", "team_name", "game_id", "created_at", "updated_at",
+		})
+	})
+
+	t.Run("published columns are pinned for every audited table", func(t *testing.T) {
+		executeSQLFile(t, db, "./test_data/games_setup_assigned_with_scores.sql")
+
+		defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+		events := readAuditLog(t, server, 1, "sub-1", http.StatusOK)
+		require.NotEmpty(t, events)
+
+		assertPublishedColumns(t, events, "game_owners", []string{"game_id", "owner_sub"})
+		assertPublishedColumns(t, events, "players", []string{
+			"id", "player_name", "team_id", "created_at", "updated_at",
+		})
+		assertPublishedColumns(t, events, "scores", []string{
+			"id", "player_id", "table_id", "score", "created_at", "updated_at",
+		})
 	})
 
 	t.Run("a game's log excludes another game's events", func(t *testing.T) {
@@ -623,13 +727,21 @@ func TestAuditLogEndpoint(t *testing.T) {
 			`INSERT INTO game_owners (game_id, owner_sub) VALUES (2, 'sub-1')`)
 		require.NoError(t, err)
 
-		for _, event := range readAuditLog(t, server, 1, "sub-1", http.StatusOK) {
+		gameOne := readAuditLog(t, server, 1, "sub-1", http.StatusOK)
+		require.NotEmpty(t, gameOne)
+
+		for _, event := range gameOne {
+			require.NotNil(t, event.New, "every event here is an insert or update")
 			assert.NotEqual(t, "Game 2", event.New["game_name"],
 				"game 1's log must not contain game 2's events")
 		}
 
-		assert.Len(t, readAuditLog(t, server, 2, "sub-1", http.StatusOK), 2,
-			"game 2 has exactly its own insert plus its owner")
+		gameTwo := readAuditLog(t, server, 2, "sub-1", http.StatusOK)
+		require.Len(t, gameTwo, 2, "game 2 has exactly its own insert plus its owner")
+
+		for _, event := range gameTwo {
+			assert.NotEqual(t, "Game 1", event.New["game_name"])
+		}
 	})
 }
 
@@ -647,9 +759,8 @@ func TestAuditActorCoversAssociations(t *testing.T) {
 
 	runGooseUp(t, db)
 
-	gormDB, err := gorm.Open(pg.Open(dbConn), &gorm.Config{})
+	gormDB, err := audit.OpenDatabase(dbConn)
 	require.NoError(t, err)
-	require.NoError(t, gormDB.Use(audit.ActorPlugin{}))
 
 	defer executeSQLFile(t, db, "./test_data/cleanup.sql")
 

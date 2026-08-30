@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"encoding/json"
+
 	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
@@ -115,7 +117,9 @@ func entityGameToAPIGame(gameEntity entity.Game) api.Game {
 	return apiGame
 }
 
-func entityAuditEventToAPIAuditEvent(event entity.AuditEvent, oldRow, newRow *map[string]any) api.AuditEvent {
+// Postgres validates jsonb on write and only the audit trigger writes these columns, so
+// the rows are handed to the client verbatim rather than decoded and re-encoded.
+func entityAuditEventToAPIAuditEvent(event entity.AuditEvent) api.AuditEvent {
 	return api.AuditEvent{
 		Id:         event.ID,
 		Entity:     event.Entity,
@@ -124,7 +128,15 @@ func entityAuditEventToAPIAuditEvent(event entity.AuditEvent, oldRow, newRow *ma
 		ActorSub:   event.ActorSub,
 		ActorEmail: event.ActorEmail,
 		CreatedAt:  event.CreatedAt,
-		Old:        oldRow,
-		New:        newRow,
+		Old:        rawRowOrNil(event.OldRow),
+		New:        rawRowOrNil(event.NewRow),
 	}
+}
+
+func rawRowOrNil(raw json.RawMessage) *json.RawMessage {
+	if len(raw) == 0 {
+		return nil
+	}
+
+	return &raw
 }

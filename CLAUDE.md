@@ -345,8 +345,13 @@ event, not one per orphaned player or score. Two consequences are worth knowing 
 
 - "When did player P disappear?" is unanswerable if P went with its team. The parent event is the only trace, and its
   `old_row` holds no child data.
-- Re-running setup calls `ResetGameTables` (`pkg/game/service.go`), which deletes `game_tables` and cascades to
-  `scores`. That score wipe is reachable from an ordinary request and leaves **no audit trace at all**.
+
+Re-running setup is the exception that proves the rule, and it is worth knowing why. `ResetGameTables`
+(`pkg/game/repository.go`) deletes `scores` **explicitly** before it drops `game_tables`, so each score still resolves
+its game through the parents that are still standing and is recorded and attributed to the caller. Had it relied on the
+cascade, the same rows would have been suppressed and a tournament's entire scoring history would have vanished
+silently. `TestAuditActor` pins this: a setup re-run records one `scores`/`delete` event per wiped score. Preserve the
+delete order if you touch that function.
 
 Three mechanics are not obvious, and the first two were measured to behave the opposite of the expectation:
 
@@ -374,8 +379,19 @@ the `game_owners` events it recorded, so a former owner can still read the delet
 learning nothing about whether the game ever existed.
 
 The response carries whole table rows in `old`/`new`, so **adding a column to an audited table publishes it to every
-owner of that game** with no code change. `TestAuditLogEndpoint` pins the exposed key set for `games` so that widening
-fails a test rather than happening silently.
+owner of that game** with no code change. `TestAuditLogEndpoint` pins the exposed key set for all five audited tables,
+so widening fails a test rather than happening silently. The corollary is that **renaming or dropping a column in an
+audited table is a breaking API change**: the frontend reads `new.game_name` directly, and historical rows keep the old
+key forever, so a rename forces clients to handle both shapes indefinitely.
+
+Two limitations are known and deliberately not addressed:
+
+- **The log is not tamper-evident.** The application's database role owns `audit_events` and its triggers, so a
+  compromised service can rewrite or disable its own audit trail. `REVOKE UPDATE, DELETE, TRUNCATE` would fix it and
+  is the right move if this ever needs to prove anything to a third party; it is over-engineering for a tournament app.
+- **`game_id` is not tied to a game's incarnation.** There is no foreign key (by design, so trails outlive games) and
+  no immutable game key, so a `setval` or a `pg_restore` that rewinds the sequence could let a new game inherit a
+  deleted one's trail. Not reachable through the API — `nextval` never goes backwards on its own.
 
 ## Test Setup
 

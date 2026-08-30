@@ -28,14 +28,22 @@ func (r *EventsRepository) FindByGameID(ctx context.Context, gameID int) ([]enti
 	return events, nil
 }
 
-// Ownership of a deleted game, recovered from the trail: every owner added to a game left
-// a game_owners event whose row_id is their sub.
+// Ownership of a deleted game, recovered from the trail. Only the most recent
+// game_owners event counts: an owner who was revoked while the game was alive left a
+// delete event behind, and matching any event would let the game's later deletion hand
+// their access back.
 func (r *EventsRepository) WasOwner(ctx context.Context, gameID int, sub string) (bool, error) {
-	var count int64
+	var action string
 
 	err := r.db.WithContext(ctx).Model(&entity.AuditEvent{}).
+		Select("action").
 		Where("game_id = ? AND table_name = ? AND row_id = ?", gameID, "game_owners", sub).
-		Count(&count).Error
+		Order("id DESC").
+		Limit(1).
+		Scan(&action).Error
+	if err != nil {
+		return false, err
+	}
 
-	return count > 0, err
+	return action != "" && action != "delete", nil
 }

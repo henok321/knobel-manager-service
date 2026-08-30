@@ -66,10 +66,17 @@ Not audited: `rounds`, `game_tables`, `table_players`. These are derived from th
 not edited by a human. One setup run on a 60-player game writes roughly 380 rows across them, which
 would bury the events anyone actually reads.
 
-Accepted consequence: re-running setup deletes `game_tables`, which cascades to `scores`. Under the
-cascade rule below that score wipe records nothing. This is the most audit-worthy event in the app
-and it is deliberately invisible. Making it visible requires denormalising `game_id` onto `scores`,
-because the parent rows are gone by the time the trigger runs — deferred until someone asks.
+This section originally claimed that re-running setup wipes scores with no audit trace. That was
+wrong, and the error survived long enough to mislead two independent reviewers who read it as
+context and confirmed it. `ResetGameTables` deletes `scores` explicitly before dropping
+`game_tables`, so each score still resolves its game through parents that are still standing and is
+recorded and attributed. Verified by `TestAuditActor`: a setup re-run records one `scores`/`delete`
+event per wiped score.
+
+The near miss is instructive. Had that function relied on the cascade instead, the suppression rule
+would have erased a tournament's entire scoring history in silence — the one question this log most
+needs to answer. The delete order in `ResetGameTables` is load-bearing for the audit log, not just
+for referential integrity.
 
 The cascade rule is broader than "a deleted game takes its trail with it", and the wording above
 originally hid that. The guard suppresses any delete whose row can no longer reach a live game,

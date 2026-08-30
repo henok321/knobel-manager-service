@@ -15,7 +15,7 @@ CREATE TABLE audit_events
     created_at timestamp with time zone NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_audit_events_game_id_id ON audit_events (game_id, id DESC);
+CREATE INDEX idx_audit_events_game_id_id ON audit_events (game_id, id);
 
 -- +goose StatementBegin
 CREATE FUNCTION AUDIT_ROW() RETURNS trigger AS

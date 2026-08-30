@@ -6,6 +6,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -113,10 +114,10 @@ type AuditEvent struct {
 	Id int64 `json:"id"`
 
 	// New The row after the change; null on delete.
-	New *map[string]interface{} `json:"new"`
+	New *json.RawMessage `json:"new"`
 
 	// Old The row before the change; null on insert.
-	Old *map[string]interface{} `json:"old"`
+	Old *json.RawMessage `json:"old"`
 }
 
 // AuditResponse defines model for AuditResponse.

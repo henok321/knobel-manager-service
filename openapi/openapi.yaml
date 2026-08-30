@@ -958,11 +958,13 @@ components:
           additionalProperties: true
           nullable: true
           description: The row before the change; null on insert.
+          x-go-type: json.RawMessage
         new:
           type: object
           additionalProperties: true
           nullable: true
           description: The row after the change; null on delete.
+          x-go-type: json.RawMessage
       required: [ id, entity, entityID, action, actorSub, actorEmail, createdAt, old, new ]
     AuditResponse:
       type: object

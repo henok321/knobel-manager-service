@@ -20,7 +20,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/cors"
 	"google.golang.org/api/option"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
 	healthpkg "github.com/henok321/knobel-manager-service/api/health"
@@ -75,14 +74,9 @@ func setupDatabase() (*gorm.DB, *sql.DB, error) {
 		return nil, nil, errors.New("DATABASE_URL is not set")
 	}
 
-	gormDB, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
+	gormDB, err := audit.OpenDatabase(databaseURL)
 	if err != nil {
 		slog.Error("Starting application failed, cannot open gormDB", "error", err)
-		return nil, nil, err
-	}
-
-	if err := gormDB.Use(audit.ActorPlugin{}); err != nil {
-		slog.Error("Starting application failed, cannot register audit actor plugin", "error", err)
 		return nil, nil, err
 	}
 

@@ -18,8 +18,6 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
-	pg "gorm.io/driver/postgres"
-	"gorm.io/gorm"
 
 	healthpkg "github.com/henok321/knobel-manager-service/api/health"
 	"github.com/henok321/knobel-manager-service/api/routes"
@@ -126,13 +124,9 @@ func setupTestServer(t *testing.T) (*httptest.Server, func(*httptest.Server)) {
 	t.Helper()
 
 	url := os.Getenv("DATABASE_URL")
-	database, err := gorm.Open(pg.Open(url), &gorm.Config{})
+	database, err := audit.OpenDatabase(url)
 	if err != nil {
 		log.Fatalln("Starting application failed, cannot start connect to database", err)
-	}
-
-	if err := database.Use(audit.ActorPlugin{}); err != nil {
-		t.Fatal("Could not register audit actor plugin", err)
 	}
 
 	dbChecker := healthpkg.NewDatabaseChecker(database, 500*time.Millisecond)
