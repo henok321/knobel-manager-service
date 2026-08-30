@@ -330,6 +330,19 @@ The Scores operations are part of the unified `gen/api` package, but **scores ar
 `TablesHandler` provides both the Tables and Scores methods of `api.ServerInterface`; it is embedded in the combined
 `apiServer` in `api/routes/routes.go`.
 
+### Roster Changes and Matchmaking
+
+Creating or deleting a team or a player calls `game.EnsureRosterEditable`, which rejects the change with 409 unless
+the game is in `setup` (`apperror.ErrGameNotEditable`) **and** has no rounds yet (`apperror.ErrGameAlreadySetUp`).
+Without it a late-arriving team could be added after matchmaking and the game started with players assigned to no
+table. Nothing is discarded behind the owner's back: `DELETE /games/{gameID}/setup` drops the rounds and tables
+explicitly, so the way back is `DELETE setup → change roster → POST setup`. `TestRosterChangeAfterSetup` pins that
+sequence.
+
+The guard reads `game.Rounds`, so every repository that loads a game for a roster mutation must preload them —
+`TeamsRepository.FindByID` and `PlayersRepository.FindPlayerByID` do. Renaming a team or player leaves the assignment
+intact and stays allowed in every status.
+
 ### Audit Log
 
 Changes to `games`, `game_owners`, `teams`, `players` and `scores` are recorded in `audit_events` by Postgres row

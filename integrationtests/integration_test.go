@@ -178,3 +178,40 @@ func setupTestDatabase(t *testing.T) (string, func()) {
 
 	return connStr, teardown
 }
+
+func advanceSequences(t *testing.T, db *sql.DB) {
+	t.Helper()
+
+	const query = `SELECT setval('teams_id_seq', (SELECT COALESCE(MAX(id), 1) FROM teams)),
+		setval('players_id_seq', (SELECT COALESCE(MAX(id), 1) FROM players))`
+
+	if _, err := db.ExecContext(t.Context(), query); err != nil {
+		t.Fatalf("failed to advance sequences: %v", err)
+	}
+}
+
+func countRows(t *testing.T, db *sql.DB, query string) int {
+	t.Helper()
+
+	var count int
+	if err := db.QueryRowContext(t.Context(), query).Scan(&count); err != nil {
+		t.Fatalf("failed to count rows: %v", err)
+	}
+
+	return count
+}
+
+func assertMatchmakingReset(t *testing.T, db *sql.DB) {
+	t.Helper()
+
+	assert.Zero(t, countRows(t, db, "SELECT COUNT(*) FROM rounds WHERE game_id = 1"), "rounds must be reset")
+	assert.Zero(t, countRows(t, db, "SELECT COUNT(*) FROM game_tables"), "game tables must be reset")
+	assert.Zero(t, countRows(t, db, "SELECT COUNT(*) FROM table_players"), "table assignments must be reset")
+}
+
+func assertMatchmakingIntact(t *testing.T, db *sql.DB) {
+	t.Helper()
+
+	assert.NotZero(t, countRows(t, db, "SELECT COUNT(*) FROM rounds WHERE game_id = 1"), "rounds must be untouched")
+	assert.NotZero(t, countRows(t, db, "SELECT COUNT(*) FROM table_players"), "table assignments must be untouched")
+}

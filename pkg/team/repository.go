@@ -19,7 +19,7 @@ func NewTeamsRepository(db *gorm.DB) *TeamsRepository {
 func (r *TeamsRepository) FindByID(ctx context.Context, id int) (entity.Team, error) {
 	team := entity.Team{}
 
-	err := r.db.WithContext(ctx).Where("id = ?", id).Preload("Game").Preload("Game.Owners").First(&team).Error
+	err := r.db.WithContext(ctx).Where("id = ?", id).Preload("Game").Preload("Game.Owners").Preload("Game.Rounds").First(&team).Error
 	if err != nil {
 		return entity.Team{}, err
 	}

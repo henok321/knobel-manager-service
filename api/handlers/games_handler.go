@@ -319,3 +319,30 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 
 	writer.WriteHeader(http.StatusNoContent)
 }
+
+func (h *GamesHandler) ResetGameSetup(writer http.ResponseWriter, request *http.Request, gameID int) {
+	ctx := request.Context()
+
+	sub, ok := userSub(writer, request)
+	if !ok {
+		return
+	}
+
+	gameToReset, err := h.gamesService.FindByID(ctx, gameID, sub)
+	if err != nil {
+		respondError(writer, err)
+		return
+	}
+
+	if gameToReset.Status != entity.StatusSetup {
+		JSONError(writer, "Game is not in setup state", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.gamesService.ResetSetup(ctx, gameID); err != nil {
+		respondError(writer, err)
+		return
+	}
+
+	writer.WriteHeader(http.StatusNoContent)
+}

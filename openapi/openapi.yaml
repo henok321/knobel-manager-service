@@ -205,6 +205,21 @@ paths:
           description: Game not found
         '500':
           description: Internal server error during table assignment
+    delete:
+      operationId: resetGameSetup
+      tags: [ Games ]
+      summary: Reset the game setup and discard all assigned rounds and tables
+      security:
+        - bearerAuth: [ ]
+      responses:
+        '204':
+          description: Game setup reset; rounds and tables discarded
+        '400':
+          description: Invalid gameID or game not in setup state
+        '403':
+          description: Not owner of the game
+        '404':
+          description: Game not found
   /games/{gameID}/owners:
     parameters:
       - name: gameID
@@ -310,6 +325,8 @@ paths:
           description: Not owner of the game
         '404':
           description: Game not found
+        '409':
+          description: Game already started or completed, or setup already assigned and not yet reset
   /games/{gameID}/teams/{teamID}:
     parameters:
       - name: gameID
@@ -360,6 +377,8 @@ paths:
           description: Not owner of the game
         '404':
           description: Team or game not found
+        '409':
+          description: Game already started or completed, or setup already assigned and not yet reset
   /games/{gameID}/teams/{teamID}/players:
     parameters:
       - name: gameID
@@ -397,6 +416,8 @@ paths:
           description: Not owner of the game
         '404':
           description: Team or game not found
+        '409':
+          description: Game already started or completed, or setup already assigned and not yet reset
   /games/{gameID}/teams/{teamID}/players/{playerID}:
     parameters:
       - name: gameID
@@ -450,6 +471,8 @@ paths:
           description: Not owner of the game
         '404':
           description: Player or team not found
+        '409':
+          description: Game already started or completed, or setup already assigned and not yet reset
   /games/{gameID}/tables:
     parameters:
       - name: gameID

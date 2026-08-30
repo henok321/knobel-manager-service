@@ -55,6 +55,10 @@ func respondError(w http.ResponseWriter, err error) {
 		JSONError(w, "Game is complete", http.StatusConflict)
 	case errors.Is(err, apperror.ErrAlreadyOwner):
 		JSONError(w, "Already an owner", http.StatusConflict)
+	case errors.Is(err, apperror.ErrGameNotEditable):
+		JSONError(w, "Game is not editable", http.StatusConflict)
+	case errors.Is(err, apperror.ErrGameAlreadySetUp):
+		JSONError(w, "Game setup already assigned, reset the setup first", http.StatusConflict)
 	case errors.Is(err, apperror.ErrLastOwner):
 		JSONError(w, "Cannot remove the last owner", http.StatusConflict)
 	case errors.Is(err, apperror.ErrUserNotFound):

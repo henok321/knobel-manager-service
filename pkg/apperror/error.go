@@ -16,4 +16,6 @@ var (
 	ErrUserNotFound         = errors.New("no user found for the given email")
 	ErrAlreadyOwner         = errors.New("user is already an owner")
 	ErrLastOwner            = errors.New("cannot remove the last owner")
+	ErrGameNotEditable      = errors.New("game is not editable")
+	ErrGameAlreadySetUp     = errors.New("game setup already assigned")
 )

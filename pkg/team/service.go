@@ -36,6 +36,10 @@ func (s *TeamsService) CreateTeam(ctx context.Context, gameID int, sub string, r
 		return entity.Team{}, apperror.ErrTeamSizeNotAllowed
 	}
 
+	if err := game.EnsureRosterEditable(gameByID); err != nil {
+		return entity.Team{}, err
+	}
+
 	players := make([]*entity.Player, playerCount)
 
 	if request.Players != nil {
@@ -77,6 +81,10 @@ func (s *TeamsService) DeleteTeam(ctx context.Context, gameID int, sub string, t
 
 	for _, team := range gameByID.Teams {
 		if team.ID == teamID {
+			if err := game.EnsureRosterEditable(gameByID); err != nil {
+				return err
+			}
+
 			return s.teamRepo.DeleteTeam(ctx, teamID)
 		}
 	}

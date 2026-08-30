@@ -95,6 +95,22 @@ func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, game 
 	return s.repo.CreateOrUpdateGame(ctx, &gameByID)
 }
 
+func EnsureRosterEditable(game entity.Game) error {
+	if game.Status != entity.StatusSetup {
+		return apperror.ErrGameNotEditable
+	}
+
+	if len(game.Rounds) > 0 {
+		return apperror.ErrGameAlreadySetUp
+	}
+
+	return nil
+}
+
+func (s *GamesService) ResetSetup(ctx context.Context, gameID int) error {
+	return s.repo.ResetGameTables(ctx, gameID)
+}
+
 func teamsMap(game entity.Game) map[int][]int {
 	teams := map[int][]int{}
 
