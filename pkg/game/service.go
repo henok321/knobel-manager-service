@@ -95,20 +95,19 @@ func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, game 
 	return s.repo.CreateOrUpdateGame(ctx, &gameByID)
 }
 
-func EnsureSetupNotAssigned(game entity.Game) error {
-	if game.Status != entity.StatusSetup {
+func (s *GamesService) ResetSetup(ctx context.Context, gameID int, sub string) error {
+	gameByID, err := s.FindByID(ctx, gameID, sub)
+	if err != nil {
+		return err
+	}
+
+	if gameByID.Status != entity.StatusSetup {
 		return apperror.ErrGameNotEditable
 	}
 
-	if len(game.Rounds) > 0 {
-		return apperror.ErrGameAlreadySetUp
-	}
-
-	return nil
-}
-
-func (s *GamesService) ResetSetup(ctx context.Context, gameID int) error {
-	return s.repo.ResetGameTables(ctx, gameID)
+	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
+		return txRepo.ResetGameTables(ctx, gameID)
+	})
 }
 
 func teamsMap(game entity.Game) map[int][]int {
@@ -186,7 +185,20 @@ func (s *GamesService) RemoveOwner(ctx context.Context, gameID int, callerSub, t
 	return s.repo.FindByID(ctx, gameID)
 }
 
-func (s *GamesService) AssignTables(ctx context.Context, game entity.Game) error {
+func (s *GamesService) AssignTables(ctx context.Context, gameID int, sub string) error {
+	game, err := s.FindByID(ctx, gameID, sub)
+	if err != nil {
+		return err
+	}
+
+	if game.Status != entity.StatusSetup {
+		return apperror.ErrGameNotEditable
+	}
+
+	if len(game.Teams) < game.TableSize {
+		return apperror.ErrNotEnoughTeams
+	}
+
 	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
 		if err := txRepo.ResetGameTables(ctx, game.ID); err != nil {
 			return fmt.Errorf("cannot reset game tables: %w", err)

@@ -9,7 +9,6 @@ import (
 	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
-	"github.com/henok321/knobel-manager-service/pkg/game"
 	"github.com/henok321/knobel-manager-service/pkg/team"
 )
 
@@ -35,7 +34,7 @@ func (s PlayersService) CreatePlayer(ctx context.Context, request api.PlayersReq
 		return entity.Player{}, apperror.ErrNotOwner
 	}
 
-	if err := game.EnsureSetupNotAssigned(*teamByID.Game); err != nil {
+	if err := entity.EnsureSetupNotAssigned(*teamByID.Game); err != nil {
 		return entity.Player{}, err
 	}
 
@@ -78,7 +77,7 @@ func (s PlayersService) DeletePlayer(ctx context.Context, id int, sub string) er
 		return err
 	}
 
-	if err := game.EnsureSetupNotAssigned(*player.Team.Game); err != nil {
+	if err := entity.EnsureSetupNotAssigned(*player.Team.Game); err != nil {
 		return err
 	}
 

@@ -27,6 +27,10 @@ func (s *TeamsService) CreateTeam(ctx context.Context, gameID int, sub string, r
 		return entity.Team{}, err
 	}
 
+	if err := entity.EnsureSetupNotAssigned(gameByID); err != nil {
+		return entity.Team{}, err
+	}
+
 	var playerCount int
 	if request.Players != nil {
 		playerCount = len(*request.Players)
@@ -34,10 +38,6 @@ func (s *TeamsService) CreateTeam(ctx context.Context, gameID int, sub string, r
 
 	if playerCount > gameByID.TeamSize {
 		return entity.Team{}, apperror.ErrTeamSizeNotAllowed
-	}
-
-	if err := game.EnsureSetupNotAssigned(gameByID); err != nil {
-		return entity.Team{}, err
 	}
 
 	players := make([]*entity.Player, playerCount)
@@ -79,12 +79,12 @@ func (s *TeamsService) DeleteTeam(ctx context.Context, gameID int, sub string, t
 		return err
 	}
 
+	if err := entity.EnsureSetupNotAssigned(gameByID); err != nil {
+		return err
+	}
+
 	for _, team := range gameByID.Teams {
 		if team.ID == teamID {
-			if err := game.EnsureSetupNotAssigned(gameByID); err != nil {
-				return err
-			}
-
 			return s.teamRepo.DeleteTeam(ctx, teamID)
 		}
 	}

@@ -332,16 +332,24 @@ The Scores operations are part of the unified `gen/api` package, but **scores ar
 
 ### Changing Teams and Players After Setup
 
-Creating or deleting a team or a player calls `game.EnsureSetupNotAssigned`, which rejects the change with 409 unless
-the game is in `setup` (`apperror.ErrGameNotEditable`) **and** has no rounds yet (`apperror.ErrGameAlreadySetUp`).
-Without it a late-arriving team could be added after the tables were assigned and the game started with players
-seated nowhere. Nothing is discarded behind the owner's back: `DELETE /games/{gameID}/setup` drops the rounds and
-tables explicitly, so the way back is `DELETE setup → add or remove the team → POST setup`. `TestAddTeamAfterSetup`
-pins that sequence.
+Creating or deleting a team or a player calls `entity.EnsureSetupNotAssigned`, which rejects the change with 409
+unless the game is in `setup` (`apperror.ErrGameNotEditable`) **and** has no rounds yet
+(`apperror.ErrGameAlreadySetUp`). Without it a late-arriving team could be added after the tables were assigned and
+the game started with players seated nowhere. Nothing happens implicitly: `DELETE /games/{gameID}/setup` discards the
+assignment explicitly, so the way back is `DELETE setup → add or remove the team → POST setup`.
+`TestAddTeamAfterSetup` pins that sequence, down to the added team's players appearing in `table_players`.
 
-The guard reads `game.Rounds`, so every repository that loads a game for such a change must preload them —
-`TeamsRepository.FindByID` and `PlayersRepository.FindPlayerByID` do. Renaming a team or player leaves the assignment
-intact and stays allowed in every status.
+**Resetting discards the scores entered at those tables**, because `ResetGameTables` deletes them (deliberately — see
+the audit section). Scores are writable while the game is still in `setup`, so a reset can destroy real scoring
+history, and `POST /setup` has always done the same on a re-run. `TestGameSetup` pins it.
+
+The guard infers "setup has not run" from `len(game.Rounds)`, so every query that loads a game on the way to a roster
+change must preload them: `GamesRepository.FindByID` (both team endpoints, via `GamesService.FindByID`),
+`TeamsRepository.FindByID` (create player) and `PlayersRepository.FindPlayerByID` (delete player). Drop one of those
+preloads and the guard fails open with no compile error — the four 409 tests are what catches it.
+`PlayersRepository.CreateOrUpdatePlayer` therefore saves with `Omit(clause.Associations)`: without it, GORM cascades
+the preloaded `Team → Game → Rounds` into an upsert on `rounds` on every player rename. Renaming a team or player
+leaves the assignment intact and stays allowed in every status.
 
 ### Audit Log
 

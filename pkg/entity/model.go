@@ -3,6 +3,8 @@ package entity
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/henok321/knobel-manager-service/pkg/apperror"
 )
 
 type GameStatus string
@@ -21,6 +23,18 @@ func IsOwner(game Game, sub string) bool {
 	}
 
 	return false
+}
+
+func EnsureSetupNotAssigned(game Game) error {
+	if game.Status != StatusSetup {
+		return apperror.ErrGameNotEditable
+	}
+
+	if len(game.Rounds) > 0 {
+		return apperror.ErrGameAlreadySetUp
+	}
+
+	return nil
 }
 
 type Game struct {

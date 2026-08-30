@@ -203,23 +203,35 @@ paths:
           description: Not owner of the game
         '404':
           description: Game not found
+        '409':
+          description: >-
+            Game already started or completed, too few teams for the table size,
+            or the teams cannot be assigned to tables
         '500':
           description: Internal server error during table assignment
     delete:
       operationId: resetGameSetup
       tags: [ Games ]
-      summary: Reset the game setup and discard all assigned rounds and tables
+      summary: >-
+        Reset the game setup and discard the assigned rounds and tables,
+        including the scores entered at those tables
       security:
         - bearerAuth: [ ]
       responses:
         '204':
-          description: Game setup reset; rounds and tables discarded
+          description: >-
+            Game setup reset; rounds, tables and the scores of those tables
+            discarded
         '400':
-          description: Invalid gameID or game not in setup state
+          description: Invalid gameID
         '403':
           description: Not owner of the game
         '404':
           description: Game not found
+        '409':
+          description: Game already started or completed
+        '500':
+          description: Internal server error while resetting the setup
   /games/{gameID}/owners:
     parameters:
       - name: gameID

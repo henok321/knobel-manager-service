@@ -18,4 +18,5 @@ var (
 	ErrLastOwner            = errors.New("cannot remove the last owner")
 	ErrGameNotEditable      = errors.New("game is not editable")
 	ErrGameAlreadySetUp     = errors.New("game setup already assigned")
+	ErrNotEnoughTeams       = errors.New("not enough teams to assign tables")
 )

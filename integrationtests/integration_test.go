@@ -182,8 +182,8 @@ func setupTestDatabase(t *testing.T) (string, func()) {
 func advanceSequences(t *testing.T, db *sql.DB) {
 	t.Helper()
 
-	const query = `SELECT setval('teams_id_seq', (SELECT COALESCE(MAX(id), 1) FROM teams)),
-		setval('players_id_seq', (SELECT COALESCE(MAX(id), 1) FROM players))`
+	const query = `SELECT setval('teams_id_seq', COALESCE((SELECT MAX(id) FROM teams), 0) + 1, false),
+		setval('players_id_seq', COALESCE((SELECT MAX(id) FROM players), 0) + 1, false)`
 
 	if _, err := db.ExecContext(t.Context(), query); err != nil {
 		t.Fatalf("failed to advance sequences: %v", err)
@@ -201,17 +201,27 @@ func countRows(t *testing.T, db *sql.DB, query string) int {
 	return count
 }
 
+const (
+	roundsOfGameOne = "SELECT COUNT(*) FROM rounds WHERE game_id = 1"
+	tablesOfGameOne = "SELECT COUNT(*) FROM game_tables gt JOIN rounds r ON r.id = gt.round_id WHERE r.game_id = 1"
+	seatsOfGameOne  = `SELECT COUNT(*) FROM table_players tp
+		JOIN game_tables gt ON gt.id = tp.game_table_id
+		JOIN rounds r ON r.id = gt.round_id WHERE r.game_id = 1`
+)
+
 func assertMatchmakingReset(t *testing.T, db *sql.DB) {
 	t.Helper()
 
-	assert.Zero(t, countRows(t, db, "SELECT COUNT(*) FROM rounds WHERE game_id = 1"), "rounds must be reset")
-	assert.Zero(t, countRows(t, db, "SELECT COUNT(*) FROM game_tables"), "game tables must be reset")
-	assert.Zero(t, countRows(t, db, "SELECT COUNT(*) FROM table_players"), "table assignments must be reset")
+	assert.Zero(t, countRows(t, db, roundsOfGameOne), "rounds must be reset")
+	assert.Zero(t, countRows(t, db, tablesOfGameOne), "game tables must be reset")
+	assert.Zero(t, countRows(t, db, seatsOfGameOne), "table assignments must be reset")
+	assert.Zero(t, countRows(t, db, "SELECT COUNT(*) FROM scores"), "scores go with the tables they belong to")
 }
 
 func assertMatchmakingIntact(t *testing.T, db *sql.DB) {
 	t.Helper()
 
-	assert.NotZero(t, countRows(t, db, "SELECT COUNT(*) FROM rounds WHERE game_id = 1"), "rounds must be untouched")
-	assert.NotZero(t, countRows(t, db, "SELECT COUNT(*) FROM table_players"), "table assignments must be untouched")
+	assert.NotZero(t, countRows(t, db, roundsOfGameOne), "rounds must be untouched")
+	assert.NotZero(t, countRows(t, db, tablesOfGameOne), "game tables must be untouched")
+	assert.NotZero(t, countRows(t, db, seatsOfGameOne), "table assignments must be untouched")
 }

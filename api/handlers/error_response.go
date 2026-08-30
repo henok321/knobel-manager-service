@@ -57,6 +57,10 @@ func respondError(w http.ResponseWriter, err error) {
 		JSONError(w, "Already an owner", http.StatusConflict)
 	case errors.Is(err, apperror.ErrGameNotEditable):
 		JSONError(w, "Game is not editable", http.StatusConflict)
+	case errors.Is(err, apperror.ErrNotEnoughTeams):
+		JSONError(w, "Not enough teams to assign tables", http.StatusConflict)
+	case errors.Is(err, apperror.ErrTableAssignment):
+		JSONError(w, "Cannot assign players to tables", http.StatusConflict)
 	case errors.Is(err, apperror.ErrGameAlreadySetUp):
 		JSONError(w, "Game setup already assigned, reset the setup first", http.StatusConflict)
 	case errors.Is(err, apperror.ErrLastOwner):

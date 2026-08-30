@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGameSetup(t *testing.T) {
@@ -31,8 +32,8 @@ func TestGameSetup(t *testing.T) {
 		"Try to setup game not in setup state": {
 			method:             "POST",
 			endpoint:           "/games/1/setup",
-			expectedStatusCode: http.StatusBadRequest,
-			expectedBody:       `{"error":"Game is not in setup state"}`,
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Game is not editable"}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
@@ -71,6 +72,19 @@ func TestGameSetup(t *testing.T) {
 			},
 			assertions: assertMatchmakingReset,
 		},
+		"Reset game setup discards the scores of the assigned tables": {
+			method:             "DELETE",
+			endpoint:           "/games/1/setup",
+			expectedStatusCode: http.StatusNoContent,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+				if _, err := db.ExecContext(t.Context(), "INSERT INTO scores (player_id, table_id, score) VALUES (1, 1, 42)"); err != nil {
+					t.Fatalf("failed to insert score: %v", err)
+				}
+			},
+			assertions: assertMatchmakingReset,
+		},
 		"Reset game setup without permission": {
 			method:             "DELETE",
 			endpoint:           "/games/1/setup",
@@ -84,8 +98,8 @@ func TestGameSetup(t *testing.T) {
 		"Reset game setup not in setup state": {
 			method:             "DELETE",
 			endpoint:           "/games/1/setup",
-			expectedStatusCode: http.StatusBadRequest,
-			expectedBody:       `{"error":"Game is not in setup state"}`,
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Game is not editable"}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
@@ -214,17 +228,22 @@ func TestAddTeamAfterSetup(t *testing.T) {
 		{"Add the team", testCase{
 			method:             "POST",
 			endpoint:           "/games/1/teams",
-			requestBody:        `{"name":"Team 9"}`,
+			requestBody:        `{"name":"Team 9","players":[{"name":"Player 33"},{"name":"Player 34"},{"name":"Player 35"},{"name":"Player 36"}]}`,
 			requestHeaders:     authorized,
 			expectedStatusCode: http.StatusCreated,
-			expectedBody:       `{"team": {"id":9,"name":"Team 9", "gameID":1}}`,
 		}},
 		{"Assign tables again", testCase{
 			method:             "POST",
 			endpoint:           "/games/1/setup",
 			requestHeaders:     authorized,
 			expectedStatusCode: http.StatusNoContent,
-			assertions:         assertMatchmakingIntact,
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				assertMatchmakingIntact(t, db)
+				seats := countRows(t, db, `SELECT COUNT(*) FROM table_players tp
+					JOIN players p ON p.id = tp.player_id WHERE p.team_id = 9`)
+				assert.Equal(t, 8, seats, "every player of the added team must be seated in both rounds")
+			},
 		}},
 	}
 

@@ -365,7 +365,7 @@ type ServerInterface interface {
 	// UpdateScores Update scores for a table
 	// (PUT /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores)
 	UpdateScores(w http.ResponseWriter, r *http.Request, gameID int, roundNumber int, tableNumber int)
-	// ResetGameSetup Reset the game setup and discard all assigned rounds and tables
+	// ResetGameSetup Reset the game setup and discard the assigned rounds and tables, including the scores entered at those tables
 	// (DELETE /games/{gameID}/setup)
 	ResetGameSetup(w http.ResponseWriter, r *http.Request, gameID int)
 	// SetupGame Setup game and assign tables for all rounds
