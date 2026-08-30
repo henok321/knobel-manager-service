@@ -188,6 +188,11 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
+	if gameUpdateRequest.Status != "" && !gameUpdateRequest.Status.Valid() {
+		JSONError(writer, "Invalid status", http.StatusBadRequest)
+		return
+	}
+
 	updatedGame, err := h.gamesService.UpdateGame(ctx, gameID, sub, gameUpdateRequest)
 	if err != nil {
 		respondError(writer, err)

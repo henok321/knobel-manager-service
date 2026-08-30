@@ -9,16 +9,18 @@ import (
 	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
+	"github.com/henok321/knobel-manager-service/pkg/game"
 	"github.com/henok321/knobel-manager-service/pkg/team"
 )
 
 type PlayersService struct {
-	playersRepo *PlayersRepository
-	teamsRepo   *team.TeamsRepository
+	playersRepo  *PlayersRepository
+	teamsRepo    *team.TeamsRepository
+	gamesService *game.GamesService
 }
 
-func NewPlayersService(playersRepo *PlayersRepository, teamsRepo *team.TeamsRepository) *PlayersService {
-	return &PlayersService{playersRepo: playersRepo, teamsRepo: teamsRepo}
+func NewPlayersService(playersRepo *PlayersRepository, teamsRepo *team.TeamsRepository, gamesService *game.GamesService) *PlayersService {
+	return &PlayersService{playersRepo: playersRepo, teamsRepo: teamsRepo, gamesService: gamesService}
 }
 
 func (s PlayersService) CreatePlayer(ctx context.Context, request api.PlayersRequest, teamID int, sub string) (entity.Player, error) {
@@ -27,20 +29,26 @@ func (s PlayersService) CreatePlayer(ctx context.Context, request api.PlayersReq
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return entity.Player{}, apperror.ErrTeamNotFound
 		}
+
 		return entity.Player{}, err
 	}
 
-	if !entity.IsOwner(*teamByID.Game, sub) {
-		return entity.Player{}, apperror.ErrNotOwner
-	}
+	var created entity.Player
 
-	if err := entity.EnsureSetupNotAssigned(*teamByID.Game); err != nil {
-		return entity.Player{}, err
-	}
+	err = s.gamesService.WithinSetup(ctx, teamByID.GameID, sub, func(ctx context.Context, tx *gorm.DB, _ entity.Game) error {
+		player := entity.Player{Name: request.Name, TeamID: teamID}
 
-	player := entity.Player{Name: request.Name, TeamID: teamID}
+		saved, err := NewPlayersRepository(tx).CreateOrUpdatePlayer(ctx, &player)
+		if err != nil {
+			return err
+		}
 
-	return s.playersRepo.CreateOrUpdatePlayer(ctx, &player)
+		created = saved
+
+		return nil
+	})
+
+	return created, err
 }
 
 func (s PlayersService) ownedPlayer(ctx context.Context, id int, sub string) (entity.Player, error) {
@@ -77,9 +85,7 @@ func (s PlayersService) DeletePlayer(ctx context.Context, id int, sub string) er
 		return err
 	}
 
-	if err := entity.EnsureSetupNotAssigned(*player.Team.Game); err != nil {
-		return err
-	}
-
-	return s.playersRepo.DeletePlayer(ctx, id)
+	return s.gamesService.WithinSetup(ctx, player.Team.GameID, sub, func(ctx context.Context, tx *gorm.DB, _ entity.Game) error {
+		return NewPlayersRepository(tx).DeletePlayer(ctx, id)
+	})
 }

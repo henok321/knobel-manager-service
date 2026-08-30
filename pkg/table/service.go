@@ -22,6 +22,15 @@ func (t *TablesService) UpdateScore(ctx context.Context, gameID, roundNumber, ta
 		return entity.GameTable{}, apperror.ErrRoundOrTableNotFound
 	}
 
+	status, err := t.repo.GameStatus(ctx, gameID)
+	if err != nil {
+		return entity.GameTable{}, err
+	}
+
+	if status != entity.StatusInProgress {
+		return entity.GameTable{}, apperror.ErrGameNotInProgress
+	}
+
 	if len(scoresRequest.Scores) != len(table.Players) {
 		return entity.GameTable{}, apperror.ErrInvalidScore
 	}

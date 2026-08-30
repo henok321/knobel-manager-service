@@ -2,6 +2,9 @@ package team
 
 import (
 	"context"
+	"errors"
+
+	"gorm.io/gorm"
 
 	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
@@ -22,39 +25,43 @@ func NewTeamsService(teamRepo *TeamsRepository, gamesService *game.GamesService)
 }
 
 func (s *TeamsService) CreateTeam(ctx context.Context, gameID int, sub string, request api.TeamsRequest) (entity.Team, error) {
-	gameByID, err := s.gamesService.FindByID(ctx, gameID, sub)
-	if err != nil {
-		return entity.Team{}, err
-	}
+	var created entity.Team
 
-	if err := entity.EnsureSetupNotAssigned(gameByID); err != nil {
-		return entity.Team{}, err
-	}
-
-	var playerCount int
-	if request.Players != nil {
-		playerCount = len(*request.Players)
-	}
-
-	if playerCount > gameByID.TeamSize {
-		return entity.Team{}, apperror.ErrTeamSizeNotAllowed
-	}
-
-	players := make([]*entity.Player, playerCount)
-
-	if request.Players != nil {
-		for i, player := range *request.Players {
-			players[i] = &entity.Player{Name: player.Name}
+	err := s.gamesService.WithinSetup(ctx, gameID, sub, func(ctx context.Context, tx *gorm.DB, gameByID entity.Game) error {
+		var playerCount int
+		if request.Players != nil {
+			playerCount = len(*request.Players)
 		}
-	}
 
-	team := entity.Team{
-		Name:    request.Name,
-		GameID:  gameID,
-		Players: players,
-	}
+		if playerCount > gameByID.TeamSize {
+			return apperror.ErrTeamSizeNotAllowed
+		}
 
-	return s.teamRepo.CreateOrUpdateTeam(ctx, &team)
+		players := make([]*entity.Player, playerCount)
+
+		if request.Players != nil {
+			for i, player := range *request.Players {
+				players[i] = &entity.Player{Name: player.Name}
+			}
+		}
+
+		team := entity.Team{
+			Name:    request.Name,
+			GameID:  gameID,
+			Players: players,
+		}
+
+		saved, err := NewTeamsRepository(tx).CreateOrUpdateTeam(ctx, &team)
+		if err != nil {
+			return err
+		}
+
+		created = saved
+
+		return nil
+	})
+
+	return created, err
 }
 
 func (s *TeamsService) UpdateTeam(ctx context.Context, gameID int, sub string, teamID int, request api.TeamsRequest) (entity.Team, error) {
@@ -74,20 +81,22 @@ func (s *TeamsService) UpdateTeam(ctx context.Context, gameID int, sub string, t
 }
 
 func (s *TeamsService) DeleteTeam(ctx context.Context, gameID int, sub string, teamID int) error {
-	gameByID, err := s.gamesService.FindByID(ctx, gameID, sub)
-	if err != nil {
-		return err
-	}
+	return s.gamesService.WithinSetup(ctx, gameID, sub, func(ctx context.Context, tx *gorm.DB, _ entity.Game) error {
+		txRepo := NewTeamsRepository(tx)
 
-	if err := entity.EnsureSetupNotAssigned(gameByID); err != nil {
-		return err
-	}
+		teamByID, err := txRepo.FindByID(ctx, teamID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return apperror.ErrTeamNotFound
+			}
 
-	for _, team := range gameByID.Teams {
-		if team.ID == teamID {
-			return s.teamRepo.DeleteTeam(ctx, teamID)
+			return err
 		}
-	}
 
-	return apperror.ErrTeamNotFound
+		if teamByID.GameID != gameID {
+			return apperror.ErrTeamNotFound
+		}
+
+		return txRepo.DeleteTeam(ctx, teamID)
+	})
 }

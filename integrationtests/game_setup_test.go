@@ -1,8 +1,11 @@
 package integrationtests
 
 import (
+	"bytes"
 	"database/sql"
+	"io"
 	"net/http"
+	"sync"
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -18,6 +21,12 @@ func TestGameSetup(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				assertMatchmakingIntact(t, db)
+				assert.Equal(t, 2, countRows(t, db, "SELECT COUNT(*) FROM rounds WHERE game_id = 1 AND status = 'setup'"),
+					"rounds must carry a status from the RoundStatus enum")
 			},
 		},
 		"Try to setup game tables with out permissions": {
@@ -70,7 +79,12 @@ func TestGameSetup(t *testing.T) {
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
 			},
-			assertions: assertMatchmakingReset,
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				assertMatchmakingReset(t, db)
+				assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "resetting must leave the roster alone")
+				assert.Equal(t, 32, countRows(t, db, "SELECT COUNT(*) FROM players"), "resetting must leave the roster alone")
+			},
 		},
 		"Reset game setup discards the scores of the assigned tables": {
 			method:             "DELETE",
@@ -252,4 +266,84 @@ func TestAddTeamAfterSetup(t *testing.T) {
 			newTestRequest(t, step.tc, server, db)
 		})
 	}
+}
+
+func TestConcurrentTeamCreateAndSetup(t *testing.T) {
+	dbConn, teardownDatabase := setupTestDatabase(t)
+	defer teardownDatabase()
+
+	db, err := sql.Open("pgx", dbConn)
+	if err != nil {
+		t.Fatalf("Failed to open database connection: %v", err)
+	}
+	defer db.Close()
+
+	runGooseUp(t, db)
+
+	server, teardown := setupTestServer(t)
+	defer teardown(server)
+
+	executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
+	advanceSequences(t, db)
+
+	defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+	post := func(endpoint, body string) int {
+		var reader io.Reader
+		if body != "" {
+			reader = bytes.NewBufferString(body)
+		}
+
+		request, err := http.NewRequestWithContext(t.Context(), http.MethodPost, server.URL+endpoint, reader)
+		if err != nil {
+			t.Errorf("failed to create request: %v", err)
+			return 0
+		}
+
+		request.Header.Set("Authorization", "Bearer sub-1")
+		request.Header.Set("Content-Type", "application/json")
+
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Errorf("failed to perform request: %v", err)
+			return 0
+		}
+		defer response.Body.Close()
+
+		return response.StatusCode
+	}
+
+	var (
+		waitGroup  sync.WaitGroup
+		start      = make(chan struct{})
+		teamStatus int
+	)
+
+	waitGroup.Add(2)
+
+	go func() {
+		defer waitGroup.Done()
+		<-start
+		teamStatus = post("/games/1/teams", `{"name":"Team 9","players":[{"name":"P33"},{"name":"P34"},{"name":"P35"},{"name":"P36"}]}`)
+	}()
+
+	go func() {
+		defer waitGroup.Done()
+		<-start
+		post("/games/1/setup", "")
+	}()
+
+	close(start)
+	waitGroup.Wait()
+
+	seats := countRows(t, db, `SELECT COUNT(*) FROM table_players tp
+		JOIN players p ON p.id = tp.player_id WHERE p.team_id = 9`)
+
+	if teamStatus == http.StatusCreated {
+		assert.Equal(t, 8, seats, "a team accepted while setup ran must be seated in both rounds")
+		return
+	}
+
+	assert.Equal(t, http.StatusConflict, teamStatus, "a team refused during setup must be refused with a conflict")
+	assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "the refused team must not exist")
 }

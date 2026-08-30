@@ -330,26 +330,49 @@ The Scores operations are part of the unified `gen/api` package, but **scores ar
 `TablesHandler` provides both the Tables and Scores methods of `api.ServerInterface`; it is embedded in the combined
 `apiServer` in `api/routes/routes.go`.
 
+### Game Lifecycle
+
+`setup → in_progress → completed`, plus one step back: `in_progress → setup`, and only while no score has been
+entered. Everything else — any move out of `completed`, a rewind that would orphan scores, a status outside the enum —
+is refused (`apperror.ErrInvalidStatusTransition`, 409; unknown values are 400 from the handler via the generated
+`GameStatus.Valid()`). `ensureTransitionAllowed` in `pkg/game/service.go` is the whole rule. Without the direction
+check, `PUT status=setup` followed by `DELETE /setup` wiped a finished tournament in two requests, both 2xx.
+
+Scores can only be written while the game is `in_progress` (`apperror.ErrGameNotInProgress`, 409). That is what makes
+the rewind rule airtight: a game in `setup` cannot have scores, so `DELETE /setup` cannot destroy any.
+
+`teamSize`, `tableSize` and `numberOfRounds` are frozen once the tables are assigned — the same guard as for teams and
+players. A game that goes `in_progress` advertising `tableSize: 2` while its tables seat four breaks every score
+submission. Renaming stays free in every status.
+
 ### Changing Teams and Players After Setup
 
-Creating or deleting a team or a player calls `entity.EnsureSetupNotAssigned`, which rejects the change with 409
-unless the game is in `setup` (`apperror.ErrGameNotEditable`) **and** has no rounds yet
-(`apperror.ErrGameAlreadySetUp`). Without it a late-arriving team could be added after the tables were assigned and
-the game started with players seated nowhere. Nothing happens implicitly: `DELETE /games/{gameID}/setup` discards the
-assignment explicitly, so the way back is `DELETE setup → add or remove the team → POST setup`.
-`TestAddTeamAfterSetup` pins that sequence, down to the added team's players appearing in `table_players`.
+Creating or deleting a team or a player runs inside `GamesService.WithinSetup`, which is the only path allowed to
+change a roster. In one transaction it locks the game row (`SELECT … FOR UPDATE`), checks ownership, counts the
+game's rounds and calls `entity.EnsureSetupNotAssigned(status, rounds)`: 409 unless the game is in `setup`
+(`apperror.ErrGameNotEditable`) and no round is assigned (`apperror.ErrGameAlreadySetUp`). Without it a late-arriving
+team could be added after the tables were assigned and the game started with players seated nowhere.
 
-**Resetting discards the scores entered at those tables**, because `ResetGameTables` deletes them (deliberately — see
-the audit section). Scores are writable while the game is still in `setup`, so a reset can destroy real scoring
-history, and `POST /setup` has always done the same on a re-run. `TestGameSetup` pins it.
+Three details of that transaction are load-bearing:
 
-The guard infers "setup has not run" from `len(game.Rounds)`, so every query that loads a game on the way to a roster
-change must preload them: `GamesRepository.FindByID` (both team endpoints, via `GamesService.FindByID`),
-`TeamsRepository.FindByID` (create player) and `PlayersRepository.FindPlayerByID` (delete player). Drop one of those
-preloads and the guard fails open with no compile error — the four 409 tests are what catches it.
-`PlayersRepository.CreateOrUpdatePlayer` therefore saves with `Omit(clause.Associations)`: without it, GORM cascades
-the preloaded `Team → Game → Rounds` into an upsert on `rounds` on every player rename. Renaming a team or player
-leaves the assignment intact and stays allowed in every status.
+- **The lock, not just the check.** `AssignTables` and `ResetSetup` take the same row lock, so a team insert cannot
+  interleave with a setup run. Without it both requests succeed and the team ends up in a fully assigned game seated
+  nowhere — `TestConcurrentTeamCreateAndSetup` reproduces exactly that, 3 runs out of 3, if the lock is removed.
+- **A `COUNT`, not `len(game.Rounds)`.** An association that was never preloaded is indistinguishable from an empty
+  one, so a guard reading the slice fails *open* — silently, with every test still green — the day a query drops a
+  `Preload`. `EnsureSetupNotAssigned` therefore takes the count as an argument.
+- **`AssignTables` loads the game after taking the lock**, not before. A snapshot taken earlier can miss a team that
+  committed in between, and the assignment would be built without it.
+
+Nothing happens implicitly: `DELETE /games/{gameID}/setup` discards the assignment explicitly, so the way back is
+`DELETE setup → add or remove the team → POST setup`. `TestAddTeamAfterSetup` pins that sequence, down to the added
+team's players appearing in `table_players`. Resetting also deletes the scores of the discarded tables
+(`ResetGameTables`, deliberately — see the audit section); the lifecycle rules above are what keep that from ever
+destroying real scoring history.
+
+`PlayersRepository.CreateOrUpdatePlayer` saves with `Omit(clause.Associations)`: a player carries its team and game,
+and GORM otherwise cascades an upsert up that chain on every rename. Renaming a team or player leaves the assignment
+intact and stays allowed in every status.
 
 ### Audit Log
 

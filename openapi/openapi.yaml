@@ -161,13 +161,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/GameResponse'
         '400':
-          description: Invalid request
+          description: Invalid request, including a status outside the enum
         '403':
           description: Not owner of the game
         '404':
           description: Game not found
         '409':
-          description: Cannot update game status due to invalid state (e.g. Setup -> In Progress)
+          description: >-
+            Status transition not allowed (setup -> in_progress -> completed,
+            and back to setup only while nothing is scored), the game is not
+            ready for the requested status, or team size, table size or the
+            number of rounds was changed after the tables were assigned
     delete:
       operationId: deleteGame
       tags: [ Games ]
@@ -620,6 +624,8 @@ paths:
           description: Not owner of the game
         '404':
           description: Game, round, or table not found
+        '409':
+          description: Game is not in progress; scores can only be entered while it runs
   /games/{gameID}/audit:
     parameters:
       - name: gameID

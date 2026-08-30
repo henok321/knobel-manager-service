@@ -112,14 +112,8 @@ func TestPlayers(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 
-				var count int
-				err := db.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM players WHERE id = 1").Scan(&count)
-				if err != nil {
-					t.Fatalf("failed to count players: %v", err)
-				}
-				if count != 1 {
-					t.Errorf("player must not be deleted by a non-owner, got count %d", count)
-				}
+				assert.Equal(t, 1, countRows(t, db, "SELECT COUNT(*) FROM players WHERE id = 1"),
+					"player must not be deleted by a non-owner")
 			},
 		},
 		"Create player after matchmaking is rejected": {

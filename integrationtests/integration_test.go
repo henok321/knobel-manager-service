@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"errors"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -23,6 +25,7 @@ import (
 	"github.com/henok321/knobel-manager-service/api/routes"
 	"github.com/henok321/knobel-manager-service/integrationtests/mock"
 	"github.com/henok321/knobel-manager-service/pkg/audit"
+	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
 
 type testCase struct {
@@ -115,7 +118,7 @@ func runGooseUp(t *testing.T, db *sql.DB) {
 		t.Fatalf("goose failed to set dialect: %v", err)
 	}
 
-	if err := goose.Up(db, migrationsDir); err != nil {
+	if err := goose.Up(db, migrationsDir); err != nil && !errors.Is(err, goose.ErrNoNextVersion) {
 		t.Fatalf("goose failed to run migrations: %v", err)
 	}
 }
@@ -152,31 +155,79 @@ func setupTestServer(t *testing.T) (*httptest.Server, func(*httptest.Server)) {
 	return server, teardown
 }
 
-func setupTestDatabase(t *testing.T) (string, func()) {
+var (
+	sharedDatabase     *postgres.PostgresContainer
+	sharedDatabaseURL  string
+	errSharedDatabase  error
+	sharedDatabaseOnce sync.Once
+)
+
+func TestMain(m *testing.M) {
+	code := m.Run()
+
+	if sharedDatabase != nil {
+		if err := sharedDatabase.Terminate(context.Background()); err != nil {
+			log.Printf("failed to terminate container: %s", err)
+		}
+	}
+
+	os.Exit(code)
+}
+
+func disposableTestDatabase(t *testing.T) (string, func()) {
 	t.Helper()
 
 	ctx := context.Background()
 
-	pgContainer, err := postgres.Run(ctx, "docker.io/postgres:18-alpine", postgres.WithDatabase("knobel-manager-service"), postgres.WithUsername("test"), postgres.WithPassword("secret"), testcontainers.WithWaitStrategy(wait.ForLog("database system is ready to accept connections").
-		WithOccurrence(2).WithStartupTimeout(5*time.Second)))
+	container, err := startPostgres(ctx)
 	if err != nil {
 		t.Fatalf("failed to start container: %v", err)
 	}
 
-	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	connStr, err := container.ConnectionString(ctx, "sslmode=disable")
 	if err != nil {
 		t.Fatalf("failed to get connection string: %v", err)
 	}
 
 	t.Setenv("DATABASE_URL", connStr)
 
-	teardown := func() {
-		if err := pgContainer.Terminate(ctx); err != nil {
+	return connStr, func() {
+		if err := container.Terminate(ctx); err != nil {
 			log.Printf("failed to terminate container: %s", err)
 		}
 	}
+}
 
-	return connStr, teardown
+func startPostgres(ctx context.Context) (*postgres.PostgresContainer, error) {
+	return postgres.Run(ctx, "docker.io/postgres:18-alpine",
+		postgres.WithDatabase("knobel-manager-service"),
+		postgres.WithUsername("test"),
+		postgres.WithPassword("secret"),
+		testcontainers.WithWaitStrategy(wait.ForLog("database system is ready to accept connections").
+			WithOccurrence(2).WithStartupTimeout(5*time.Second)))
+}
+
+func setupTestDatabase(t *testing.T) (string, func()) {
+	t.Helper()
+
+	sharedDatabaseOnce.Do(func() {
+		ctx := context.Background()
+
+		sharedDatabase, errSharedDatabase = startPostgres(ctx)
+		if errSharedDatabase != nil {
+			return
+		}
+
+		sharedDatabaseURL, errSharedDatabase = sharedDatabase.ConnectionString(ctx, "sslmode=disable")
+	})
+
+	if errSharedDatabase != nil {
+		t.Fatalf("failed to start container: %v", errSharedDatabase)
+	}
+
+	t.Setenv("DATABASE_URL", sharedDatabaseURL)
+
+	return sharedDatabaseURL, func() {}
 }
 
 func advanceSequences(t *testing.T, db *sql.DB) {
@@ -224,4 +275,15 @@ func assertMatchmakingIntact(t *testing.T, db *sql.DB) {
 	assert.NotZero(t, countRows(t, db, roundsOfGameOne), "rounds must be untouched")
 	assert.NotZero(t, countRows(t, db, tablesOfGameOne), "game tables must be untouched")
 	assert.NotZero(t, countRows(t, db, seatsOfGameOne), "table assignments must be untouched")
+}
+
+func gameStatus(t *testing.T, db *sql.DB) entity.GameStatus {
+	t.Helper()
+
+	var status entity.GameStatus
+	if err := db.QueryRowContext(t.Context(), "SELECT status FROM games WHERE id = 1").Scan(&status); err != nil {
+		t.Fatalf("failed to query game status: %v", err)
+	}
+
+	return status
 }

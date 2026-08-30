@@ -25,12 +25,12 @@ func IsOwner(game Game, sub string) bool {
 	return false
 }
 
-func EnsureSetupNotAssigned(game Game) error {
-	if game.Status != StatusSetup {
+func EnsureSetupNotAssigned(status GameStatus, assignedRounds int) error {
+	if status != StatusSetup {
 		return apperror.ErrGameNotEditable
 	}
 
-	if len(game.Rounds) > 0 {
+	if assignedRounds > 0 {
 		return apperror.ErrGameAlreadySetUp
 	}
 

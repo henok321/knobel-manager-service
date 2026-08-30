@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
@@ -48,6 +49,28 @@ func (r *GamesRepository) FindByID(ctx context.Context, id int) (entity.Game, er
 	}
 
 	return game, nil
+}
+
+func (r *GamesRepository) LockGame(ctx context.Context, gameID int) (entity.Game, error) {
+	var game entity.Game
+
+	err := r.db.WithContext(ctx).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Preload("Owners").
+		First(&game, gameID).Error
+	if err != nil {
+		return entity.Game{}, err
+	}
+
+	return game, nil
+}
+
+func (r *GamesRepository) CountRounds(ctx context.Context, gameID int) (int, error) {
+	var count int64
+
+	err := r.db.WithContext(ctx).Model(&entity.Round{}).Where("game_id = ?", gameID).Count(&count).Error
+
+	return int(count), err
 }
 
 func (r *GamesRepository) CreateOrUpdateGame(ctx context.Context, game *entity.Game) (entity.Game, error) {

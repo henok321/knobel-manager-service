@@ -89,7 +89,7 @@ func TestHealthCheck(t *testing.T) {
 	})
 
 	t.Run("readiness check database not available fail", func(t *testing.T) {
-		dbConn, teardownDatabase := setupTestDatabase(t)
+		dbConn, teardownDatabase := disposableTestDatabase(t)
 
 		db, err := sql.Open("pgx", dbConn)
 		if err != nil {
