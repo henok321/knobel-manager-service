@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -44,17 +43,8 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
 	writer.Header().Set("Location", request.URL.String()+"/"+strconv.FormatInt(int64(createdTeam.ID), 10))
-	writer.WriteHeader(http.StatusCreated)
-
-	response := api.TeamResponse{
-		Team: entityTeamToAPITeam(createdTeam),
-	}
-
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.InfoContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusCreated, api.TeamResponse{Team: entityTeamToAPITeam(createdTeam)})
 }
 
 func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
@@ -83,16 +73,7 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	response := api.TeamResponse{
-		Team: entityTeamToAPITeam(updatedGame),
-	}
-
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.InfoContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusOK, api.TeamResponse{Team: entityTeamToAPITeam(updatedGame)})
 }
 
 func (t *TeamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {

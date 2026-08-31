@@ -68,12 +68,16 @@ CI/CD runs `make openapi-validate` in parallel with lint and test jobs. The buil
 ### Linting
 
 ```bash
-make lint       # Runs go fmt and golangci-lint (Go only, fast)
+make lint       # Runs the golangci-lint pre-commit hook only (Go, with --fix)
 make lint-all   # Runs all pre-commit hooks (golangci-lint, sqlfluff, shellcheck, markdownlint, etc.)
 ```
 
 `make lint` is for quick Go-only linting during development. `make lint-all` runs the complete pre-commit hook suite for
 comprehensive validation before committing.
+
+Both go through pre-commit, which owns the pinned golangci-lint binary. golangci-lint is deliberately **not** a
+`go tool` directive: it pulled ~230 indirect modules into `go.mod` and drifted out of sync with the pre-commit pin.
+`golangci-lint run --fix` already applies the `formatters:` block, so no separate `go fmt` step is needed.
 
 ### Testing
 
@@ -467,9 +471,12 @@ Tests are automatically run by pre-commit hooks on push and by CI/CD.
 The project uses Go toolchain directives:
 
 - `github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen` - OpenAPI code generation
-- `github.com/pressly/goose/v3/cmd/goose` - Database migrations
+- `golang.org/x/vuln/cmd/govulncheck` - dependency CVE scanning (pre-commit)
 
-These are listed in `go.mod` and installed via `go tool <command>`.
+These are listed in `go.mod` and installed via `go tool <command>`. Only tools actually invoked by the Makefile or
+pre-commit belong here — every directive drags the tool's whole dependency tree into `go.mod`/`go.sum`. goose is a
+library dependency (`cmd/main.go` runs migrations in-process); its CLI is not used, and `cmd/goose` alone pulled in
+ClickHouse, MSSQL, MySQL, SQLite, Vertica and YDB drivers.
 
 ## Environment Variables
 

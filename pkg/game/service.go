@@ -58,21 +58,29 @@ func (s *GamesService) CreateGame(ctx context.Context, sub string, game *api.Gam
 	return s.repo.CreateOrUpdateGame(ctx, &gameModel)
 }
 
+func lockOwnedGame(ctx context.Context, txRepo *GamesRepository, gameID int, sub string) (entity.Game, error) {
+	game, err := txRepo.LockGame(ctx, gameID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.Game{}, apperror.ErrGameNotFound
+		}
+
+		return entity.Game{}, err
+	}
+
+	if !entity.IsOwner(game, sub) {
+		return entity.Game{}, apperror.ErrNotOwner
+	}
+
+	return game, nil
+}
+
 func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, request api.GameUpdateRequest) (entity.Game, error) {
 	var updated entity.Game
 
 	err := s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
-		locked, err := txRepo.LockGame(ctx, id)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return apperror.ErrGameNotFound
-			}
-
+		if _, err := lockOwnedGame(ctx, txRepo, id, sub); err != nil {
 			return err
-		}
-
-		if !entity.IsOwner(locked, sub) {
-			return apperror.ErrNotOwner
 		}
 
 		gameByID, err := txRepo.FindByID(ctx, id)
@@ -151,17 +159,9 @@ func ensureTransitionAllowed(game entity.Game, counts Counts, next entity.GameSt
 
 func (s *GamesService) WithinSetup(ctx context.Context, gameID int, sub string, write func(ctx context.Context, tx *gorm.DB, game entity.Game) error) error {
 	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
-		game, err := txRepo.LockGame(ctx, gameID)
+		game, err := lockOwnedGame(ctx, txRepo, gameID, sub)
 		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return apperror.ErrGameNotFound
-			}
-
 			return err
-		}
-
-		if !entity.IsOwner(game, sub) {
-			return apperror.ErrNotOwner
 		}
 
 		counts, err := txRepo.CountRelated(ctx, gameID)
@@ -179,17 +179,9 @@ func (s *GamesService) WithinSetup(ctx context.Context, gameID int, sub string, 
 
 func (s *GamesService) ResetSetup(ctx context.Context, gameID int, sub string) error {
 	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
-		game, err := txRepo.LockGame(ctx, gameID)
+		game, err := lockOwnedGame(ctx, txRepo, gameID, sub)
 		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return apperror.ErrGameNotFound
-			}
-
 			return err
-		}
-
-		if !entity.IsOwner(game, sub) {
-			return apperror.ErrNotOwner
 		}
 
 		if game.Status != entity.StatusSetup {
@@ -265,21 +257,13 @@ func (s *GamesService) RemoveOwner(ctx context.Context, gameID int, callerSub, t
 
 func (s *GamesService) AssignTables(ctx context.Context, gameID int, sub string) error {
 	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
-		if _, err := txRepo.LockGame(ctx, gameID); err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return apperror.ErrGameNotFound
-			}
-
+		if _, err := lockOwnedGame(ctx, txRepo, gameID, sub); err != nil {
 			return err
 		}
 
 		game, err := txRepo.FindByID(ctx, gameID)
 		if err != nil {
 			return err
-		}
-
-		if !entity.IsOwner(game, sub) {
-			return apperror.ErrNotOwner
 		}
 
 		if game.Status != entity.StatusSetup {

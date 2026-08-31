@@ -29,13 +29,9 @@ func (c *FirebaseChecker) Check(ctx context.Context) error {
 	checkCtx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	_, err := c.authClient.VerifyIDToken(checkCtx, "health-check-invalid-token")
-	if err != nil {
-		if errors.Is(checkCtx.Err(), context.DeadlineExceeded) {
-			return fmt.Errorf("firebase jwt validation endpoint timeout: %w", err)
-		}
-
-		return nil
+	if _, err := c.authClient.VerifyIDToken(checkCtx, "health-check-invalid-token"); err != nil &&
+		errors.Is(checkCtx.Err(), context.DeadlineExceeded) {
+		return fmt.Errorf("firebase jwt validation endpoint timeout: %w", err)
 	}
 
 	return nil

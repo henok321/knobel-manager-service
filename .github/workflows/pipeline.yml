@@ -12,7 +12,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - "*.md"
+      - "**/*.md"
       - "LICENSE"
       - ".vscode/**"
       - ".idea/**"
@@ -23,7 +23,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - "*.md"
+      - "**/*.md"
       - "LICENSE"
       - ".vscode/**"
       - ".idea/**"
@@ -117,18 +117,6 @@ jobs:
         env:
           TESTCONTAINERS_RYUK_DISABLED: true
         run: make test
-
-  go-report:
-    name: Go Report
-    runs-on: ubuntu-latest
-    permissions: { }
-    steps:
-      - name: Trigger Go Report Card refresh
-        run: |
-          curl -i -X POST https://goreportcard.com/checks \
-            -H 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8' \
-            -H 'Accept: application/json, text/javascript, */*; q=0.01' \
-          --data "repo=github.com/${{ github.repository }}"
 
   build:
     name: Build Docker Image

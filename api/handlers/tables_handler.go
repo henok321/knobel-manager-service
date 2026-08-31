@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log/slog"
 	"net/http"
 
 	"github.com/henok321/knobel-manager-service/gen/api"
@@ -41,16 +40,7 @@ func (t *TablesHandler) GetGameTables(writer http.ResponseWriter, request *http.
 		}
 	}
 
-	response := api.TablesResponse{
-		Tables: apiTables,
-	}
-
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.InfoContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusOK, api.TablesResponse{Tables: apiTables})
 }
 
 func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request, gameID, roundNumber int) {
@@ -74,16 +64,7 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 				apiTables[i] = entityTableToAPITable(*t)
 			}
 
-			response := api.TablesResponse{
-				Tables: apiTables,
-			}
-
-			writer.Header().Set("Content-Type", "application/json")
-			writer.WriteHeader(http.StatusOK)
-
-			if err := json.NewEncoder(writer).Encode(response); err != nil {
-				slog.InfoContext(ctx, "Could not write body", "error", err)
-			}
+			writeJSON(ctx, writer, http.StatusOK, api.TablesResponse{Tables: apiTables})
 
 			return
 		}
@@ -110,14 +91,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 		if round.RoundNumber == roundNumber {
 			for _, currentTable := range round.Tables {
 				if currentTable.TableNumber == tableNumber {
-					response := api.TableResponse{Table: entityTableToAPITable(*currentTable)}
-
-					writer.Header().Set("Content-Type", "application/json")
-					writer.WriteHeader(http.StatusOK)
-
-					if err := json.NewEncoder(writer).Encode(response); err != nil {
-						slog.InfoContext(ctx, "Could not write body", "error", err)
-					}
+					writeJSON(ctx, writer, http.StatusOK, api.TableResponse{Table: entityTableToAPITable(*currentTable)})
 
 					return
 				}
@@ -154,14 +128,5 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 		return
 	}
 
-	response := api.TableResponse{
-		Table: entityTableToAPITable(updatedTable),
-	}
-
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusOK, api.TableResponse{Table: entityTableToAPITable(updatedTable)})
 }

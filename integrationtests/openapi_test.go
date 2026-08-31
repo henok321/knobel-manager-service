@@ -15,8 +15,7 @@ import (
 
 func TestOpenAPI(t *testing.T) {
 	t.Run("openapi.yaml", func(t *testing.T) {
-		dbConn, teardownDatabase := setupTestDatabase(t)
-		defer teardownDatabase()
+		dbConn := setupTestDatabase(t)
 
 		db, err := sql.Open("pgx", dbConn)
 		if err != nil {
@@ -27,8 +26,7 @@ func TestOpenAPI(t *testing.T) {
 
 		runGooseUp(t, db)
 
-		server, teardown := setupTestServer(t)
-		defer teardown(server)
+		server := setupTestServer(t)
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, server.URL+"/openapi.yaml", nil)
 		require.NoError(t, err)
@@ -61,8 +59,7 @@ func TestOpenAPI(t *testing.T) {
 	})
 
 	t.Run("swagger docs", func(t *testing.T) {
-		dbConn, teardownDatabase := setupTestDatabase(t)
-		defer teardownDatabase()
+		dbConn := setupTestDatabase(t)
 
 		db, err := sql.Open("pgx", dbConn)
 		if err != nil {
@@ -73,8 +70,7 @@ func TestOpenAPI(t *testing.T) {
 
 		runGooseUp(t, db)
 
-		server, teardown := setupTestServer(t)
-		defer teardown(server)
+		server := setupTestServer(t)
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, server.URL+"/docs", nil)
 		require.NoError(t, err)

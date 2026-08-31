@@ -147,8 +147,7 @@ func readAuditLog(t *testing.T, server *httptest.Server, gameID int, sub string,
 }
 
 func TestAuditTriggers(t *testing.T) {
-	dbConn, teardownDatabase := setupTestDatabase(t)
-	defer teardownDatabase()
+	dbConn := setupTestDatabase(t)
 
 	db, err := sql.Open("pgx", dbConn)
 	require.NoError(t, err)
@@ -406,8 +405,7 @@ func TestAuditActor(t *testing.T) {
 		},
 	}
 
-	dbConn, teardownDatabase := setupTestDatabase(t)
-	defer teardownDatabase()
+	dbConn := setupTestDatabase(t)
 
 	db, err := sql.Open("pgx", dbConn)
 	require.NoError(t, err)
@@ -416,8 +414,7 @@ func TestAuditActor(t *testing.T) {
 
 	runGooseUp(t, db)
 
-	server, teardown := setupTestServer(t)
-	defer teardown(server)
+	server := setupTestServer(t)
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -628,8 +625,7 @@ func TestAuditLogEndpoint(t *testing.T) {
 		},
 	}
 
-	dbConn, teardownDatabase := setupTestDatabase(t)
-	defer teardownDatabase()
+	dbConn := setupTestDatabase(t)
 
 	db, err := sql.Open("pgx", dbConn)
 	require.NoError(t, err)
@@ -638,8 +634,7 @@ func TestAuditLogEndpoint(t *testing.T) {
 
 	runGooseUp(t, db)
 
-	server, teardown := setupTestServer(t)
-	defer teardown(server)
+	server := setupTestServer(t)
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -749,8 +744,7 @@ func TestAuditLogEndpoint(t *testing.T) {
 // the parent row, as its own nested create; this pins that such writes are attributed too,
 // which an anchor on "gorm:begin_transaction" would silently break.
 func TestAuditActorCoversAssociations(t *testing.T) {
-	dbConn, teardownDatabase := setupTestDatabase(t)
-	defer teardownDatabase()
+	dbConn := setupTestDatabase(t)
 
 	db, err := sql.Open("pgx", dbConn)
 	require.NoError(t, err)

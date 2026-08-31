@@ -37,17 +37,13 @@ func (t *TablesRepository) FindTable(ctx context.Context, sub string, gameID, ro
 }
 
 func (t *TablesRepository) GameStatus(ctx context.Context, gameID int) (entity.GameStatus, error) {
-	var statuses []entity.GameStatus
+	var game entity.Game
 
-	if err := t.db.WithContext(ctx).Model(&entity.Game{}).Where("id = ?", gameID).Pluck("status", &statuses).Error; err != nil {
+	if err := t.db.WithContext(ctx).Select("status").First(&game, gameID).Error; err != nil {
 		return "", err
 	}
 
-	if len(statuses) == 0 {
-		return "", gorm.ErrRecordNotFound
-	}
-
-	return statuses[0], nil
+	return game.Status, nil
 }
 
 func (t *TablesRepository) UpdateTable(ctx context.Context, table *entity.GameTable) (entity.GameTable, error) {

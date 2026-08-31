@@ -32,17 +32,15 @@ func (s *EventsService) FindByGameID(ctx context.Context, gameID int, sub string
 		if !isOwner {
 			return nil, apperror.ErrNotOwner
 		}
+	} else {
+		wasOwner, err := s.events.WasOwner(ctx, gameID, sub)
+		if err != nil {
+			return nil, err
+		}
 
-		return s.events.FindByGameID(ctx, gameID)
-	}
-
-	wasOwner, err := s.events.WasOwner(ctx, gameID, sub)
-	if err != nil {
-		return nil, err
-	}
-
-	if !wasOwner {
-		return nil, apperror.ErrGameNotFound
+		if !wasOwner {
+			return nil, apperror.ErrGameNotFound
+		}
 	}
 
 	return s.events.FindByGameID(ctx, gameID)

@@ -104,8 +104,7 @@ func TestGameSetup(t *testing.T) {
 		},
 	}
 
-	dbConn, teardownDatabase := setupTestDatabase(t)
-	defer teardownDatabase()
+	dbConn := setupTestDatabase(t)
 
 	db, err := sql.Open("pgx", dbConn)
 	if err != nil {
@@ -116,8 +115,7 @@ func TestGameSetup(t *testing.T) {
 
 	runGooseUp(t, db)
 
-	server, teardown := setupTestServer(t)
-	defer teardown(server)
+	server := setupTestServer(t)
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -132,8 +130,7 @@ func TestGameSetup(t *testing.T) {
 }
 
 func TestGameSetupMultipleTimes(t *testing.T) {
-	dbConn, teardownDatabase := setupTestDatabase(t)
-	defer teardownDatabase()
+	dbConn := setupTestDatabase(t)
 
 	db, err := sql.Open("pgx", dbConn)
 	if err != nil {
@@ -143,8 +140,7 @@ func TestGameSetupMultipleTimes(t *testing.T) {
 
 	runGooseUp(t, db)
 
-	server, teardown := setupTestServer(t)
-	defer teardown(server)
+	server := setupTestServer(t)
 
 	// Setup test data
 	executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
@@ -173,8 +169,7 @@ func TestGameSetupMultipleTimes(t *testing.T) {
 }
 
 func TestAddTeamAfterSetup(t *testing.T) {
-	dbConn, teardownDatabase := setupTestDatabase(t)
-	defer teardownDatabase()
+	dbConn := setupTestDatabase(t)
 
 	db, err := sql.Open("pgx", dbConn)
 	if err != nil {
@@ -184,8 +179,7 @@ func TestAddTeamAfterSetup(t *testing.T) {
 
 	runGooseUp(t, db)
 
-	server, teardown := setupTestServer(t)
-	defer teardown(server)
+	server := setupTestServer(t)
 
 	executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
 	advanceSequences(t, db)
@@ -251,8 +245,7 @@ func TestAddTeamAfterSetup(t *testing.T) {
 }
 
 func TestConcurrentTeamCreateAndSetup(t *testing.T) {
-	dbConn, teardownDatabase := setupTestDatabase(t)
-	defer teardownDatabase()
+	dbConn := setupTestDatabase(t)
 
 	db, err := sql.Open("pgx", dbConn)
 	if err != nil {
@@ -262,8 +255,7 @@ func TestConcurrentTeamCreateAndSetup(t *testing.T) {
 
 	runGooseUp(t, db)
 
-	server, teardown := setupTestServer(t)
-	defer teardown(server)
+	server := setupTestServer(t)
 
 	executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
 	advanceSequences(t, db)

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -23,6 +24,15 @@ func JSONError(w http.ResponseWriter, errorMessage string, statusCode int) {
 	}
 }
 
+func writeJSON(ctx context.Context, w http.ResponseWriter, statusCode int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+
+	if err := json.NewEncoder(w).Encode(body); err != nil {
+		slog.ErrorContext(ctx, "Could not write body", "error", err)
+	}
+}
+
 func userSub(w http.ResponseWriter, r *http.Request) (string, bool) {
 	user, ok := middleware.UserFromContext(r.Context())
 	if !ok {
@@ -33,45 +43,38 @@ func userSub(w http.ResponseWriter, r *http.Request) (string, bool) {
 	return user.Sub, true
 }
 
+var errorResponses = []struct {
+	err     error
+	message string
+	status  int
+}{
+	{apperror.ErrNotOwner, "Forbidden", http.StatusForbidden},
+	{apperror.ErrGameNotFound, "Game not found", http.StatusNotFound},
+	{apperror.ErrTeamNotFound, "Team not found", http.StatusNotFound},
+	{apperror.ErrPlayerNotFound, "Player not found", http.StatusNotFound},
+	{apperror.ErrRoundOrTableNotFound, "Round or table not found", http.StatusNotFound},
+	{apperror.ErrInvalidScore, "Invalid score", http.StatusBadRequest},
+	{apperror.ErrTeamSizeNotAllowed, "Invalid team size", http.StatusBadRequest},
+	{apperror.ErrInvalidGameSetup, "Invalid game setup", http.StatusConflict},
+	{apperror.ErrGameIncomplete, "Game is incomplete", http.StatusConflict},
+	{apperror.ErrAlreadyOwner, "Already an owner", http.StatusConflict},
+	{apperror.ErrGameNotEditable, "Game is not editable", http.StatusConflict},
+	{apperror.ErrInvalidStatusTransition, "Invalid status transition", http.StatusConflict},
+	{apperror.ErrGameNotInProgress, "Game is not in progress", http.StatusConflict},
+	{apperror.ErrNotEnoughTeams, "Not enough teams to assign tables", http.StatusConflict},
+	{apperror.ErrTableAssignment, "Cannot assign players to tables", http.StatusConflict},
+	{apperror.ErrGameAlreadySetUp, "Game setup already assigned, reset the setup first", http.StatusConflict},
+	{apperror.ErrLastOwner, "Cannot remove the last owner", http.StatusConflict},
+	{apperror.ErrUserNotFound, "No user found for the given email", http.StatusUnprocessableEntity},
+}
+
 func respondError(w http.ResponseWriter, err error) {
-	switch {
-	case errors.Is(err, apperror.ErrNotOwner):
-		JSONError(w, "Forbidden", http.StatusForbidden)
-	case errors.Is(err, apperror.ErrGameNotFound):
-		JSONError(w, "Game not found", http.StatusNotFound)
-	case errors.Is(err, apperror.ErrTeamNotFound):
-		JSONError(w, "Team not found", http.StatusNotFound)
-	case errors.Is(err, apperror.ErrPlayerNotFound):
-		JSONError(w, "Player not found", http.StatusNotFound)
-	case errors.Is(err, apperror.ErrRoundOrTableNotFound):
-		JSONError(w, "Round or table not found", http.StatusNotFound)
-	case errors.Is(err, apperror.ErrInvalidScore):
-		JSONError(w, "Invalid score", http.StatusBadRequest)
-	case errors.Is(err, apperror.ErrTeamSizeNotAllowed):
-		JSONError(w, "Invalid team size", http.StatusBadRequest)
-	case errors.Is(err, apperror.ErrInvalidGameSetup):
-		JSONError(w, "Invalid game setup", http.StatusConflict)
-	case errors.Is(err, apperror.ErrGameIncomplete):
-		JSONError(w, "Game is incomplete", http.StatusConflict)
-	case errors.Is(err, apperror.ErrAlreadyOwner):
-		JSONError(w, "Already an owner", http.StatusConflict)
-	case errors.Is(err, apperror.ErrGameNotEditable):
-		JSONError(w, "Game is not editable", http.StatusConflict)
-	case errors.Is(err, apperror.ErrInvalidStatusTransition):
-		JSONError(w, "Invalid status transition", http.StatusConflict)
-	case errors.Is(err, apperror.ErrGameNotInProgress):
-		JSONError(w, "Game is not in progress", http.StatusConflict)
-	case errors.Is(err, apperror.ErrNotEnoughTeams):
-		JSONError(w, "Not enough teams to assign tables", http.StatusConflict)
-	case errors.Is(err, apperror.ErrTableAssignment):
-		JSONError(w, "Cannot assign players to tables", http.StatusConflict)
-	case errors.Is(err, apperror.ErrGameAlreadySetUp):
-		JSONError(w, "Game setup already assigned, reset the setup first", http.StatusConflict)
-	case errors.Is(err, apperror.ErrLastOwner):
-		JSONError(w, "Cannot remove the last owner", http.StatusConflict)
-	case errors.Is(err, apperror.ErrUserNotFound):
-		JSONError(w, "No user found for the given email", http.StatusUnprocessableEntity)
-	default:
-		JSONError(w, "Internal server error", http.StatusInternalServerError)
+	for _, response := range errorResponses {
+		if errors.Is(err, response.err) {
+			JSONError(w, response.message, response.status)
+			return
+		}
 	}
+
+	JSONError(w, "Internal server error", http.StatusInternalServerError)
 }

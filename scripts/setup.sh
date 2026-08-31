@@ -6,7 +6,7 @@ echo "Install git hooks..."
 pre-commit install --hook-type pre-commit --hook-type pre-push
 
 echo "Setup database..."
-docker-compose up -d
+docker compose up -d
 
 DATABASE_URL=postgres://postgres:secret@localhost:5432/postgres
 

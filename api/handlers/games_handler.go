@@ -77,9 +77,6 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
 	apiGames := make([]api.Game, len(allGames))
 	ptrs := make([]*api.Game, len(allGames))
 
@@ -90,13 +87,7 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 
 	h.enrichOwnerEmails(ctx, ptrs...)
 
-	response := api.GamesResponse{
-		Games: apiGames,
-	}
-
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusOK, api.GamesResponse{Games: apiGames})
 }
 
 func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request, gameID int) {
@@ -113,16 +104,10 @@ func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
 	apiGame := entityGameToAPIGame(gameByID)
 	h.enrichOwnerEmails(ctx, &apiGame)
-	response := api.GameResponse{Game: apiGame}
 
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusOK, api.GameResponse{Game: apiGame})
 }
 
 func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Request) {
@@ -152,19 +137,11 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.Header().Set("Location", fmt.Sprintf("/games/%d", createdGame.ID))
-	writer.WriteHeader(http.StatusCreated)
-
 	apiGame := entityGameToAPIGame(createdGame)
 	h.enrichOwnerEmails(ctx, &apiGame)
-	response := api.GameResponse{
-		Game: apiGame,
-	}
 
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
-	}
+	writer.Header().Set("Location", fmt.Sprintf("/games/%d", createdGame.ID))
+	writeJSON(ctx, writer, http.StatusCreated, api.GameResponse{Game: apiGame})
 }
 
 func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Request, gameID int) {
@@ -201,16 +178,8 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 
 	apiGame := entityGameToAPIGame(updatedGame)
 	h.enrichOwnerEmails(ctx, &apiGame)
-	response := api.GameResponse{
-		Game: apiGame,
-	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusOK, api.GameResponse{Game: apiGame})
 }
 
 func (h *GamesHandler) AddOwner(writer http.ResponseWriter, request *http.Request, gameID int) {
@@ -242,12 +211,7 @@ func (h *GamesHandler) AddOwner(writer http.ResponseWriter, request *http.Reques
 	apiGame := entityGameToAPIGame(updatedGame)
 	h.enrichOwnerEmails(ctx, &apiGame)
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(writer).Encode(api.GameResponse{Game: apiGame}); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusOK, api.GameResponse{Game: apiGame})
 }
 
 func (h *GamesHandler) RemoveOwner(writer http.ResponseWriter, request *http.Request, gameID int, ownerSub string) {
@@ -267,12 +231,7 @@ func (h *GamesHandler) RemoveOwner(writer http.ResponseWriter, request *http.Req
 	apiGame := entityGameToAPIGame(updatedGame)
 	h.enrichOwnerEmails(ctx, &apiGame)
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(writer).Encode(api.GameResponse{Game: apiGame}); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusOK, api.GameResponse{Game: apiGame})
 }
 
 func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Request, gameID int) {

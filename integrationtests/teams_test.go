@@ -213,8 +213,7 @@ func TestTeams(t *testing.T) {
 		},
 	}
 
-	dbConn, teardownDatabase := setupTestDatabase(t)
-	defer teardownDatabase()
+	dbConn := setupTestDatabase(t)
 
 	db, err := sql.Open("pgx", dbConn)
 	if err != nil {
@@ -225,8 +224,7 @@ func TestTeams(t *testing.T) {
 
 	runGooseUp(t, db)
 
-	server, teardown := setupTestServer(t)
-	defer teardown(server)
+	server := setupTestServer(t)
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
