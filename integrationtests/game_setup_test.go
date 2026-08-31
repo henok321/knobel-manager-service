@@ -82,8 +82,8 @@ func TestGameSetup(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 				assertMatchmakingReset(t, db)
-				assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "resetting must leave the roster alone")
-				assert.Equal(t, 32, countRows(t, db, "SELECT COUNT(*) FROM players"), "resetting must leave the roster alone")
+				assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "resetting must leave the teams alone")
+				assert.Equal(t, 32, countRows(t, db, "SELECT COUNT(*) FROM players"), "resetting must leave the players alone")
 			},
 		},
 		"Reset game setup discards the scores of the assigned tables": {

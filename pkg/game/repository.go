@@ -65,12 +65,24 @@ func (r *GamesRepository) LockGame(ctx context.Context, gameID int) (entity.Game
 	return game, nil
 }
 
-func (r *GamesRepository) CountRounds(ctx context.Context, gameID int) (int, error) {
-	var count int64
+type Counts struct {
+	Rounds  int
+	Players int
+	Scores  int
+}
 
-	err := r.db.WithContext(ctx).Model(&entity.Round{}).Where("game_id = ?", gameID).Count(&count).Error
+func (r *GamesRepository) CountRelated(ctx context.Context, gameID int) (Counts, error) {
+	var counts Counts
 
-	return int(count), err
+	err := r.db.WithContext(ctx).Raw(`SELECT
+			(SELECT COUNT(*) FROM rounds WHERE game_id = ?) AS rounds,
+			(SELECT COUNT(*) FROM players p JOIN teams t ON t.id = p.team_id WHERE t.game_id = ?) AS players,
+			(SELECT COUNT(*) FROM scores s
+				JOIN game_tables gt ON gt.id = s.table_id
+				JOIN rounds r ON r.id = gt.round_id WHERE r.game_id = ?) AS scores`,
+		gameID, gameID, gameID).Scan(&counts).Error
+
+	return counts, err
 }
 
 func (r *GamesRepository) CreateOrUpdateGame(ctx context.Context, game *entity.Game) (entity.Game, error) {

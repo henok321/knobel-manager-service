@@ -338,6 +338,10 @@ is refused (`apperror.ErrInvalidStatusTransition`, 409; unknown values are 400 f
 `GameStatus.Valid()`). `ensureTransitionAllowed` in `pkg/game/service.go` is the whole rule. Without the direction
 check, `PUT status=setup` followed by `DELETE /setup` wiped a finished tournament in two requests, both 2xx.
 
+`UpdateGame` runs under the same row lock as a setup run and decides from `GamesRepository.CountRelated` — rounds,
+players and scores in one query — rather than from preloaded associations, for the reason given below: a slice nobody
+loaded looks exactly like an empty one, and "no scores" is the answer that lets a rewind through.
+
 Scores can only be written while the game is `in_progress` (`apperror.ErrGameNotInProgress`, 409). That is what makes
 the rewind rule airtight: a game in `setup` cannot have scores, so `DELETE /setup` cannot destroy any.
 
@@ -348,7 +352,7 @@ submission. Renaming stays free in every status.
 ### Changing Teams and Players After Setup
 
 Creating or deleting a team or a player runs inside `GamesService.WithinSetup`, which is the only path allowed to
-change a roster. In one transaction it locks the game row (`SELECT … FOR UPDATE`), checks ownership, counts the
+change the teams of a game. In one transaction it locks the game row (`SELECT … FOR UPDATE`), checks ownership, counts the
 game's rounds and calls `entity.EnsureSetupNotAssigned(status, rounds)`: 409 unless the game is in `setup`
 (`apperror.ErrGameNotEditable`) and no round is assigned (`apperror.ErrGameAlreadySetUp`). Without it a late-arriving
 team could be added after the tables were assigned and the game started with players seated nowhere.
