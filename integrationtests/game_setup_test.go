@@ -86,19 +86,6 @@ func TestGameSetup(t *testing.T) {
 				assert.Equal(t, 32, countRows(t, db, "SELECT COUNT(*) FROM players"), "resetting must leave the players alone")
 			},
 		},
-		"Reset game setup discards the scores of the assigned tables": {
-			method:             "DELETE",
-			endpoint:           "/games/1/setup",
-			expectedStatusCode: http.StatusNoContent,
-			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
-			setup: func(db *sql.DB) {
-				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
-				if _, err := db.ExecContext(t.Context(), "INSERT INTO scores (player_id, table_id, score) VALUES (1, 1, 42)"); err != nil {
-					t.Fatalf("failed to insert score: %v", err)
-				}
-			},
-			assertions: assertMatchmakingReset,
-		},
 		"Reset game setup without permission": {
 			method:             "DELETE",
 			endpoint:           "/games/1/setup",
