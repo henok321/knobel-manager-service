@@ -508,7 +508,7 @@ Single workflow runs on push to main with dependent jobs:
 
 1. **Validate, Lint & Test** - Run in parallel
     - Validate OpenAPI: Ensures generated code matches spec (`make openapi-validate`)
-    - Lint: Pre-commit hooks (golangci-lint, gitleaks, shellcheck, markdownlint, etc.)
+    - Lint: Pre-commit hooks (golangci-lint, betterleaks, shellcheck, markdownlint, etc.)
     - Test: Full test suite (`make test`)
 2. **Build** - Triggers after all validations pass:
     - Builds multi-arch Docker image (amd64/arm64)
@@ -567,6 +567,11 @@ expanded away and `FIREBASE_SECRET` must be unwrapped base64 (`base64 -w0`).
 ---
 
 ## Code Review Standards
+
+This section is the only copy. `.github/copilot-instructions.md` used to restate it and drifted: it documented
+`apperror.ToHTTPStatus()` and `apperror.NotFoundError` (neither exists — see `pkg/apperror/error.go`), reversible
+migrations (they are Up-only), a middleware chain missing `SecurityHeaders`, and a worked example using `uuid.UUID`
+game IDs. It was deleted rather than re-synced. Keep review standards here.
 
 ### Review Philosophy
 
