@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 
@@ -24,13 +23,7 @@ var _ health.ServerInterface = (*HealthHandler)(nil)
 func (h *HealthHandler) LivenessCheck(writer http.ResponseWriter, request *http.Request) {
 	slog.DebugContext(request.Context(), "Handle liveness check")
 
-	response := health.HealthCheckResponse{Status: "pass"}
-
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(request.Context(), "Failed to write response", "error", err)
-	}
+	writeJSON(request.Context(), writer, http.StatusOK, health.HealthCheckResponse{Status: "pass"})
 }
 
 func (h *HealthHandler) ReadinessCheck(writer http.ResponseWriter, request *http.Request) {
@@ -46,9 +39,5 @@ func (h *HealthHandler) ReadinessCheck(writer http.ResponseWriter, request *http
 			"checks", response.Checks)
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(statusCode)
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(request.Context(), "Failed to write response", "error", err)
-	}
+	writeJSON(request.Context(), writer, statusCode, response)
 }

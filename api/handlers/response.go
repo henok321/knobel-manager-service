@@ -1,0 +1,76 @@
+package handlers
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"log/slog"
+	"net/http"
+
+	"github.com/henok321/knobel-manager-service/api/middleware"
+	"github.com/henok321/knobel-manager-service/pkg/apperror"
+)
+
+func writeJSON(ctx context.Context, w http.ResponseWriter, statusCode int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+
+	if err := json.NewEncoder(w).Encode(body); err != nil {
+		slog.WarnContext(ctx, "Could not write body", "error", err)
+	}
+}
+
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
+// nosniff comes from the SecurityHeaders middleware on every route, so this adds no header of its own.
+func JSONError(ctx context.Context, w http.ResponseWriter, statusCode int, errorMessage string) {
+	writeJSON(ctx, w, statusCode, &ErrorResponse{Error: errorMessage})
+}
+
+func userSub(w http.ResponseWriter, r *http.Request) (string, bool) {
+	user, ok := middleware.UserFromContext(r.Context())
+	if !ok {
+		JSONError(r.Context(), w, http.StatusInternalServerError, "User context not found")
+		return "", false
+	}
+
+	return user.Sub, true
+}
+
+var errorResponses = []struct {
+	err     error
+	message string
+	status  int
+}{
+	{apperror.ErrNotOwner, "Forbidden", http.StatusForbidden},
+	{apperror.ErrGameNotFound, "Game not found", http.StatusNotFound},
+	{apperror.ErrTeamNotFound, "Team not found", http.StatusNotFound},
+	{apperror.ErrPlayerNotFound, "Player not found", http.StatusNotFound},
+	{apperror.ErrRoundOrTableNotFound, "Round or table not found", http.StatusNotFound},
+	{apperror.ErrInvalidScore, "Invalid score", http.StatusBadRequest},
+	{apperror.ErrTeamSizeNotAllowed, "Invalid team size", http.StatusBadRequest},
+	{apperror.ErrInvalidGameSetup, "Invalid game setup", http.StatusConflict},
+	{apperror.ErrGameIncomplete, "Game is incomplete", http.StatusConflict},
+	{apperror.ErrAlreadyOwner, "Already an owner", http.StatusConflict},
+	{apperror.ErrGameNotEditable, "Game is not editable", http.StatusConflict},
+	{apperror.ErrInvalidStatusTransition, "Invalid status transition", http.StatusConflict},
+	{apperror.ErrGameNotInProgress, "Game is not in progress", http.StatusConflict},
+	{apperror.ErrNotEnoughTeams, "Not enough teams to assign tables", http.StatusConflict},
+	{apperror.ErrTableAssignment, "Cannot assign players to tables", http.StatusConflict},
+	{apperror.ErrGameAlreadySetUp, "Game setup already assigned, reset the setup first", http.StatusConflict},
+	{apperror.ErrLastOwner, "Cannot remove the last owner", http.StatusConflict},
+	{apperror.ErrUserNotFound, "No user found for the given email", http.StatusUnprocessableEntity},
+}
+
+func respondError(ctx context.Context, w http.ResponseWriter, err error) {
+	for _, response := range errorResponses {
+		if errors.Is(err, response.err) {
+			JSONError(ctx, w, response.status, response.message)
+			return
+		}
+	}
+
+	JSONError(ctx, w, http.StatusInternalServerError, "Internal server error")
+}

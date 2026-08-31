@@ -2,6 +2,7 @@ package entity
 
 import (
 	"encoding/json"
+	"slices"
 	"time"
 
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
@@ -16,13 +17,9 @@ const (
 )
 
 func IsOwner(game Game, sub string) bool {
-	for _, owner := range game.Owners {
-		if owner.OwnerSub == sub {
-			return true
-		}
-	}
-
-	return false
+	return slices.ContainsFunc(game.Owners, func(owner *GameOwner) bool {
+		return owner.OwnerSub == sub
+	})
 }
 
 func EnsureSetupNotAssigned(status GameStatus, assignedRounds int) error {

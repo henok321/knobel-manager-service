@@ -117,8 +117,7 @@ func entityGameToAPIGame(gameEntity entity.Game) api.Game {
 	return apiGame
 }
 
-// Postgres validates jsonb on write and only the audit trigger writes these columns, so
-// the rows are handed to the client verbatim rather than decoded and re-encoded.
+// Handed over verbatim: Postgres validated the jsonb on write and only the audit trigger writes it.
 func entityAuditEventToAPIAuditEvent(event entity.AuditEvent) api.AuditEvent {
 	return api.AuditEvent{
 		Id:         event.ID,

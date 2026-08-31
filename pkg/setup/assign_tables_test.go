@@ -142,8 +142,7 @@ func TestAssignTables(t *testing.T) {
 	}
 }
 
-// Regression: teamSize a strict multiple of tableSize yields more tables than
-// teams; the assignment loop used to fill only len(teams) tables and retry forever.
+// Regression: more tables than teams made the loop fill only len(teams) tables and retry forever.
 func TestAssignTablesMoreTablesThanTeams(t *testing.T) {
 	teams := map[int][]int{
 		1: {1, 2, 3, 4, 5, 6, 7, 8},

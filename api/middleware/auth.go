@@ -71,7 +71,7 @@ func Authentication(authClient FirebaseAuth) func(http.Handler) http.Handler {
 				Email: email,
 			}
 
-			ctx := context.WithValue(requestContext, userKey, userContext)
+			ctx := ContextWithUser(requestContext, userContext)
 
 			slog.InfoContext(ctx, "Request authenticated")
 

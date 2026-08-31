@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
-	"log/slog"
 	"net/http"
 
 	"github.com/henok321/knobel-manager-service/gen/api"
@@ -27,7 +25,7 @@ func (a *AuditHandler) GetAuditLog(writer http.ResponseWriter, request *http.Req
 
 	events, err := a.service.FindByGameID(ctx, gameID, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -36,10 +34,5 @@ func (a *AuditHandler) GetAuditLog(writer http.ResponseWriter, request *http.Req
 		apiEvents[i] = entityAuditEventToAPIAuditEvent(event)
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(writer).Encode(api.AuditResponse{Events: apiEvents}); err != nil {
-		slog.InfoContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusOK, api.AuditResponse{Events: apiEvents})
 }

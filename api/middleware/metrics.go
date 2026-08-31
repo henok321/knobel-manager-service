@@ -28,8 +28,7 @@ func init() {
 func Metrics() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Label on the route template, not r.URL.Path: raw paths carry unbounded IDs
-			// (/games/{id}/…) and would let anyone explode metric cardinality → OOM.
+			// Route template, not r.URL.Path: raw paths carry unbounded IDs and let anyone OOM us via metric cardinality.
 			handlerName := r.Pattern
 			if handlerName == "" {
 				handlerName = "unmatched"

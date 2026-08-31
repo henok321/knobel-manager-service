@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 
 	"github.com/henok321/knobel-manager-service/gen/api"
@@ -31,32 +30,23 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 	playersRequest := api.PlayersRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if playersRequest.Name == "" {
-		JSONError(writer, "Invalid request body", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	createPlayer, err := h.playersService.CreatePlayer(ctx, playersRequest, teamID, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
 	writer.Header().Set("Location", fmt.Sprintf("/games/%d/teams/%d/players/%d", gameID, teamID, createPlayer.ID))
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusCreated)
-
-	response := api.PlayersResponse{
-		Player: entityPlayerToAPIPlayer(createPlayer),
-	}
-
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusCreated, api.PlayersResponse{Player: entityPlayerToAPIPlayer(createPlayer)})
 }
 
 func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
@@ -70,41 +60,34 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 	playersRequest := api.PlayersRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if playersRequest.Name == "" {
-		JSONError(writer, "Invalid request body", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	updatePlayer, err := h.playersService.UpdatePlayer(ctx, playerID, playersRequest, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	response := api.PlayersResponse{
-		Player: entityPlayerToAPIPlayer(updatePlayer),
-	}
-
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusOK, api.PlayersResponse{Player: entityPlayerToAPIPlayer(updatePlayer)})
 }
 
 func (h *PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
+	ctx := request.Context()
+
 	sub, ok := userSub(writer, request)
 	if !ok {
 		return
 	}
 
-	if err := h.playersService.DeletePlayer(request.Context(), playerID, sub); err != nil {
-		respondError(writer, err)
+	if err := h.playersService.DeletePlayer(ctx, playerID, sub); err != nil {
+		respondError(ctx, writer, err)
 		return
 	}
 

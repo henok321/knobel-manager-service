@@ -2,6 +2,9 @@ package table
 
 import (
 	"context"
+	"errors"
+
+	"gorm.io/gorm"
 
 	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
@@ -24,6 +27,10 @@ func (t *TablesService) UpdateScore(ctx context.Context, gameID, roundNumber, ta
 
 	status, err := t.repo.GameStatus(ctx, gameID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entity.GameTable{}, apperror.ErrGameNotFound
+		}
+
 		return entity.GameTable{}, err
 	}
 

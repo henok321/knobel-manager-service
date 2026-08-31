@@ -13,14 +13,12 @@ all: help
 
 help:
 	@echo "Usage: make [target]"
-	@echo "Targets: help, setup, reset, openapi-generate, openapi-validate, lint, update, test, build, clean"
+	@grep -hE '^[a-zA-Z0-9_-]+:([^=]|$$)' $(MAKEFILE_LIST) | cut -d: -f1 | sort -u | paste -sd' ' -
 
 check-deps:
-	@echo "Checking dependencies..."
-	@command -v go >/dev/null 2>&1 || { echo >&2 "Go is not installed."; exit 1; }
-	@command -v pre-commit >/dev/null 2>&1 || { echo >&2 "pre-commit is not installed."; exit 1; }
-	@command -v docker >/dev/null 2>&1 || { echo >&2 "Docker is not installed."; exit 1; }
-	@echo "Dependencies fulfilled!"
+	@for tool in pre-commit docker jq; do \
+		command -v $$tool >/dev/null 2>&1 || { echo >&2 "$$tool is not installed."; exit 1; }; \
+	done
 
 setup: check-deps
 	@echo "Setting up commit hooks and local database..."
@@ -51,14 +49,10 @@ openapi-validate:
 
 lint:
 	@echo "Running Go linter..."
-	go fix ./...
-	go fmt ./...
 	go tool golangci-lint run --fix ./...
 
 lint-all:
 	@echo "Running linter..."
-	go fix ./...
-	go fmt ./...
 	pre-commit run --all-files
 
 update:

@@ -123,14 +123,22 @@ func runGooseUp(t *testing.T, db *sql.DB) {
 	}
 }
 
-func setupTestServer(t *testing.T) (*httptest.Server, func(*httptest.Server)) {
+func setupTestServer(t *testing.T) *httptest.Server {
 	t.Helper()
 
 	url := os.Getenv("DATABASE_URL")
 	database, err := audit.OpenDatabase(url)
 	if err != nil {
-		log.Fatalln("Starting application failed, cannot start connect to database", err)
+		t.Fatalf("failed to connect to database: %v", err)
 	}
+
+	// Registered before the server so it runs after it: Postgres has a finite
+	// max_connections and this helper is called once per test.
+	t.Cleanup(func() {
+		if pool, err := database.DB(); err == nil {
+			_ = pool.Close()
+		}
+	})
 
 	dbChecker := healthpkg.NewDatabaseChecker(database, 500*time.Millisecond)
 	firebaseChecker := healthpkg.NewFirebaseChecker(mock.FirebaseAuthMock{}, 500*time.Millisecond)
@@ -148,11 +156,11 @@ func setupTestServer(t *testing.T) (*httptest.Server, func(*httptest.Server)) {
 	router := routes.SetupRouter(database, mock.FirebaseAuthMock{}, healthService, openAPIConfig, swaggerDocs)
 
 	server := httptest.NewServer(router)
-	teardown := func(*httptest.Server) {
-		server.Close()
-	}
+	t.Cleanup(server.Close)
 
-	return server, teardown
+	// Cleanups run after every defer, so a test that defers fixture teardown tears it down
+	// with the server still up: await in-flight requests before returning.
+	return server
 }
 
 var (
@@ -207,7 +215,7 @@ func startPostgres(ctx context.Context) (*postgres.PostgresContainer, error) {
 			WithOccurrence(2).WithStartupTimeout(5*time.Second)))
 }
 
-func setupTestDatabase(t *testing.T) (string, func()) {
+func setupTestDatabase(t *testing.T) string {
 	t.Helper()
 
 	sharedDatabaseOnce.Do(func() {
@@ -227,7 +235,7 @@ func setupTestDatabase(t *testing.T) (string, func()) {
 
 	t.Setenv("DATABASE_URL", sharedDatabaseURL)
 
-	return sharedDatabaseURL, func() {}
+	return sharedDatabaseURL
 }
 
 func advanceSequences(t *testing.T, db *sql.DB) {

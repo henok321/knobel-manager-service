@@ -14,8 +14,7 @@ import (
 
 func TestHealthCheck(t *testing.T) {
 	t.Run("liveness check pass", func(t *testing.T) {
-		dbConn, teardownDatabase := setupTestDatabase(t)
-		defer teardownDatabase()
+		dbConn := setupTestDatabase(t)
 
 		db, err := sql.Open("pgx", dbConn)
 		if err != nil {
@@ -26,8 +25,7 @@ func TestHealthCheck(t *testing.T) {
 
 		runGooseUp(t, db)
 
-		server, teardown := setupTestServer(t)
-		defer teardown(server)
+		server := setupTestServer(t)
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, server.URL+"/health/live", nil)
 		require.NoError(t, err)
@@ -46,8 +44,7 @@ func TestHealthCheck(t *testing.T) {
 	})
 
 	t.Run("readiness check pass", func(t *testing.T) {
-		dbConn, teardownDatabase := setupTestDatabase(t)
-		defer teardownDatabase()
+		dbConn := setupTestDatabase(t)
 
 		db, err := sql.Open("pgx", dbConn)
 		if err != nil {
@@ -58,8 +55,7 @@ func TestHealthCheck(t *testing.T) {
 
 		runGooseUp(t, db)
 
-		server, teardown := setupTestServer(t)
-		defer teardown(server)
+		server := setupTestServer(t)
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, server.URL+"/health/ready", nil)
 		require.NoError(t, err)
@@ -100,10 +96,8 @@ func TestHealthCheck(t *testing.T) {
 
 		runGooseUp(t, db)
 
-		server, teardown := setupTestServer(t)
-		defer teardown(server)
+		server := setupTestServer(t)
 
-		// Stop database to simulate database not available
 		teardownDatabase()
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, server.URL+"/health/ready", nil)

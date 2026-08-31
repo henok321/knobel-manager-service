@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log/slog"
 	"net/http"
 
 	"github.com/henok321/knobel-manager-service/gen/api"
@@ -29,7 +28,7 @@ func (t *TablesHandler) GetGameTables(writer http.ResponseWriter, request *http.
 
 	gameByID, err := t.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -41,16 +40,7 @@ func (t *TablesHandler) GetGameTables(writer http.ResponseWriter, request *http.
 		}
 	}
 
-	response := api.TablesResponse{
-		Tables: apiTables,
-	}
-
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.InfoContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusOK, api.TablesResponse{Tables: apiTables})
 }
 
 func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Request, gameID, roundNumber int) {
@@ -63,7 +53,7 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 
 	gameByID, err := t.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -74,22 +64,13 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 				apiTables[i] = entityTableToAPITable(*t)
 			}
 
-			response := api.TablesResponse{
-				Tables: apiTables,
-			}
-
-			writer.Header().Set("Content-Type", "application/json")
-			writer.WriteHeader(http.StatusOK)
-
-			if err := json.NewEncoder(writer).Encode(response); err != nil {
-				slog.InfoContext(ctx, "Could not write body", "error", err)
-			}
+			writeJSON(ctx, writer, http.StatusOK, api.TablesResponse{Tables: apiTables})
 
 			return
 		}
 	}
 
-	JSONError(writer, "Round not found", http.StatusNotFound)
+	JSONError(ctx, writer, http.StatusNotFound, "Round not found")
 }
 
 func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
@@ -102,7 +83,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 
 	gameByID, err := t.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -110,14 +91,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 		if round.RoundNumber == roundNumber {
 			for _, currentTable := range round.Tables {
 				if currentTable.TableNumber == tableNumber {
-					response := api.TableResponse{Table: entityTableToAPITable(*currentTable)}
-
-					writer.Header().Set("Content-Type", "application/json")
-					writer.WriteHeader(http.StatusOK)
-
-					if err := json.NewEncoder(writer).Encode(response); err != nil {
-						slog.InfoContext(ctx, "Could not write body", "error", err)
-					}
+					writeJSON(ctx, writer, http.StatusOK, api.TableResponse{Table: entityTableToAPITable(*currentTable)})
 
 					return
 				}
@@ -125,7 +99,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 		}
 	}
 
-	JSONError(writer, "Round or table not found", http.StatusNotFound)
+	JSONError(ctx, writer, http.StatusNotFound, "Round or table not found")
 }
 
 func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
@@ -139,29 +113,20 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 	scoresRequest := api.ScoresRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&scoresRequest); err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if len(scoresRequest.Scores) == 0 {
-		JSONError(writer, "Invalid request body", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	updatedTable, err := t.tablesService.UpdateScore(ctx, gameID, roundNumber, tableNumber, sub, scoresRequest)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
-	response := api.TableResponse{
-		Table: entityTableToAPITable(updatedTable),
-	}
-
-	writer.Header().Set("Content-Type", "application/json")
-	writer.WriteHeader(http.StatusOK)
-
-	if err := json.NewEncoder(writer).Encode(response); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
-	}
+	writeJSON(ctx, writer, http.StatusOK, api.TableResponse{Table: entityTableToAPITable(updatedTable)})
 }

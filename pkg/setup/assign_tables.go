@@ -2,9 +2,9 @@ package setup
 
 import (
 	"fmt"
+	"maps"
 	"math/rand"
 	"slices"
-	"sort"
 )
 
 type Player struct {
@@ -32,54 +32,36 @@ func IsAssignable(teams map[int][]int, teamSize, tableSize int) bool {
 	return numberOfTables >= teamSize
 }
 
-type TeamsPlayersMapping map[int][]Player
-
 type TeamSetup struct {
 	Teams     map[int][]int
 	TeamSize  int
 	TableSize int
 }
 
-func AssignTables(teamSetup TeamSetup, seed int64) (TeamsPlayersMapping, error) {
+func AssignTables(teamSetup TeamSetup, seed int64) (map[int][]Player, error) {
 	if !IsAssignable(teamSetup.Teams, teamSetup.TeamSize, teamSetup.TableSize) {
 		return nil, fmt.Errorf("invalid setup: teams=%d teamSize=%d tableSize=%d", len(teamSetup.Teams), teamSetup.TeamSize, teamSetup.TableSize)
 	}
 
+	numberOfPlayers := teamSetup.TeamSize * len(teamSetup.Teams)
+	numberOfTables := numberOfPlayers / teamSetup.TableSize
+
+	allPlayers := make([]Player, 0, numberOfPlayers)
+
+	for _, teamID := range slices.Sorted(maps.Keys(teamSetup.Teams)) {
+		for _, id := range teamSetup.Teams[teamID] {
+			allPlayers = append(allPlayers, Player{TeamID: teamID, ID: id})
+		}
+	}
+
 	for {
-		numberOfTeams := len(teamSetup.Teams)
-		numberOfPlayers := teamSetup.TeamSize * numberOfTeams
-
-		playersToAssign := make([]Player, 0, numberOfPlayers)
-
-		teamIDs := make([]int, 0, numberOfTeams)
-
-		for id := range teamSetup.Teams {
-			teamIDs = append(teamIDs, id)
-		}
-
-		sort.Ints(teamIDs)
-
-		for _, teamID := range teamIDs {
-			memberIDs := teamSetup.Teams[teamID]
-			teamMembers := make([]Player, 0, len(memberIDs))
-
-			for _, id := range memberIDs {
-				teamMembers = append(teamMembers, Player{
-					TeamID: teamID,
-					ID:     id,
-				})
-			}
-
-			playersToAssign = append(playersToAssign, teamMembers...)
-		}
+		playersToAssign := slices.Clone(allPlayers)
 
 		rnd := rand.New(rand.NewSource(seed)) //nolint:gosec // G404: deterministic seeded shuffle for table assignment, not security-sensitive
 
 		rnd.Shuffle(numberOfPlayers, func(i, j int) {
 			playersToAssign[i], playersToAssign[j] = playersToAssign[j], playersToAssign[i]
 		})
-
-		numberOfTables := numberOfPlayers / teamSetup.TableSize
 
 		tables := make(map[int][]Player, numberOfTables)
 		for i := range numberOfTables {
@@ -95,7 +77,7 @@ func AssignTables(teamSetup TeamSetup, seed int64) (TeamsPlayersMapping, error) 
 					})
 					if !containsSameTeamID {
 						tables[tableID] = append(assignedToTable, playerToAssign)
-						playersToAssign = append(playersToAssign[:i], playersToAssign[i+1:]...)
+						playersToAssign = slices.Delete(playersToAssign, i, i+1)
 
 						break
 					}
