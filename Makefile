@@ -7,15 +7,20 @@ OUTPUT := knobel-manager-service
 BUILD_FLAGS := -a -ldflags="-s -w -extldflags '-static'"
 CMD_DIR := ./cmd
 
-.PHONY: all help setup reset openapi-generate openapi-validate lint lint-all update test build clean
+.PHONY: all help check-deps setup reset openapi-generate openapi-validate lint lint-all update test build clean
 
 all: help
 
 help:
 	@echo "Usage: make [target]"
-	@grep -hE '^[a-z][a-z-]*:' $(MAKEFILE_LIST) | cut -d: -f1 | sort | paste -sd' ' -
+	@grep -hE '^[a-zA-Z0-9_-]+:([^=]|$$)' $(MAKEFILE_LIST) | cut -d: -f1 | sort -u | paste -sd' ' -
 
-setup:
+check-deps:
+	@for tool in pre-commit docker jq; do \
+		command -v $$tool >/dev/null 2>&1 || { echo >&2 "$$tool is not installed."; exit 1; }; \
+	done
+
+setup: check-deps
 	@echo "Setting up commit hooks and local database..."
 	./scripts/setup.sh
 

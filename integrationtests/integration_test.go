@@ -132,6 +132,14 @@ func setupTestServer(t *testing.T) *httptest.Server {
 		t.Fatalf("failed to connect to database: %v", err)
 	}
 
+	// Registered before the server so it runs after it: Postgres has a finite
+	// max_connections and this helper is called once per test.
+	t.Cleanup(func() {
+		if pool, err := database.DB(); err == nil {
+			_ = pool.Close()
+		}
+	})
+
 	dbChecker := healthpkg.NewDatabaseChecker(database, 500*time.Millisecond)
 	firebaseChecker := healthpkg.NewFirebaseChecker(mock.FirebaseAuthMock{}, 500*time.Millisecond)
 	healthService := healthpkg.NewService(dbChecker, firebaseChecker)
@@ -150,6 +158,8 @@ func setupTestServer(t *testing.T) *httptest.Server {
 	server := httptest.NewServer(router)
 	t.Cleanup(server.Close)
 
+	// Cleanups run after every defer, so a test that defers fixture teardown tears it down
+	// with the server still up: await in-flight requests before returning.
 	return server
 }
 

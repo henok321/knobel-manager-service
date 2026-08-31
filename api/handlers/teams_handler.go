@@ -28,18 +28,18 @@ func (t *TeamsHandler) CreateTeam(writer http.ResponseWriter, request *http.Requ
 	teamsRequest := api.TeamsRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&teamsRequest); err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if teamsRequest.Name == "" {
-		JSONError(writer, "Missing required fields", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Missing required fields")
 		return
 	}
 
 	createdTeam, err := t.service.CreateTeam(ctx, gameID, sub, teamsRequest)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -58,18 +58,18 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 	teamsRequest := api.TeamsRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&teamsRequest); err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if teamsRequest.Name == "" {
-		JSONError(writer, "Missing required fields", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Missing required fields")
 		return
 	}
 
 	updatedGame, err := t.service.UpdateTeam(ctx, gameID, sub, teamID, teamsRequest)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -77,13 +77,15 @@ func (t *TeamsHandler) UpdateTeam(writer http.ResponseWriter, request *http.Requ
 }
 
 func (t *TeamsHandler) DeleteTeam(writer http.ResponseWriter, request *http.Request, gameID, teamID int) {
+	ctx := request.Context()
+
 	sub, ok := userSub(writer, request)
 	if !ok {
 		return
 	}
 
-	if err := t.service.DeleteTeam(request.Context(), gameID, sub, teamID); err != nil {
-		respondError(writer, err)
+	if err := t.service.DeleteTeam(ctx, gameID, sub, teamID); err != nil {
+		respondError(ctx, writer, err)
 		return
 	}
 

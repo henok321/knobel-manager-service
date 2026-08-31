@@ -30,18 +30,18 @@ func (h *PlayersHandler) CreatePlayer(writer http.ResponseWriter, request *http.
 	playersRequest := api.PlayersRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if playersRequest.Name == "" {
-		JSONError(writer, "Invalid request body", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	createPlayer, err := h.playersService.CreatePlayer(ctx, playersRequest, teamID, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -60,18 +60,18 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 	playersRequest := api.PlayersRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&playersRequest); err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if playersRequest.Name == "" {
-		JSONError(writer, "Invalid request body", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	updatePlayer, err := h.playersService.UpdatePlayer(ctx, playerID, playersRequest, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -79,13 +79,15 @@ func (h *PlayersHandler) UpdatePlayer(writer http.ResponseWriter, request *http.
 }
 
 func (h *PlayersHandler) DeletePlayer(writer http.ResponseWriter, request *http.Request, _ /* gameID */, _ /* teamID */, playerID int) {
+	ctx := request.Context()
+
 	sub, ok := userSub(writer, request)
 	if !ok {
 		return
 	}
 
-	if err := h.playersService.DeletePlayer(request.Context(), playerID, sub); err != nil {
-		respondError(writer, err)
+	if err := h.playersService.DeletePlayer(ctx, playerID, sub); err != nil {
+		respondError(ctx, writer, err)
 		return
 	}
 

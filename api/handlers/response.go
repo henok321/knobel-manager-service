@@ -24,19 +24,15 @@ type ErrorResponse struct {
 	Error string `json:"error"`
 }
 
-func JSONError(w http.ResponseWriter, errorMessage string, statusCode int) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(statusCode)
-	if err := json.NewEncoder(w).Encode(&ErrorResponse{Error: errorMessage}); err != nil {
-		slog.Error("Failed to encode error response", "error", err)
-	}
+// nosniff comes from the SecurityHeaders middleware on every route, so this adds no header of its own.
+func JSONError(ctx context.Context, w http.ResponseWriter, statusCode int, errorMessage string) {
+	writeJSON(ctx, w, statusCode, &ErrorResponse{Error: errorMessage})
 }
 
 func userSub(w http.ResponseWriter, r *http.Request) (string, bool) {
 	user, ok := middleware.UserFromContext(r.Context())
 	if !ok {
-		JSONError(w, "User context not found", http.StatusInternalServerError)
+		JSONError(r.Context(), w, http.StatusInternalServerError, "User context not found")
 		return "", false
 	}
 
@@ -68,13 +64,13 @@ var errorResponses = []struct {
 	{apperror.ErrUserNotFound, "No user found for the given email", http.StatusUnprocessableEntity},
 }
 
-func respondError(w http.ResponseWriter, err error) {
+func respondError(ctx context.Context, w http.ResponseWriter, err error) {
 	for _, response := range errorResponses {
 		if errors.Is(err, response.err) {
-			JSONError(w, response.message, response.status)
+			JSONError(ctx, w, response.status, response.message)
 			return
 		}
 	}
 
-	JSONError(w, "Internal server error", http.StatusInternalServerError)
+	JSONError(ctx, w, http.StatusInternalServerError, "Internal server error")
 }

@@ -73,7 +73,7 @@ func (h *GamesHandler) GetGames(writer http.ResponseWriter, request *http.Reques
 
 	allGames, err := h.gamesService.FindAllByOwner(ctx, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -100,7 +100,7 @@ func (h *GamesHandler) GetGame(writer http.ResponseWriter, request *http.Request
 
 	gameByID, err := h.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -121,19 +121,19 @@ func (h *GamesHandler) CreateGame(writer http.ResponseWriter, request *http.Requ
 	gameCreateRequest := api.GameCreateRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameCreateRequest); err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if gameCreateRequest.Name == "" || gameCreateRequest.NumberOfRounds == 0 ||
 		gameCreateRequest.TeamSize == 0 || gameCreateRequest.TableSize == 0 {
-		JSONError(writer, "Missing required fields", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Missing required fields")
 		return
 	}
 
 	createdGame, err := h.gamesService.CreateGame(ctx, sub, &gameCreateRequest)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -155,24 +155,24 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 	gameUpdateRequest := api.GameUpdateRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&gameUpdateRequest); err != nil {
-		JSONError(writer, "Invalid request body", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	if gameUpdateRequest.Name == "" || gameUpdateRequest.NumberOfRounds == 0 ||
 		gameUpdateRequest.TeamSize == 0 || gameUpdateRequest.TableSize == 0 {
-		JSONError(writer, "Invalid request body", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	if gameUpdateRequest.Status != nil && !gameUpdateRequest.Status.Valid() {
-		JSONError(writer, "Invalid status", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Invalid status")
 		return
 	}
 
 	updatedGame, err := h.gamesService.UpdateGame(ctx, gameID, sub, gameUpdateRequest)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -193,18 +193,18 @@ func (h *GamesHandler) AddOwner(writer http.ResponseWriter, request *http.Reques
 	body := api.AddOwnerRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if body.Email == "" {
-		JSONError(writer, "Missing required fields", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Missing required fields")
 		return
 	}
 
 	updatedGame, err := h.gamesService.AddOwner(ctx, gameID, sub, body.Email)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -224,7 +224,7 @@ func (h *GamesHandler) RemoveOwner(writer http.ResponseWriter, request *http.Req
 
 	updatedGame, err := h.gamesService.RemoveOwner(ctx, gameID, sub, ownerSub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -243,7 +243,7 @@ func (h *GamesHandler) DeleteGame(writer http.ResponseWriter, request *http.Requ
 	}
 
 	if err := h.gamesService.DeleteGame(ctx, gameID, sub); err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -259,7 +259,7 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 	}
 
 	if err := h.gamesService.AssignTables(ctx, gameID, sub); err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -275,7 +275,7 @@ func (h *GamesHandler) ResetGameSetup(writer http.ResponseWriter, request *http.
 	}
 
 	if err := h.gamesService.ResetSetup(ctx, gameID, sub); err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 

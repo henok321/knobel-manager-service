@@ -25,7 +25,7 @@ func (a *AuditHandler) GetAuditLog(writer http.ResponseWriter, request *http.Req
 
 	events, err := a.service.FindByGameID(ctx, gameID, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 

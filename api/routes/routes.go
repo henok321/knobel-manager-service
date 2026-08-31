@@ -82,8 +82,8 @@ func SetupRouter(database *gorm.DB, authClient middleware.FirebaseAuth, healthSe
 	router.Handle("/openapi.yaml", public("default-src 'self'")(serveBytes("text/yaml; charset=utf-8", openAPIConfig)))
 	router.Handle("/docs", public("default-src 'self'; style-src 'self' https://unpkg.com; script-src 'self' https://unpkg.com 'unsafe-inline'; img-src 'self' data:")(serveBytes("text/html; charset=utf-8", swaggerDocs)))
 
-	handleValidationErrors := func(w http.ResponseWriter, _ *http.Request, err error) {
-		handlers.JSONError(w, err.Error(), http.StatusBadRequest)
+	handleValidationErrors := func(w http.ResponseWriter, r *http.Request, err error) {
+		handlers.JSONError(r.Context(), w, http.StatusBadRequest, err.Error())
 	}
 
 	health.HandlerWithOptions(healthHandler, health.StdHTTPServerOptions{

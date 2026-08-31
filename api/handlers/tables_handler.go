@@ -28,7 +28,7 @@ func (t *TablesHandler) GetGameTables(writer http.ResponseWriter, request *http.
 
 	gameByID, err := t.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -53,7 +53,7 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 
 	gameByID, err := t.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -70,7 +70,7 @@ func (t *TablesHandler) GetTables(writer http.ResponseWriter, request *http.Requ
 		}
 	}
 
-	JSONError(writer, "Round not found", http.StatusNotFound)
+	JSONError(ctx, writer, http.StatusNotFound, "Round not found")
 }
 
 func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
@@ -83,7 +83,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 
 	gameByID, err := t.gamesService.FindByID(ctx, gameID, sub)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 
@@ -99,7 +99,7 @@ func (t *TablesHandler) GetTable(writer http.ResponseWriter, request *http.Reque
 		}
 	}
 
-	JSONError(writer, "Round or table not found", http.StatusNotFound)
+	JSONError(ctx, writer, http.StatusNotFound, "Round or table not found")
 }
 
 func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.Request, gameID, roundNumber, tableNumber int) {
@@ -113,18 +113,18 @@ func (t *TablesHandler) UpdateScores(writer http.ResponseWriter, request *http.R
 	scoresRequest := api.ScoresRequest{}
 
 	if err := json.NewDecoder(request.Body).Decode(&scoresRequest); err != nil {
-		JSONError(writer, err.Error(), http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if len(scoresRequest.Scores) == 0 {
-		JSONError(writer, "Invalid request body", http.StatusBadRequest)
+		JSONError(ctx, writer, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
 	updatedTable, err := t.tablesService.UpdateScore(ctx, gameID, roundNumber, tableNumber, sub, scoresRequest)
 	if err != nil {
-		respondError(writer, err)
+		respondError(ctx, writer, err)
 		return
 	}
 

@@ -509,6 +509,10 @@ Single workflow runs on push to main with dependent jobs:
 
 **On Pull Requests:** Only validation, lint, and test jobs run (build/deploy are skipped)
 
+Both workflows skip `**/*.md`, so **markdown is not linted in CI** — markdownlint runs only in pre-commit, which
+`make setup` installs. An edit made outside a local clone (the GitHub web UI) can therefore land a violation that
+reddens the next unrelated PR's lint job.
+
 ### Security and Quality Analysis (CodeQL)
 
 - Runs on push to main, PRs, and weekly (Thursday 01:44 UTC)

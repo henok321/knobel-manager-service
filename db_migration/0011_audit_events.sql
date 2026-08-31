@@ -43,7 +43,7 @@ BEGIN
         RAISE EXCEPTION 'audit_row: no game_id resolution for table %', TG_TABLE_NAME;
     END IF;
 
-    -- ignore cascade deletes
+    -- skip children a cascade already orphaned: pg_trigger_depth() cannot tell them from a direct delete
     IF TG_OP = 'DELETE' AND TG_TABLE_NAME <> 'games'
         AND NOT EXISTS (SELECT 1 FROM games WHERE id = resolved_game_id) THEN
         RETURN NULL;
