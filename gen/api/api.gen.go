@@ -200,9 +200,9 @@ type GameUpdateRequest struct {
 	NumberOfRounds int    `json:"numberOfRounds"`
 
 	// Status Example: setup
-	Status    GameStatus `json:"status"`
-	TableSize int        `json:"tableSize"`
-	TeamSize  int        `json:"teamSize"`
+	Status    *GameStatus `json:"status,omitempty"`
+	TableSize int         `json:"tableSize"`
+	TeamSize  int         `json:"teamSize"`
 }
 
 // GamesResponse defines model for GamesResponse.

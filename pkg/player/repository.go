@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
@@ -28,11 +27,21 @@ func (r *PlayersRepository) FindPlayerByID(ctx context.Context, id int) (entity.
 	return player, nil
 }
 
-func (r *PlayersRepository) CreateOrUpdatePlayer(ctx context.Context, player *entity.Player) (entity.Player, error) {
-	err := r.db.WithContext(ctx).Omit(clause.Associations).Save(player).Error
+func (r *PlayersRepository) CreatePlayer(ctx context.Context, player *entity.Player) (entity.Player, error) {
+	err := r.db.WithContext(ctx).Save(player).Error
 	if err != nil {
 		return entity.Player{}, err
 	}
+
+	return *player, nil
+}
+
+func (r *PlayersRepository) UpdatePlayerName(ctx context.Context, player *entity.Player, name string) (entity.Player, error) {
+	if err := r.db.WithContext(ctx).Model(&entity.Player{ID: player.ID}).Update("player_name", name).Error; err != nil {
+		return entity.Player{}, err
+	}
+
+	player.Name = name
 
 	return *player, nil
 }

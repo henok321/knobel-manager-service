@@ -38,7 +38,7 @@ func (s PlayersService) CreatePlayer(ctx context.Context, request api.PlayersReq
 	err = s.gamesService.WithinSetup(ctx, teamByID.GameID, sub, func(ctx context.Context, tx *gorm.DB, _ entity.Game) error {
 		player := entity.Player{Name: request.Name, TeamID: teamID}
 
-		saved, err := NewPlayersRepository(tx).CreateOrUpdatePlayer(ctx, &player)
+		saved, err := NewPlayersRepository(tx).CreatePlayer(ctx, &player)
 		if err != nil {
 			return err
 		}
@@ -74,9 +74,7 @@ func (s PlayersService) UpdatePlayer(ctx context.Context, id int, request api.Pl
 		return entity.Player{}, err
 	}
 
-	player.Name = request.Name
-
-	return s.playersRepo.CreateOrUpdatePlayer(ctx, &player)
+	return s.playersRepo.UpdatePlayerName(ctx, &player, request.Name)
 }
 
 func (s PlayersService) DeletePlayer(ctx context.Context, id int, sub string) error {

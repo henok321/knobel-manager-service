@@ -52,7 +52,7 @@ func respondError(w http.ResponseWriter, err error) {
 	case errors.Is(err, apperror.ErrInvalidGameSetup):
 		JSONError(w, "Invalid game setup", http.StatusConflict)
 	case errors.Is(err, apperror.ErrGameIncomplete):
-		JSONError(w, "Game is complete", http.StatusConflict)
+		JSONError(w, "Game is incomplete", http.StatusConflict)
 	case errors.Is(err, apperror.ErrAlreadyOwner):
 		JSONError(w, "Already an owner", http.StatusConflict)
 	case errors.Is(err, apperror.ErrGameNotEditable):

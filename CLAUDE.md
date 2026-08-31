@@ -335,7 +335,8 @@ The Scores operations are part of the unified `gen/api` package, but **scores ar
 `setup → in_progress → completed`, plus one step back: `in_progress → setup`, and only while no score has been
 entered. Everything else — any move out of `completed`, a rewind that would orphan scores, a status outside the enum —
 is refused (`apperror.ErrInvalidStatusTransition`, 409; unknown values are 400 from the handler via the generated
-`GameStatus.Valid()`). `ensureTransitionAllowed` in `pkg/game/service.go` is the whole rule. Without the direction
+`GameStatus.Valid()`). `status` is optional in `GameUpdateRequest` — absent means "leave it alone", which is why
+it is a pointer in the generated type. `ensureTransitionAllowed` in `pkg/game/service.go` is the whole rule. Without the direction
 check, `PUT status=setup` followed by `DELETE /setup` wiped a finished tournament in two requests, both 2xx.
 
 `UpdateGame` runs under the same row lock as a setup run and decides from `GamesRepository.CountRelated` — rounds,
@@ -374,9 +375,11 @@ team's players appearing in `table_players`. Resetting also deletes the scores o
 (`ResetGameTables`, deliberately — see the audit section); the lifecycle rules above are what keep that from ever
 destroying real scoring history.
 
-`PlayersRepository.CreateOrUpdatePlayer` saves with `Omit(clause.Associations)`: a player carries its team and game,
-and GORM otherwise cascades an upsert up that chain on every rename. Renaming a team or player leaves the assignment
-intact and stays allowed in every status.
+Creating and renaming are separate repository methods on purpose — `CreateTeam`/`UpdateTeamName`,
+`CreatePlayer`/`UpdatePlayerName`. Create needs GORM's association cascade (a team is inserted with its players); a
+rename must not have it, because the entity it was loaded from carries its team, game and rounds, and `Save` walks
+that chain and upserts every row it finds. The rename methods therefore update the single column on the single row.
+Renaming leaves the assignment intact and stays allowed in every status.
 
 ### Audit Log
 

@@ -188,7 +188,7 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
-	if gameUpdateRequest.Status != "" && !gameUpdateRequest.Status.Valid() {
+	if gameUpdateRequest.Status != nil && !gameUpdateRequest.Status.Valid() {
 		JSONError(writer, "Invalid status", http.StatusBadRequest)
 		return
 	}

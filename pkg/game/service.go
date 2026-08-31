@@ -95,12 +95,12 @@ func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, reque
 			}
 		}
 
-		if request.Status != "" {
-			if err := ensureTransitionAllowed(gameByID, counts, entity.GameStatus(request.Status)); err != nil {
+		if request.Status != nil {
+			if err := ensureTransitionAllowed(gameByID, counts, entity.GameStatus(*request.Status)); err != nil {
 				return err
 			}
 
-			gameByID.Status = entity.GameStatus(request.Status)
+			gameByID.Status = entity.GameStatus(*request.Status)
 		}
 
 		gameByID.Name = request.Name

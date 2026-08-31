@@ -856,7 +856,7 @@ components:
           type: integer
         status:
           $ref: '#/components/schemas/GameStatus'
-      required: [ name, numberOfRounds, teamSize, tableSize, status ]
+      required: [ name, numberOfRounds, teamSize, tableSize ]
     PlayersRequest:
       type: object
       properties:

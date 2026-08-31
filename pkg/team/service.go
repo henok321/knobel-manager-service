@@ -51,7 +51,7 @@ func (s *TeamsService) CreateTeam(ctx context.Context, gameID int, sub string, r
 			Players: players,
 		}
 
-		saved, err := NewTeamsRepository(tx).CreateOrUpdateTeam(ctx, &team)
+		saved, err := NewTeamsRepository(tx).CreateTeam(ctx, &team)
 		if err != nil {
 			return err
 		}
@@ -72,8 +72,7 @@ func (s *TeamsService) UpdateTeam(ctx context.Context, gameID int, sub string, t
 
 	for _, team := range gameByID.Teams {
 		if team.ID == teamID {
-			team.Name = request.Name
-			return s.teamRepo.CreateOrUpdateTeam(ctx, team)
+			return s.teamRepo.UpdateTeamName(ctx, team, request.Name)
 		}
 	}
 
