@@ -81,7 +81,7 @@ make openapi-generate        # Regenerate server code from spec
 ## Code Quality
 
 ```sh
-make lint                   # Run the golangci-lint pre-commit hook only (fast)
+make lint                   # Run golangci-lint only (fast)
 make lint-all               # Run all pre-commit hooks
 make test                   # Run tests
 ```

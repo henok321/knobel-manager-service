@@ -42,11 +42,9 @@ openapi-validate:
 	@echo "Validating OpenAPI generated code..."
 	@./scripts/validate-openapi.sh
 
-# Run twice: the hook's entry is `golangci-lint run --fix`, and pre-commit fails a hook that
-# modified files even when the tool exited 0. The second run reports only real issues.
 lint:
 	@echo "Running Go linter..."
-	pre-commit run golangci-lint-full --all-files || pre-commit run golangci-lint-full --all-files
+	go tool golangci-lint run --fix ./...
 
 lint-all:
 	@echo "Running linter..."

@@ -64,9 +64,17 @@ make lint-all   # Runs all pre-commit hooks (golangci-lint, sqlfluff, shellcheck
 `make lint` is for quick Go-only linting during development. `make lint-all` runs the complete pre-commit hook suite for
 comprehensive validation before committing.
 
-Both go through pre-commit, which owns the pinned golangci-lint binary. golangci-lint is deliberately **not** a
-`go tool` directive: it pulled ~230 indirect modules into `go.mod` and drifted out of sync with the pre-commit pin.
-`golangci-lint run --fix` already applies the `formatters:` block, so no separate `go fmt` step is needed.
+`make lint` runs golangci-lint through `go tool`, one pass, exiting 0 when `--fix` was all that was needed. Going
+through the pre-commit hook instead would need two invocations, because pre-commit fails a hook that modified files even
+when the tool exited 0. `golangci-lint run --fix` already applies the `formatters:` block, so there is no separate
+`go fmt` step.
+
+The directive adds ~185 indirect requires, but they are **not** in the build: nothing links them into the binary, and
+govulncheck does not flag them. Measured cost is ~49 MiB of extra `go mod download` on a cold cache — the Dockerfile's
+`go mod download` and the `setup-go` cache — which Docker layer caching amortises because `go.mod` rarely changes.
+
+The one real cost is that golangci-lint now exists **twice**: this directive and the pre-commit hook rev CI runs. Bump
+them together; they have drifted apart before (go.mod v2.12.2 against the hook's v2.13.2).
 
 The editor path is separate again: `.vscode/settings.json` sets `go.lintTool`/`customFormatter` to `golangci-lint`,
 which the Go extension resolves from `PATH` (Homebrew), never through `go tool`. So the binary exists three times
@@ -452,6 +460,8 @@ Tests are automatically run by pre-commit hooks on push and by CI/CD.
 
 The project uses Go toolchain directives:
 
+- `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` - linting via `make lint` (keep in step with the
+  pre-commit hook rev)
 - `github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen` - OpenAPI code generation
 - `golang.org/x/vuln/cmd/govulncheck` - dependency CVE scanning (pre-commit)
 
