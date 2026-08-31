@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPlayers(t *testing.T) {
@@ -111,14 +112,72 @@ func TestPlayers(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 
-				var count int
-				err := db.QueryRowContext(t.Context(), "SELECT COUNT(*) FROM players WHERE id = 1").Scan(&count)
-				if err != nil {
-					t.Fatalf("failed to count players: %v", err)
-				}
-				if count != 1 {
-					t.Errorf("player must not be deleted by a non-owner, got count %d", count)
-				}
+				assert.Equal(t, 1, countRows(t, db, "SELECT COUNT(*) FROM players WHERE id = 1"),
+					"player must not be deleted by a non-owner")
+			},
+		},
+		"Create player while the tables are assigned": {
+			method:             "POST",
+			endpoint:           "/games/1/teams/1/players",
+			requestBody:        `{"name":"Player 33"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Game setup already assigned, reset the setup first"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+				advanceSequences(t, db)
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				assert.Equal(t, 32, countRows(t, db, "SELECT COUNT(*) FROM players"), "player must not be created")
+				assertTablesAssigned(t, db)
+			},
+		},
+		"Create player in a running game": {
+			method:             "POST",
+			endpoint:           "/games/1/teams/1/players",
+			requestBody:        `{"name":"Player 33"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Game is not editable"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+				advanceSequences(t, db)
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				assert.Equal(t, 32, countRows(t, db, "SELECT COUNT(*) FROM players"), "player must not be created")
+				assertTablesAssigned(t, db)
+			},
+		},
+		"Delete player while the tables are assigned": {
+			method:             "DELETE",
+			endpoint:           "/games/1/teams/1/players/1",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Game setup already assigned, reset the setup first"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				assert.Equal(t, 32, countRows(t, db, "SELECT COUNT(*) FROM players"), "player must not be deleted")
+				assertTablesAssigned(t, db)
+			},
+		},
+		"Delete player in a running game": {
+			method:             "DELETE",
+			endpoint:           "/games/1/teams/1/players/1",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Game is not editable"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				assert.Equal(t, 32, countRows(t, db, "SELECT COUNT(*) FROM players"), "player must not be deleted")
+				assertTablesAssigned(t, db)
 			},
 		},
 	}

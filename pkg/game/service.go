@@ -58,41 +58,146 @@ func (s *GamesService) CreateGame(ctx context.Context, sub string, game *api.Gam
 	return s.repo.CreateOrUpdateGame(ctx, &gameModel)
 }
 
-func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, game api.GameUpdateRequest) (entity.Game, error) {
-	gameByID, err := s.FindByID(ctx, id, sub)
-	if err != nil {
-		return entity.Game{}, err
-	}
+func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, request api.GameUpdateRequest) (entity.Game, error) {
+	var updated entity.Game
 
-	gameByID.Name = game.Name
-	gameByID.TeamSize = game.TeamSize
-	gameByID.TableSize = game.TableSize
-	gameByID.NumberOfRounds = game.NumberOfRounds
+	err := s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
+		locked, err := txRepo.LockGame(ctx, id)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return apperror.ErrGameNotFound
+			}
 
-	if game.Status != "" {
-		gameByID.Status = entity.GameStatus(game.Status)
-	}
-
-	if game.Status == "in_progress" {
-		teams := teamsMap(gameByID)
-
-		if len(gameByID.Rounds) != gameByID.NumberOfRounds {
-			return entity.Game{}, apperror.ErrInvalidGameSetup
+			return err
 		}
 
-		validSetup := setup.IsAssignable(teams, gameByID.TeamSize, gameByID.TableSize)
-
-		if !validSetup {
-			return entity.Game{}, apperror.ErrInvalidGameSetup
+		if !entity.IsOwner(locked, sub) {
+			return apperror.ErrNotOwner
 		}
+
+		gameByID, err := txRepo.FindByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		counts, err := txRepo.CountRelated(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		configChanged := request.TeamSize != gameByID.TeamSize ||
+			request.TableSize != gameByID.TableSize ||
+			request.NumberOfRounds != gameByID.NumberOfRounds
+
+		if configChanged {
+			if err := entity.EnsureSetupNotAssigned(gameByID.Status, counts.Rounds); err != nil {
+				return err
+			}
+		}
+
+		if request.Status != nil {
+			if err := ensureTransitionAllowed(gameByID, counts, entity.GameStatus(*request.Status)); err != nil {
+				return err
+			}
+
+			gameByID.Status = entity.GameStatus(*request.Status)
+		}
+
+		gameByID.Name = request.Name
+		gameByID.TeamSize = request.TeamSize
+		gameByID.TableSize = request.TableSize
+		gameByID.NumberOfRounds = request.NumberOfRounds
+
+		updated, err = txRepo.CreateOrUpdateGame(ctx, &gameByID)
+
+		return err
+	})
+
+	return updated, err
+}
+
+func ensureTransitionAllowed(game entity.Game, counts Counts, next entity.GameStatus) error {
+	if game.Status == next {
+		return nil
 	}
 
-	if game.Status == "completed" {
-		if gameIncompleteScoresMissing(gameByID) {
-			return entity.Game{}, apperror.ErrGameIncomplete
+	switch {
+	case game.Status == entity.StatusSetup && next == entity.StatusInProgress:
+		if counts.Rounds != game.NumberOfRounds {
+			return apperror.ErrInvalidGameSetup
 		}
+
+		if !setup.IsAssignable(teamsMap(game), game.TeamSize, game.TableSize) {
+			return apperror.ErrInvalidGameSetup
+		}
+
+		return nil
+	case game.Status == entity.StatusInProgress && next == entity.StatusCompleted:
+		if counts.Scores < counts.Players*game.NumberOfRounds {
+			return apperror.ErrGameIncomplete
+		}
+
+		return nil
+	case game.Status == entity.StatusInProgress && next == entity.StatusSetup:
+		if counts.Scores > 0 {
+			return apperror.ErrInvalidStatusTransition
+		}
+
+		return nil
+	default:
+		return apperror.ErrInvalidStatusTransition
 	}
-	return s.repo.CreateOrUpdateGame(ctx, &gameByID)
+}
+
+func (s *GamesService) WithinSetup(ctx context.Context, gameID int, sub string, write func(ctx context.Context, tx *gorm.DB, game entity.Game) error) error {
+	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
+		game, err := txRepo.LockGame(ctx, gameID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return apperror.ErrGameNotFound
+			}
+
+			return err
+		}
+
+		if !entity.IsOwner(game, sub) {
+			return apperror.ErrNotOwner
+		}
+
+		counts, err := txRepo.CountRelated(ctx, gameID)
+		if err != nil {
+			return err
+		}
+
+		if err := entity.EnsureSetupNotAssigned(game.Status, counts.Rounds); err != nil {
+			return err
+		}
+
+		return write(ctx, txRepo.db, game)
+	})
+}
+
+func (s *GamesService) ResetSetup(ctx context.Context, gameID int, sub string) error {
+	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
+		game, err := txRepo.LockGame(ctx, gameID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return apperror.ErrGameNotFound
+			}
+
+			return err
+		}
+
+		if !entity.IsOwner(game, sub) {
+			return apperror.ErrNotOwner
+		}
+
+		if game.Status != entity.StatusSetup {
+			return apperror.ErrGameNotEditable
+		}
+
+		return txRepo.ResetGameTables(ctx, gameID)
+	})
 }
 
 func teamsMap(game entity.Game) map[int][]int {
@@ -105,18 +210,6 @@ func teamsMap(game entity.Game) map[int][]int {
 	}
 
 	return teams
-}
-
-func gameIncompleteScoresMissing(game entity.Game) bool {
-	for _, team := range game.Teams {
-		for _, player := range team.Players {
-			scores := len(player.Scores)
-			if scores < game.NumberOfRounds {
-				return true
-			}
-		}
-	}
-	return false
 }
 
 func (s *GamesService) DeleteGame(ctx context.Context, id int, sub string) error {
@@ -170,8 +263,33 @@ func (s *GamesService) RemoveOwner(ctx context.Context, gameID int, callerSub, t
 	return s.repo.FindByID(ctx, gameID)
 }
 
-func (s *GamesService) AssignTables(ctx context.Context, game entity.Game) error {
+func (s *GamesService) AssignTables(ctx context.Context, gameID int, sub string) error {
 	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
+		if _, err := txRepo.LockGame(ctx, gameID); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return apperror.ErrGameNotFound
+			}
+
+			return err
+		}
+
+		game, err := txRepo.FindByID(ctx, gameID)
+		if err != nil {
+			return err
+		}
+
+		if !entity.IsOwner(game, sub) {
+			return apperror.ErrNotOwner
+		}
+
+		if game.Status != entity.StatusSetup {
+			return apperror.ErrGameNotEditable
+		}
+
+		if len(game.Teams) < game.TableSize {
+			return apperror.ErrNotEnoughTeams
+		}
+
 		if err := txRepo.ResetGameTables(ctx, game.ID); err != nil {
 			return fmt.Errorf("cannot reset game tables: %w", err)
 		}

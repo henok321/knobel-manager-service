@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestTeams(t *testing.T) {
@@ -145,6 +146,70 @@ func TestTeams(t *testing.T) {
 			endpoint:           "/games/1/teams/invalid",
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			expectedStatusCode: http.StatusBadRequest,
+		},
+		"Create team while the tables are assigned": {
+			method:             "POST",
+			endpoint:           "/games/1/teams",
+			requestBody:        `{"name":"Team 9"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Game setup already assigned, reset the setup first"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+				advanceSequences(t, db)
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "team must not be created")
+				assertTablesAssigned(t, db)
+			},
+		},
+		"Create team in a running game": {
+			method:             "POST",
+			endpoint:           "/games/1/teams",
+			requestBody:        `{"name":"Team 9"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Game is not editable"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+				advanceSequences(t, db)
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "team must not be created")
+				assertTablesAssigned(t, db)
+			},
+		},
+		"Delete team while the tables are assigned": {
+			method:             "DELETE",
+			endpoint:           "/games/1/teams/8",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Game setup already assigned, reset the setup first"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "team must not be deleted")
+				assertTablesAssigned(t, db)
+			},
+		},
+		"Delete team in a running game": {
+			method:             "DELETE",
+			endpoint:           "/games/1/teams/8",
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Game is not editable"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "team must not be deleted")
+				assertTablesAssigned(t, db)
+			},
 		},
 	}
 

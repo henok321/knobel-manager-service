@@ -17,10 +17,6 @@ func NewEventsService(events *EventsRepository, games *game.GamesRepository) *Ev
 	return &EventsService{events: events, games: games}
 }
 
-// A game's trail deliberately outlives the game, so authorization cannot always ask the
-// games table. While the game exists the owners table decides; once it is gone the trail
-// authorizes itself, using the game_owners events it recorded. Someone who never owned the
-// game gets the same 404 whether it was deleted or never existed.
 func (s *EventsService) FindByGameID(ctx context.Context, gameID int, sub string) ([]entity.AuditEvent, error) {
 	exists, err := s.games.Exists(ctx, gameID)
 	if err != nil {

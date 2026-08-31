@@ -11,7 +11,6 @@ import (
 
 	"github.com/henok321/knobel-manager-service/api/middleware"
 	"github.com/henok321/knobel-manager-service/gen/api"
-	"github.com/henok321/knobel-manager-service/pkg/entity"
 	"github.com/henok321/knobel-manager-service/pkg/game"
 )
 
@@ -189,6 +188,11 @@ func (h *GamesHandler) UpdateGame(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 
+	if gameUpdateRequest.Status != nil && !gameUpdateRequest.Status.Valid() {
+		JSONError(writer, "Invalid status", http.StatusBadRequest)
+		return
+	}
+
 	updatedGame, err := h.gamesService.UpdateGame(ctx, gameID, sub, gameUpdateRequest)
 	if err != nil {
 		respondError(writer, err)
@@ -295,24 +299,23 @@ func (h *GamesHandler) SetupGame(writer http.ResponseWriter, request *http.Reque
 		return
 	}
 
-	gameToAssign, err := h.gamesService.FindByID(ctx, gameID, sub)
-	if err != nil {
+	if err := h.gamesService.AssignTables(ctx, gameID, sub); err != nil {
 		respondError(writer, err)
 		return
 	}
 
-	if gameToAssign.Status != entity.StatusSetup {
-		JSONError(writer, "Game is not in setup state", http.StatusBadRequest)
+	writer.WriteHeader(http.StatusNoContent)
+}
+
+func (h *GamesHandler) ResetGameSetup(writer http.ResponseWriter, request *http.Request, gameID int) {
+	ctx := request.Context()
+
+	sub, ok := userSub(writer, request)
+	if !ok {
 		return
 	}
 
-	if len(gameToAssign.Teams) < gameToAssign.TableSize {
-		JSONError(writer, "Not enough teams to assign tables", http.StatusConflict)
-		return
-	}
-
-	err = h.gamesService.AssignTables(ctx, gameToAssign)
-	if err != nil {
+	if err := h.gamesService.ResetSetup(ctx, gameID, sub); err != nil {
 		respondError(writer, err)
 		return
 	}

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestOwners(t *testing.T) {
@@ -22,14 +23,8 @@ func TestOwners(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 
-				var count int
-				if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM game_owners WHERE game_id=1 AND owner_sub='sub-2'").Scan(&count); err != nil {
-					t.Fatalf("query failed: %v", err)
-				}
-
-				if count != 1 {
-					t.Fatalf("expected sub-2 to be an owner, got %d rows", count)
-				}
+				assert.Equal(t, 1, countRows(t, db, "SELECT count(*) FROM game_owners WHERE game_id=1 AND owner_sub='sub-2'"),
+					"expected sub-2 to be an owner")
 			},
 		},
 		"Add owner unknown email": {
@@ -93,14 +88,8 @@ func TestOwners(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 
-				var count int
-				if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM game_owners WHERE game_id=1 AND owner_sub='sub-2'").Scan(&count); err != nil {
-					t.Fatalf("query failed: %v", err)
-				}
-
-				if count != 0 {
-					t.Fatalf("expected sub-2 to be removed, got %d rows", count)
-				}
+				assert.Equal(t, 0, countRows(t, db, "SELECT count(*) FROM game_owners WHERE game_id=1 AND owner_sub='sub-2'"),
+					"expected sub-2 to be removed")
 			},
 		},
 		"Remove last owner": {

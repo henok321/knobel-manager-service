@@ -9,16 +9,18 @@ import (
 	"github.com/henok321/knobel-manager-service/gen/api"
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 	"github.com/henok321/knobel-manager-service/pkg/entity"
+	"github.com/henok321/knobel-manager-service/pkg/game"
 	"github.com/henok321/knobel-manager-service/pkg/team"
 )
 
 type PlayersService struct {
-	playersRepo *PlayersRepository
-	teamsRepo   *team.TeamsRepository
+	playersRepo  *PlayersRepository
+	teamsRepo    *team.TeamsRepository
+	gamesService *game.GamesService
 }
 
-func NewPlayersService(playersRepo *PlayersRepository, teamsRepo *team.TeamsRepository) *PlayersService {
-	return &PlayersService{playersRepo: playersRepo, teamsRepo: teamsRepo}
+func NewPlayersService(playersRepo *PlayersRepository, teamsRepo *team.TeamsRepository, gamesService *game.GamesService) *PlayersService {
+	return &PlayersService{playersRepo: playersRepo, teamsRepo: teamsRepo, gamesService: gamesService}
 }
 
 func (s PlayersService) CreatePlayer(ctx context.Context, request api.PlayersRequest, teamID int, sub string) (entity.Player, error) {
@@ -27,18 +29,26 @@ func (s PlayersService) CreatePlayer(ctx context.Context, request api.PlayersReq
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return entity.Player{}, apperror.ErrTeamNotFound
 		}
+
 		return entity.Player{}, err
 	}
 
-	game := teamByID.Game
+	var created entity.Player
 
-	if !entity.IsOwner(*game, sub) {
-		return entity.Player{}, apperror.ErrNotOwner
-	}
+	err = s.gamesService.WithinSetup(ctx, teamByID.GameID, sub, func(ctx context.Context, tx *gorm.DB, _ entity.Game) error {
+		player := entity.Player{Name: request.Name, TeamID: teamID}
 
-	player := entity.Player{Name: request.Name, TeamID: teamID}
+		saved, err := NewPlayersRepository(tx).CreatePlayer(ctx, &player)
+		if err != nil {
+			return err
+		}
 
-	return s.playersRepo.CreateOrUpdatePlayer(ctx, &player)
+		created = saved
+
+		return nil
+	})
+
+	return created, err
 }
 
 func (s PlayersService) ownedPlayer(ctx context.Context, id int, sub string) (entity.Player, error) {
@@ -64,15 +74,16 @@ func (s PlayersService) UpdatePlayer(ctx context.Context, id int, request api.Pl
 		return entity.Player{}, err
 	}
 
-	player.Name = request.Name
-
-	return s.playersRepo.CreateOrUpdatePlayer(ctx, &player)
+	return s.playersRepo.UpdatePlayerName(ctx, &player, request.Name)
 }
 
 func (s PlayersService) DeletePlayer(ctx context.Context, id int, sub string) error {
-	if _, err := s.ownedPlayer(ctx, id, sub); err != nil {
+	player, err := s.ownedPlayer(ctx, id, sub)
+	if err != nil {
 		return err
 	}
 
-	return s.playersRepo.DeletePlayer(ctx, id)
+	return s.gamesService.WithinSetup(ctx, player.Team.GameID, sub, func(ctx context.Context, tx *gorm.DB, _ entity.Game) error {
+		return NewPlayersRepository(tx).DeletePlayer(ctx, id)
+	})
 }

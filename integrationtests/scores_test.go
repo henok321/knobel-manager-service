@@ -132,6 +132,21 @@ func TestScores(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
 			},
 		},
+		"Update score before the game started": {
+			method:             "PUT",
+			endpoint:           "/games/1/rounds/1/tables/1/scores",
+			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Game is not in progress"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+				assert.Zero(t, countRows(t, db, "SELECT COUNT(*) FROM scores"), "no score may be written before the game starts")
+			},
+		},
 	}
 
 	dbConn, teardownDatabase := setupTestDatabase(t)

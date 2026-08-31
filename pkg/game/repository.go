@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/henok321/knobel-manager-service/pkg/entity"
 )
@@ -48,6 +49,40 @@ func (r *GamesRepository) FindByID(ctx context.Context, id int) (entity.Game, er
 	}
 
 	return game, nil
+}
+
+func (r *GamesRepository) LockGame(ctx context.Context, gameID int) (entity.Game, error) {
+	var game entity.Game
+
+	err := r.db.WithContext(ctx).
+		Clauses(clause.Locking{Strength: "UPDATE"}).
+		Preload("Owners").
+		First(&game, gameID).Error
+	if err != nil {
+		return entity.Game{}, err
+	}
+
+	return game, nil
+}
+
+type Counts struct {
+	Rounds  int
+	Players int
+	Scores  int
+}
+
+func (r *GamesRepository) CountRelated(ctx context.Context, gameID int) (Counts, error) {
+	var counts Counts
+
+	err := r.db.WithContext(ctx).Raw(`SELECT
+			(SELECT COUNT(*) FROM rounds WHERE game_id = ?) AS rounds,
+			(SELECT COUNT(*) FROM players p JOIN teams t ON t.id = p.team_id WHERE t.game_id = ?) AS players,
+			(SELECT COUNT(*) FROM scores s
+				JOIN game_tables gt ON gt.id = s.table_id
+				JOIN rounds r ON r.id = gt.round_id WHERE r.game_id = ?) AS scores`,
+		gameID, gameID, gameID).Scan(&counts).Error
+
+	return counts, err
 }
 
 func (r *GamesRepository) CreateOrUpdateGame(ctx context.Context, game *entity.Game) (entity.Game, error) {

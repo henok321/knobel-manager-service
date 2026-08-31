@@ -114,13 +114,7 @@ func TestGames(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 
-				var gameStatus *string
-
-				if err := db.QueryRowContext(t.Context(), "SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
-					t.Fatalf("Failed to query game status: %v", err)
-				}
-
-				assert.Equal(t, entity.StatusInProgress, entity.GameStatus(*gameStatus))
+				assert.Equal(t, entity.StatusInProgress, gameStatus(t, db))
 			},
 		},
 		"Update game status to in_progress without setup": {
@@ -135,13 +129,7 @@ func TestGames(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 
-				var gameStatus *string
-
-				if err := db.QueryRowContext(t.Context(), "SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
-					t.Fatalf("Failed to query game status: %v", err)
-				}
-
-				assert.Equal(t, entity.StatusSetup, entity.GameStatus(*gameStatus))
+				assert.Equal(t, entity.StatusSetup, gameStatus(t, db))
 			},
 		},
 		"Should fail to update game status to completed if scores incomplete": {
@@ -156,13 +144,7 @@ func TestGames(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 
-				var gameStatus *string
-
-				if err := db.QueryRowContext(t.Context(), "SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
-					t.Fatalf("Failed to query game status: %v", err)
-				}
-
-				assert.Equal(t, entity.StatusInProgress, entity.GameStatus(*gameStatus))
+				assert.Equal(t, entity.StatusInProgress, gameStatus(t, db))
 			},
 		},
 		"Update game status to completed": {
@@ -178,13 +160,7 @@ func TestGames(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 
-				var gameStatus *string
-
-				if err := db.QueryRowContext(t.Context(), "SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
-					t.Fatalf("Failed to query game status: %v", err)
-				}
-
-				assert.Equal(t, entity.StatusCompleted, entity.GameStatus(*gameStatus))
+				assert.Equal(t, entity.StatusCompleted, gameStatus(t, db))
 			},
 		},
 		"Update game status to in_progress with invalid setup": {
@@ -199,13 +175,7 @@ func TestGames(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 
-				var gameStatus *string
-
-				if err := db.QueryRowContext(t.Context(), "SELECT status FROM games WHERE id = 1").Scan(&gameStatus); err != nil {
-					t.Fatalf("Failed to query game status: %v", err)
-				}
-
-				assert.Equal(t, entity.StatusSetup, entity.GameStatus(*gameStatus))
+				assert.Equal(t, entity.StatusSetup, gameStatus(t, db))
 			},
 		},
 		"Update an existing game invalid request": {
@@ -255,6 +225,124 @@ func TestGames(t *testing.T) {
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
+		},
+		"Update game status back to setup while nothing is scored": {
+			method:             http.MethodPut,
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1","numberOfRounds":1, "teamSize":4, "tableSize":4, "status":"setup"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusOK,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
+				assert.Equal(t, entity.StatusSetup, gameStatus(t, db))
+			},
+		},
+		"Update game status back to setup once scores exist": {
+			method:             http.MethodPut,
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1","numberOfRounds":1, "teamSize":4, "tableSize":4, "status":"setup"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Invalid status transition"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned_with_scores.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
+				assert.Equal(t, entity.StatusInProgress, gameStatus(t, db))
+				assert.Equal(t, 4, countRows(t, db, "SELECT COUNT(*) FROM scores"), "scores must survive a rejected transition")
+			},
+		},
+		"Update game status from completed back to in_progress": {
+			method:             http.MethodPut,
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1","numberOfRounds":1, "teamSize":4, "tableSize":4, "status":"in_progress"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Invalid status transition"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned_scores_entered.sql")
+				if _, err := db.ExecContext(t.Context(), "UPDATE games SET status = 'completed' WHERE id = 1"); err != nil {
+					t.Fatalf("Failed to update game status: %v", err)
+				}
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
+				assert.Equal(t, entity.StatusCompleted, gameStatus(t, db))
+			},
+		},
+		"Update game status from completed back to setup": {
+			method:             http.MethodPut,
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1","numberOfRounds":1, "teamSize":4, "tableSize":4, "status":"setup"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Invalid status transition"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned_scores_entered.sql")
+				if _, err := db.ExecContext(t.Context(), "UPDATE games SET status = 'completed' WHERE id = 1"); err != nil {
+					t.Fatalf("Failed to update game status: %v", err)
+				}
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
+				assert.Equal(t, entity.StatusCompleted, gameStatus(t, db))
+			},
+		},
+		"Update game status to an unknown value": {
+			method:             http.MethodPut,
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1","numberOfRounds":2, "teamSize":4, "tableSize":4, "status":"banana"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusBadRequest,
+			expectedBody:       `{"error":"Invalid status"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
+				assert.Equal(t, entity.StatusSetup, gameStatus(t, db))
+			},
+		},
+		"Change the table size once the tables are assigned": {
+			method:             http.MethodPut,
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1","numberOfRounds":2, "teamSize":4, "tableSize":2, "status":"setup"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusConflict,
+			expectedBody:       `{"error":"Game setup already assigned, reset the setup first"}`,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+			},
+			assertions: func(t *testing.T, db *sql.DB) {
+				t.Helper()
+
+				var tableSize int
+				if err := db.QueryRowContext(t.Context(), "SELECT table_size FROM games WHERE id = 1").Scan(&tableSize); err != nil {
+					t.Fatalf("Failed to query table size: %v", err)
+				}
+
+				assert.Equal(t, 4, tableSize, "the assignment must keep the size it was built for")
+			},
+		},
+		"Rename a game once the tables are assigned": {
+			method:             http.MethodPut,
+			endpoint:           "/games/1",
+			requestBody:        `{"name":"Game 1 renamed","numberOfRounds":2, "teamSize":4, "tableSize":4, "status":"setup"}`,
+			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
+			expectedStatusCode: http.StatusOK,
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
+			},
+			assertions: assertTablesAssigned,
 		},
 	}
 

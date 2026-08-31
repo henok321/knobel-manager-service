@@ -200,9 +200,9 @@ type GameUpdateRequest struct {
 	NumberOfRounds int    `json:"numberOfRounds"`
 
 	// Status Example: setup
-	Status    GameStatus `json:"status"`
-	TableSize int        `json:"tableSize"`
-	TeamSize  int        `json:"teamSize"`
+	Status    *GameStatus `json:"status,omitempty"`
+	TableSize int         `json:"tableSize"`
+	TeamSize  int         `json:"teamSize"`
 }
 
 // GamesResponse defines model for GamesResponse.
@@ -365,6 +365,9 @@ type ServerInterface interface {
 	// UpdateScores Update scores for a table
 	// (PUT /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores)
 	UpdateScores(w http.ResponseWriter, r *http.Request, gameID int, roundNumber int, tableNumber int)
+	// ResetGameSetup Reset the game setup and discard the assigned rounds and tables, including the scores entered at those tables
+	// (DELETE /games/{gameID}/setup)
+	ResetGameSetup(w http.ResponseWriter, r *http.Request, gameID int)
 	// SetupGame Setup game and assign tables for all rounds
 	// (POST /games/{gameID}/setup)
 	SetupGame(w http.ResponseWriter, r *http.Request, gameID int)
@@ -707,6 +710,32 @@ func (siw *ServerInterfaceWrapper) UpdateScores(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UpdateScores(w, r, gameID, roundNumber, tableNumber)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ResetGameSetup operation middleware
+func (siw *ServerInterfaceWrapper) ResetGameSetup(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "gameID" -------------
+	var gameID int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ResetGameSetup(w, r, gameID)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1112,6 +1141,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameID}", wrapper.DeleteGame)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}", wrapper.GetGame)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameID}", wrapper.UpdateGame)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameID}/setup", wrapper.ResetGameSetup)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/games/{gameID}/setup", wrapper.SetupGame)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/games/{gameID}/owners", wrapper.AddOwner)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameID}/owners/{ownerSub}", wrapper.RemoveOwner)

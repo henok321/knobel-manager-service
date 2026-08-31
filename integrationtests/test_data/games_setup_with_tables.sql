@@ -51,9 +51,9 @@ VALUES (1, 'Player 1', 1),
 (31, 'Player 31', 8),
 (32, 'Player 32', 8);
 
-INSERT INTO rounds (id, round_number, game_id, status)
-VALUES (1, 1, 1, 'ready'),
-(2, 2, 1, 'ready');
+INSERT INTO rounds (id, round_number, game_id)
+VALUES (1, 1, 1),
+(2, 2, 1);
 
 INSERT INTO game_tables (id, table_number, round_id)
 VALUES (1, 1, 1),
