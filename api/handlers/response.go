@@ -11,6 +11,15 @@ import (
 	"github.com/henok321/knobel-manager-service/pkg/apperror"
 )
 
+func writeJSON(ctx context.Context, w http.ResponseWriter, statusCode int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+
+	if err := json.NewEncoder(w).Encode(body); err != nil {
+		slog.ErrorContext(ctx, "Could not write body", "error", err)
+	}
+}
+
 type ErrorResponse struct {
 	Error string `json:"error"`
 }
@@ -21,15 +30,6 @@ func JSONError(w http.ResponseWriter, errorMessage string, statusCode int) {
 	w.WriteHeader(statusCode)
 	if err := json.NewEncoder(w).Encode(&ErrorResponse{Error: errorMessage}); err != nil {
 		slog.Error("Failed to encode error response", "error", err)
-	}
-}
-
-func writeJSON(ctx context.Context, w http.ResponseWriter, statusCode int, body any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-
-	if err := json.NewEncoder(w).Encode(body); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
 	}
 }
 
