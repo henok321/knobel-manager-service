@@ -142,12 +142,10 @@ func TestGameSetupMultipleTimes(t *testing.T) {
 
 	server := setupTestServer(t)
 
-	// Setup test data
 	executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
 	defer executeSQLFile(t, db, "./test_data/cleanup.sql")
 
-	// Setup is idempotent at the API level: it returns 204 each time
-	// (it deletes and recreates rounds/tables on every call).
+	// Setup is idempotent at the API level: rounds and tables are recreated on every call.
 	tc := testCase{
 		method:             "POST",
 		endpoint:           "/games/1/setup",

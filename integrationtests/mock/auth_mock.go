@@ -10,11 +10,8 @@ import (
 
 type FirebaseAuthMock struct{}
 
-// VerifyIDToken mocks Firebase token verification.
-// For health checks, it returns an error for invalid tokens (expected behavior).
-// For test tokens, the token string is used as the UID and "<uid>@example.org" as email.
+// VerifyIDToken treats the token string as the UID; the health-check probe token must fail.
 func (m FirebaseAuthMock) VerifyIDToken(_ context.Context, idToken string) (*auth.Token, error) {
-	// If it's the health check token, return an error (Firebase would reject invalid tokens)
 	if idToken == "health-check-invalid-token" {
 		return nil, fmt.Errorf("invalid token")
 	}
@@ -25,8 +22,7 @@ func (m FirebaseAuthMock) VerifyIDToken(_ context.Context, idToken string) (*aut
 	}, nil
 }
 
-// GetUserByEmail resolves "<uid>@example.org" -> uid. Anything else is treated as not found,
-// mirroring the error the real Firebase client returns for an unknown email.
+// GetUserByEmail fails for anything but "<uid>@example.org", as the real client does.
 func (m FirebaseAuthMock) GetUserByEmail(_ context.Context, email string) (*auth.UserRecord, error) {
 	uid, ok := strings.CutSuffix(email, "@example.org")
 	if !ok || uid == "" || uid == "ghost" {
@@ -36,7 +32,6 @@ func (m FirebaseAuthMock) GetUserByEmail(_ context.Context, email string) (*auth
 	return userRecord(uid), nil
 }
 
-// GetUsers echoes back a record per requested UID identifier.
 func (m FirebaseAuthMock) GetUsers(_ context.Context, identifiers []auth.UserIdentifier) (*auth.GetUsersResult, error) {
 	result := &auth.GetUsersResult{}
 

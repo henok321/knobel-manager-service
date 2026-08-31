@@ -16,8 +16,7 @@ func NewEventsRepository(db *gorm.DB) *EventsRepository {
 	return &EventsRepository{db}
 }
 
-// ponytail: returns a game's whole history, unbounded. Fine at tournament size; the
-// (game_id, id DESC) index already supports adding a limit plus a keyset cursor.
+// ponytail: unbounded history. Fine at tournament size; the (game_id, id DESC) index supports a keyset cursor.
 func (r *EventsRepository) FindByGameID(ctx context.Context, gameID int) ([]entity.AuditEvent, error) {
 	var events []entity.AuditEvent
 

@@ -98,7 +98,6 @@ func TestHealthCheck(t *testing.T) {
 
 		server := setupTestServer(t)
 
-		// Stop database to simulate database not available
 		teardownDatabase()
 
 		req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, server.URL+"/health/ready", nil)

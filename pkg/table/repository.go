@@ -47,10 +47,7 @@ func (t *TablesRepository) GameStatus(ctx context.Context, gameID int) (entity.G
 }
 
 func (t *TablesRepository) UpdateTable(ctx context.Context, table *entity.GameTable) (entity.GameTable, error) {
-	// One batched upsert rather than a Save per score: a loop leaves earlier scores
-	// committed when a later one fails, which the audit log then records as a deliberate
-	// partial submission, and each Save would otherwise open its own transaction and pay
-	// for its own actor round trip.
+	// Batched, not a Save per score: a partial failure would leave the audit log claiming a deliberate partial submission.
 	if len(table.Scores) > 0 {
 		if err := t.db.WithContext(ctx).Save(table.Scores).Error; err != nil {
 			return entity.GameTable{}, err

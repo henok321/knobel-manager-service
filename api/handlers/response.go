@@ -16,7 +16,7 @@ func writeJSON(ctx context.Context, w http.ResponseWriter, statusCode int, body 
 	w.WriteHeader(statusCode)
 
 	if err := json.NewEncoder(w).Encode(body); err != nil {
-		slog.ErrorContext(ctx, "Could not write body", "error", err)
+		slog.WarnContext(ctx, "Could not write body", "error", err)
 	}
 }
 

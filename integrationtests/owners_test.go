@@ -3,6 +3,8 @@ package integrationtests
 import (
 	"database/sql"
 	"net/http"
+	"slices"
+	"sync"
 	"testing"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -144,4 +146,75 @@ func TestOwners(t *testing.T) {
 			newTestRequest(t, tc, server, db)
 		})
 	}
+}
+
+func TestConcurrentOwnerRemoval(t *testing.T) {
+	dbConn := setupTestDatabase(t)
+
+	db, err := sql.Open("pgx", dbConn)
+	if err != nil {
+		t.Fatalf("Failed to open database connection: %v", err)
+	}
+
+	defer db.Close()
+
+	runGooseUp(t, db)
+
+	server := setupTestServer(t)
+
+	executeSQLFile(t, db, "./test_data/games_setup_two_owners.sql")
+
+	defer executeSQLFile(t, db, "./test_data/cleanup.sql")
+
+	remove := func(callerSub, targetSub string) int {
+		request, err := http.NewRequestWithContext(t.Context(), http.MethodDelete, server.URL+"/games/1/owners/"+targetSub, nil)
+		if err != nil {
+			t.Errorf("failed to create request: %v", err)
+			return 0
+		}
+
+		request.Header.Set("Authorization", "Bearer "+callerSub)
+
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			t.Errorf("failed to perform request: %v", err)
+			return 0
+		}
+		defer response.Body.Close()
+
+		return response.StatusCode
+	}
+
+	var (
+		waitGroup sync.WaitGroup
+		start     = make(chan struct{})
+		statuses  [2]int
+	)
+
+	waitGroup.Add(2)
+
+	go func() {
+		defer waitGroup.Done()
+		<-start
+
+		statuses[0] = remove("sub-1", "sub-2")
+	}()
+
+	go func() {
+		defer waitGroup.Done()
+		<-start
+
+		statuses[1] = remove("sub-2", "sub-1")
+	}()
+
+	close(start)
+	waitGroup.Wait()
+
+	assert.Equal(t, 1, countRows(t, db, "SELECT COUNT(*) FROM game_owners WHERE game_id = 1"),
+		"two owners removing each other must not leave the game ownerless")
+
+	slices.Sort(statuses[:])
+	assert.Equal(t, http.StatusOK, statuses[0], "exactly one removal must succeed")
+	assert.Contains(t, []int{http.StatusForbidden, http.StatusConflict}, statuses[1],
+		"the loser must be refused: 403 once its own sub is gone, 409 if it would strand the last owner")
 }

@@ -54,8 +54,7 @@ func auditRows(t *testing.T, db *sql.DB) []auditRow {
 	return out
 }
 
-// Seed data is inserted with the triggers live, so it leaves audit rows of its own.
-// Clearing them after seeding lets a test assert on exactly what its own action wrote.
+// Seeding runs with the triggers live, so its own audit rows must go before a test asserts.
 func resetAuditEvents(t *testing.T, db *sql.DB) {
 	t.Helper()
 
@@ -94,8 +93,7 @@ type auditEvent struct {
 	New        map[string]any `json:"new"`
 }
 
-// Fails when an audited table gains a column, because that column is published to every
-// owner of the game with no code change anywhere.
+// Fails when an audited table gains a column: that column reaches every owner with no code change.
 func assertPublishedColumns(t *testing.T, events []auditEvent, entity string, expected []string) {
 	t.Helper()
 
@@ -200,8 +198,7 @@ func TestAuditTriggers(t *testing.T) {
 			seedGameWithPlayerAndScore(t, db)
 			resetAuditEvents(t, db)
 
-			// What GORM's Save emits when a form is re-submitted unchanged: every
-			// column rewritten to its current value, updated_at bumped.
+			// What GORM's Save emits for an unchanged form: every column rewritten, updated_at bumped.
 			_, err := db.ExecContext(t.Context(), `UPDATE games
                                SET game_name = game_name, status = status, updated_at = NOW()
                                WHERE id = 1`)
@@ -427,8 +424,7 @@ func TestAuditActor(t *testing.T) {
 		})
 	}
 
-	// Scores are the highest-frequency mutation and the reason the no-op guard exists,
-	// and this is the only test that drives GORM's Save rather than hand-written SQL.
+	// The only test driving GORM's Save rather than hand-written SQL, and the reason the no-op guard exists.
 	t.Run("score writes are attributed, and resubmitting the same scores records nothing", func(t *testing.T) {
 		executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
 		resetAuditEvents(t, db)
@@ -477,8 +473,7 @@ func TestAuditActor(t *testing.T) {
 			expectedStatusCode: http.StatusNoContent,
 		}, server, db)
 
-		// The whole point of audit_events.game_id having no foreign key: the trail, and
-		// the deletion event itself, outlive the game they describe.
+		// Why audit_events.game_id has no foreign key: the trail outlives the game it describes.
 		events := readAuditLog(t, server, 1, "sub-1", http.StatusOK)
 		require.NotEmpty(t, events)
 
@@ -533,9 +528,7 @@ func TestAuditActor(t *testing.T) {
 			expectedStatusCode: http.StatusNoContent,
 		}, server, db)
 
-		// Deleting the game must not hand that access back. Matching any game_owners
-		// event rather than the most recent one would: the revocation itself left a
-		// delete event carrying sub-2.
+		// Deleting the game must not hand access back: matching any game_owners event and not the latest would.
 		readAuditLog(t, server, 1, "sub-2", http.StatusNotFound)
 
 		require.NotEmpty(t, readAuditLog(t, server, 1, "sub-1", http.StatusOK),
@@ -570,9 +563,7 @@ func TestAuditActor(t *testing.T) {
 			}
 		}
 
-		// ResetGameTables deletes scores explicitly while game_tables and rounds still
-		// exist, so they resolve their game and are recorded rather than suppressed as
-		// cascades. Wiping a tournament's scores is the event this log most needs.
+		// ResetGameTables deletes scores before their parents, so they resolve a game and escape cascade suppression.
 		assert.Equal(t, 4, scoreDeletes, "every wiped score must be recorded and attributed")
 	})
 
@@ -647,8 +638,7 @@ func TestAuditLogEndpoint(t *testing.T) {
 		})
 	}
 
-	// Reads the response body rather than only its status code, so it cannot use the
-	// shared testCase harness: assertions there receive no handle on the server.
+	// Cannot use the shared testCase harness: its assertions get no handle on the server, only a status code.
 	t.Run("read audit log newest first", func(t *testing.T) {
 		executeSQLFile(t, db, "./test_data/games_setup.sql")
 		resetAuditEvents(t, db)
@@ -679,9 +669,7 @@ func TestAuditLogEndpoint(t *testing.T) {
 		assert.Equal(t, "insert", events[1].Action)
 		assert.Nil(t, events[1].Old)
 
-		// The endpoint publishes whole table rows, so adding a column to any audited table
-		// widens the public API for every owner. Pinning each table's key set makes that a
-		// failing test rather than a silent disclosure.
+		// Whole rows are published, so pinning the key set turns a widened API into a failing test.
 		assertPublishedColumns(t, events, "games", []string{
 			"id", "game_name", "team_size", "table_size", "number_of_rounds",
 			"status", "created_at", "updated_at",
@@ -740,9 +728,8 @@ func TestAuditLogEndpoint(t *testing.T) {
 	})
 }
 
-// Regression guard for the callback anchor. GORM writes a belongs-to association before
-// the parent row, as its own nested create; this pins that such writes are attributed too,
-// which an anchor on "gorm:begin_transaction" would silently break.
+// Callback-anchor guard: GORM writes a belongs-to association as its own nested create, which an
+// anchor on "gorm:begin_transaction" would leave unattributed.
 func TestAuditActorCoversAssociations(t *testing.T) {
 	dbConn := setupTestDatabase(t)
 
