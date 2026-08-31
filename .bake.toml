@@ -1,0 +1,11 @@
+# Only non-default settings; a restated default rots when the tool changes it.
+
+[formatter]
+auto_insert_phony_declarations = true
+group_phony_declarations = true
+phony_at_top = true
+tab_width = 4
+
+# Required *because* end-of-file-fixer exists: mbake strips the final newline at
+# its default of false, and the two hooks then fight forever.
+ensure_final_newline = true

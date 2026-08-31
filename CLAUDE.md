@@ -79,6 +79,14 @@ Both go through pre-commit, which owns the pinned golangci-lint binary. golangci
 `go tool` directive: it pulled ~230 indirect modules into `go.mod` and drifted out of sync with the pre-commit pin.
 `golangci-lint run --fix` already applies the `formatters:` block, so no separate `go fmt` step is needed.
 
+The editor path is separate again: `.vscode/settings.json` sets `go.lintTool`/`customFormatter` to `golangci-lint`,
+which the Go extension resolves from `PATH` (Homebrew), never through `go tool`. So the binary exists three times
+over — pre-commit's pin, PATH for the editor, and formerly the `go tool` directive that nothing could reach.
+
+`.bake.toml` holds only settings that differ from mbake's defaults. `ensure_final_newline` is not optional despite
+looking redundant with the `end-of-file-fixer` hook: mbake strips the final newline at its default, that hook re-adds
+it, and the two loop forever.
+
 ### Testing
 
 ```bash
