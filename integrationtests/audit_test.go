@@ -72,7 +72,7 @@ func seedGameWithPlayerAndScore(t *testing.T, db *sql.DB) {
 		`INSERT INTO game_owners (game_id, owner_sub) VALUES (1, 'sub-1')`,
 		`INSERT INTO teams (id, team_name, game_id) VALUES (1, 'Team 1', 1)`,
 		`INSERT INTO players (id, player_name, team_id) VALUES (1, 'Player 1', 1)`,
-		`INSERT INTO rounds (id, round_number, game_id, status) VALUES (1, 1, 1, 'in_progress')`,
+		`INSERT INTO rounds (id, round_number, game_id) VALUES (1, 1, 1)`,
 		`INSERT INTO game_tables (id, table_number, round_id) VALUES (1, 1, 1)`,
 		`INSERT INTO scores (id, player_id, table_id, score) VALUES (1, 1, 1, 42)`,
 	}

@@ -295,7 +295,7 @@ Core entities in `pkg/entity/model.go`:
 - `GameOwner` - Links games to Firebase user IDs
 - `Team` - Group of players
 - `Player` - Individual participant
-- `Round` - Game round container
+- `Round` - Game round container (no stored status: `GET` derives it, see below)
 - `GameTable` - Table assignment for a round (DB name: `game_tables`)
 - `Score` - Player score at a specific table
 - `TablePlayer` - Many-to-many join table (DB name: `table_players`)
@@ -345,6 +345,12 @@ loaded looks exactly like an empty one, and "no scores" is the answer that lets 
 
 Scores can only be written while the game is `in_progress` (`apperror.ErrGameNotInProgress`, 409). That is what makes
 the rewind rule airtight: a game in `setup` cannot have scores, so `DELETE /setup` cannot destroy any.
+
+A round's status is **derived, never stored** (`entity.RoundStatus`): `setup` while the game has not started,
+`completed` once every seat at every table of that round is scored, `in_progress` otherwise. The `rounds.status`
+column was dropped in `db_migration/0012_drop_round_status.sql` — nothing ever transitioned it, so it was written once
+and then lied for the rest of the tournament (the application never set it at all, which served `status: ""`, outside
+the `RoundStatus` enum the spec declares).
 
 `teamSize`, `tableSize` and `numberOfRounds` are frozen once the tables are assigned — the same guard as for teams and
 players. A game that goes `in_progress` advertising `tableSize: 2` while its tables seat four breaks every score

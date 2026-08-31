@@ -68,12 +68,12 @@ func entityTeamToAPITeam(teamEntity entity.Team) api.Team {
 	return apiTeam
 }
 
-func entityRoundToAPIRound(roundEntity entity.Round) api.GameRound {
+func entityRoundToAPIRound(gameEntity entity.Game, roundEntity entity.Round) api.GameRound {
 	return api.GameRound{
 		GameID:      roundEntity.GameID,
 		Id:          roundEntity.ID,
 		RoundNumber: roundEntity.RoundNumber,
-		Status:      api.RoundStatus(roundEntity.Status),
+		Status:      api.RoundStatus(entity.RoundStatus(gameEntity, roundEntity)),
 	}
 }
 
@@ -109,7 +109,7 @@ func entityGameToAPIGame(gameEntity entity.Game) api.Game {
 	if len(gameEntity.Rounds) > 0 {
 		rounds := make([]api.GameRound, len(gameEntity.Rounds))
 		for i, round := range gameEntity.Rounds {
-			rounds[i] = entityRoundToAPIRound(*round)
+			rounds[i] = entityRoundToAPIRound(gameEntity, *round)
 		}
 		apiGame.Rounds = &rounds
 	}

@@ -22,12 +22,7 @@ func TestGameSetup(t *testing.T) {
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_ready.sql")
 			},
-			assertions: func(t *testing.T, db *sql.DB) {
-				t.Helper()
-				assertTablesAssigned(t, db)
-				assert.Equal(t, 2, countRows(t, db, "SELECT COUNT(*) FROM rounds WHERE game_id = 1 AND status = 'setup'"),
-					"rounds must carry a status from the RoundStatus enum")
-			},
+			assertions: assertTablesAssigned,
 		},
 		"Try to setup game tables with out permissions": {
 			method:             "POST",

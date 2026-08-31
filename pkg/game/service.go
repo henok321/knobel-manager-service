@@ -305,7 +305,6 @@ func (s *GamesService) AssignTables(ctx context.Context, gameID int, sub string)
 			round := entity.Round{
 				RoundNumber: i + 1,
 				GameID:      game.ID,
-				Status:      string(entity.StatusSetup),
 			}
 
 			round, err = txRepo.CreateRound(ctx, &round)

@@ -80,10 +80,27 @@ type Round struct {
 	ID          int          `gorm:"primaryKey"`
 	RoundNumber int          `gorm:"not null;uniqueIndex:idx_game_round"`
 	GameID      int          `gorm:"not null;uniqueIndex:idx_game_round"`
-	Status      string       `gorm:"size:50;not null"`
 	Tables      []*GameTable `gorm:"foreignKey:RoundID"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+}
+
+func RoundStatus(game Game, round Round) GameStatus {
+	if game.Status == StatusSetup {
+		return StatusSetup
+	}
+
+	if len(round.Tables) == 0 {
+		return StatusInProgress
+	}
+
+	for _, table := range round.Tables {
+		if len(table.Scores) < len(table.Players) {
+			return StatusInProgress
+		}
+	}
+
+	return StatusCompleted
 }
 
 type GameTable struct {
