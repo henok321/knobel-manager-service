@@ -147,7 +147,7 @@ func TestTeams(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			expectedStatusCode: http.StatusBadRequest,
 		},
-		"Create team after matchmaking is rejected": {
+		"Create team while the tables are assigned": {
 			method:             "POST",
 			endpoint:           "/games/1/teams",
 			requestBody:        `{"name":"Team 9"}`,
@@ -161,7 +161,7 @@ func TestTeams(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 				assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "team must not be created")
-				assertMatchmakingIntact(t, db)
+				assertTablesAssigned(t, db)
 			},
 		},
 		"Create team in a running game": {
@@ -178,10 +178,10 @@ func TestTeams(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 				assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "team must not be created")
-				assertMatchmakingIntact(t, db)
+				assertTablesAssigned(t, db)
 			},
 		},
-		"Delete team after matchmaking is rejected": {
+		"Delete team while the tables are assigned": {
 			method:             "DELETE",
 			endpoint:           "/games/1/teams/8",
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
@@ -193,7 +193,7 @@ func TestTeams(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 				assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "team must not be deleted")
-				assertMatchmakingIntact(t, db)
+				assertTablesAssigned(t, db)
 			},
 		},
 		"Delete team in a running game": {
@@ -208,7 +208,7 @@ func TestTeams(t *testing.T) {
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
 				assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "team must not be deleted")
-				assertMatchmakingIntact(t, db)
+				assertTablesAssigned(t, db)
 			},
 		},
 	}

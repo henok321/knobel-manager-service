@@ -24,7 +24,7 @@ func TestGameSetup(t *testing.T) {
 			},
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
-				assertMatchmakingIntact(t, db)
+				assertTablesAssigned(t, db)
 				assert.Equal(t, 2, countRows(t, db, "SELECT COUNT(*) FROM rounds WHERE game_id = 1 AND status = 'setup'"),
 					"rounds must carry a status from the RoundStatus enum")
 			},
@@ -69,7 +69,7 @@ func TestGameSetup(t *testing.T) {
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
-			assertions: assertMatchmakingReset,
+			assertions: assertNoTablesAssigned,
 		},
 		"Reset game setup without assigned tables": {
 			method:             "DELETE",
@@ -81,7 +81,7 @@ func TestGameSetup(t *testing.T) {
 			},
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
-				assertMatchmakingReset(t, db)
+				assertNoTablesAssigned(t, db)
 				assert.Equal(t, 8, countRows(t, db, "SELECT COUNT(*) FROM teams WHERE game_id = 1"), "resetting must leave the teams alone")
 				assert.Equal(t, 32, countRows(t, db, "SELECT COUNT(*) FROM players"), "resetting must leave the players alone")
 			},
@@ -94,7 +94,7 @@ func TestGameSetup(t *testing.T) {
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
-			assertions: assertMatchmakingIntact,
+			assertions: assertTablesAssigned,
 		},
 		"Reset game setup not in setup state": {
 			method:             "DELETE",
@@ -105,7 +105,7 @@ func TestGameSetup(t *testing.T) {
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
 			},
-			assertions: assertMatchmakingIntact,
+			assertions: assertTablesAssigned,
 		},
 	}
 
@@ -208,7 +208,7 @@ func TestAddTeamAfterSetup(t *testing.T) {
 			endpoint:           "/games/1/setup",
 			requestHeaders:     authorized,
 			expectedStatusCode: http.StatusNoContent,
-			assertions:         assertMatchmakingIntact,
+			assertions:         assertTablesAssigned,
 		}},
 		{"Adding a team is rejected while tables are assigned", testCase{
 			method:             "POST",
@@ -217,14 +217,14 @@ func TestAddTeamAfterSetup(t *testing.T) {
 			requestHeaders:     authorized,
 			expectedStatusCode: http.StatusConflict,
 			expectedBody:       `{"error":"Game setup already assigned, reset the setup first"}`,
-			assertions:         assertMatchmakingIntact,
+			assertions:         assertTablesAssigned,
 		}},
 		{"Reset the setup", testCase{
 			method:             "DELETE",
 			endpoint:           "/games/1/setup",
 			requestHeaders:     authorized,
 			expectedStatusCode: http.StatusNoContent,
-			assertions:         assertMatchmakingReset,
+			assertions:         assertNoTablesAssigned,
 		}},
 		{"Add the team", testCase{
 			method:             "POST",
@@ -240,7 +240,7 @@ func TestAddTeamAfterSetup(t *testing.T) {
 			expectedStatusCode: http.StatusNoContent,
 			assertions: func(t *testing.T, db *sql.DB) {
 				t.Helper()
-				assertMatchmakingIntact(t, db)
+				assertTablesAssigned(t, db)
 				seats := countRows(t, db, `SELECT COUNT(*) FROM table_players tp
 					JOIN players p ON p.id = tp.player_id WHERE p.team_id = 9`)
 				assert.Equal(t, 8, seats, "every player of the added team must be seated in both rounds")

@@ -342,7 +342,7 @@ func TestGames(t *testing.T) {
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
-			assertions: assertMatchmakingIntact,
+			assertions: assertTablesAssigned,
 		},
 	}
 

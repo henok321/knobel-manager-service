@@ -260,21 +260,21 @@ const (
 		JOIN rounds r ON r.id = gt.round_id WHERE r.game_id = 1`
 )
 
-func assertMatchmakingReset(t *testing.T, db *sql.DB) {
+func assertNoTablesAssigned(t *testing.T, db *sql.DB) {
 	t.Helper()
 
-	assert.Zero(t, countRows(t, db, roundsOfGameOne), "rounds must be reset")
-	assert.Zero(t, countRows(t, db, tablesOfGameOne), "game tables must be reset")
-	assert.Zero(t, countRows(t, db, seatsOfGameOne), "table assignments must be reset")
+	assert.Zero(t, countRows(t, db, roundsOfGameOne), "no round may survive")
+	assert.Zero(t, countRows(t, db, tablesOfGameOne), "no table may survive")
+	assert.Zero(t, countRows(t, db, seatsOfGameOne), "no seat may survive")
 	assert.Zero(t, countRows(t, db, "SELECT COUNT(*) FROM scores"), "scores go with the tables they belong to")
 }
 
-func assertMatchmakingIntact(t *testing.T, db *sql.DB) {
+func assertTablesAssigned(t *testing.T, db *sql.DB) {
 	t.Helper()
 
-	assert.NotZero(t, countRows(t, db, roundsOfGameOne), "rounds must be untouched")
-	assert.NotZero(t, countRows(t, db, tablesOfGameOne), "game tables must be untouched")
-	assert.NotZero(t, countRows(t, db, seatsOfGameOne), "table assignments must be untouched")
+	assert.NotZero(t, countRows(t, db, roundsOfGameOne), "the rounds must be untouched")
+	assert.NotZero(t, countRows(t, db, tablesOfGameOne), "the tables must be untouched")
+	assert.NotZero(t, countRows(t, db, seatsOfGameOne), "the seats must be untouched")
 }
 
 func gameStatus(t *testing.T, db *sql.DB) entity.GameStatus {
