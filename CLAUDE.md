@@ -10,13 +10,9 @@ code, PostgreSQL for persistence, and Firebase JWT for authentication.
 
 Frontend: [knobel-manager-app](https://github.com/henok321/knobel-manager-app) (React)
 
-## Prerequisites
-
-- [Go](https://go.dev/doc/install)
-- [Docker](https://docs.docker.com/get-docker/)
-- [pre-commit](https://pre-commit.com/) (`pip install pre-commit`)
-
 ## Development Commands
+
+Requires Go, Docker and pre-commit on `PATH`.
 
 ### Initial Setup
 
@@ -54,14 +50,7 @@ Generated code is **checked into git** in the `gen/` directory. This approach:
 - Speeds up CI/CD (validation instead of generation)
 - Tracks generated code changes in git history
 
-**Workflow:**
-
-1. Edit `openapi/openapi.yaml`
-2. Run `make openapi-generate`
-3. Review changes with `git diff gen/`
-4. Commit both spec and generated code together
-
-**Validation:**
+The workflow is under **OpenAPI-First Development** below.
 
 CI/CD runs `make openapi-validate` in parallel with lint and test jobs. The build job only proceeds if all three pass.
 
@@ -95,12 +84,9 @@ go test -v ./...                # Run tests directly (same as make test)
 go test -v ./pkg/game/...       # Run specific package tests
 go test -v -run TestName ./...  # Run specific test
 go test -race ./...             # Run tests with race detector
-
-# Coverage (manual)
-go test ./... -coverpkg=./... -coverprofile=coverage.out  # Generate coverage
-go tool cover -html=coverage.out                           # View HTML report
-go tool cover -func=coverage.out                           # View text report
 ```
+
+Coverage: see **Test Coverage** under CI/CD.
 
 ### Building
 
@@ -139,12 +125,6 @@ The app also serves the OpenAPI spec at `/openapi.yaml` and Swagger UI at `/docs
 make update  # Updates Go modules (go get -u && go mod tidy)
 ```
 
-### Available Commands
-
-```bash
-make help    # Display all available Makefile targets
-```
-
 ## Architecture
 
 ### System Overview
@@ -174,39 +154,16 @@ The system uses:
 
 ### Code Organization
 
-```shell
-cmd/                    # Application entry point
-  main.go              # Server initialization, Firebase setup, DB migrations, routing
+`api/` is the HTTP layer (`routes/`, `handlers/`, `middleware/`, `health/`, `logging/`), `pkg/` the domain modules,
+`gen/` the generated code, `db_migration/` the goose migrations, `integrationtests/` the testcontainers suite. The
+parts that are not self-evident from the tree:
 
-api/                   # HTTP layer
-  routes/              # HTTP route setup with middleware chain
-  handlers/            # HTTP handlers implementing OpenAPI interfaces
-  middleware/          # Authentication, logging, metrics, security headers
-  health/              # Health check implementations (DB, Firebase)
-  logging/             # Structured logging with context
-
-pkg/                   # Domain modules (independent, reusable)
-  game/                # Game management
-  team/                # Team management
-  player/              # Player management
-  table/               # Table/round management (also handles scores)
-  audit/               # Audit log: connection setup with actor propagation, read repository and service
-  setup/               # Game setup algorithms (table assignments)
-  entity/              # Shared database models
-  apperror/            # Application sentinel errors
-
-gen/                   # OpenAPI-generated code (DO NOT EDIT MANUALLY)
-  health/, games/, teams/, players/, tables/, scores/
-                       # Generated types, handler interfaces and routing
-
-openapi/               # OpenAPI specification
-  openapi.yaml         # Main OpenAPI spec
-  swagger.html         # Swagger UI served at /docs
-  config/              # oapi-codegen configuration files per module
-
-db_migration/          # Database migrations (goose)
-integrationtests/      # Integration tests using testcontainers
-```
+- `gen/` has exactly **two** packages, `gen/api` and `gen/health` — not one per tag. Never edit either.
+- `pkg/table/` covers rounds **and** scores; there is no `pkg/scores`.
+- `pkg/setup/` is the table-assignment algorithm, not application setup.
+- `pkg/audit/` holds the read path plus `OpenDatabase`, which registers the actor callbacks. Audit *writes* are
+  Postgres triggers, not Go code.
+- `pkg/entity/` is shared by every module and is the one place a model may be defined.
 
 ### Domain Module Pattern
 
@@ -228,13 +185,6 @@ separate scores domain module in `pkg/`.
 5. Implement new interfaces in `api/handlers/`
 6. Wire up routes in `api/routes/routes.go`
 7. Commit both spec and generated code together
-
-The generated code in `gen/` provides:
-
-- Type-safe request/response models
-- Server interfaces to implement
-- Request validation
-- HTTP routing helpers
 
 ### Generated Type Usage Pattern
 
@@ -312,14 +262,6 @@ Core entities in `pkg/entity/model.go`:
 - `Score` - Player score at a specific table
 - `TablePlayer` - Many-to-many join table (DB name: `table_players`)
 
-### Enum Pattern
-
-**Prefer String Enums for readability.**
-
-Unless you are writing mission-critical financial code where a state mismatch costs millions, just use String Enums. The readability benefit outweighs the lack of strict type safety in most Go projects.
-
-String enums are simple, JSON-compatible, database-friendly, and easy to debug. They make code more maintainable by being self-documenting.
-
 ### Authentication & Authorization
 
 - Uses Firebase JWT tokens via `Authorization: Bearer <token>` header
@@ -335,12 +277,44 @@ Configured in `api/routes/routes.go`:
 - Public endpoints: `SecurityHeaders → Metrics → RequestLogging`
 - Authenticated endpoints: `SecurityHeaders → Metrics → RequestLogging → Authentication`
 
+### HTTP Response Convention
+
+All response writing lives in `api/handlers/response.go`:
+
+- `writeJSON(ctx, w, status, body)` for **every** 2xx body. It sets `Content-Type`, writes the status, encodes and logs
+  an encode failure once. Do not hand-roll the header/encode block: it had grown to 16 copies that logged the identical
+  failure at Info, Warn and Error depending on which file you opened.
+- `JSONError(w, message, status)` for a bare error body; `respondError(w, err)` to map an `apperror` sentinel to its
+  status. `respondError` walks a table with `errors.Is`, so a wrapped sentinel still matches. An unmapped error is a 500,
+  which is why a repository must not leak a raw `gorm` error to a handler.
+- Set `Location` (or any other header) **before** calling `writeJSON` — it writes the header, so anything added
+  afterwards is silently dropped.
+
 ### Scores Architecture Note
 
 The Scores operations are part of the unified `gen/api` package, but **scores are implemented by `TablesHandler`**
 (`api/handlers/tables_handler.go`), not a dedicated scores handler. There is no `pkg/scores` domain module.
 `TablesHandler` provides both the Tables and Scores methods of `api.ServerInterface`; it is embedded in the combined
 `apiServer` in `api/routes/routes.go`.
+
+### Row Locking
+
+Every path that mutates a game or its children opens `GamesRepository.WithinTransaction`, takes the game row lock
+(`LockGame`, `SELECT … FOR UPDATE`) and only then checks ownership. `UpdateGame`, `WithinSetup` (which is how every team
+and player write happens), `ResetSetup` and `AssignTables` all reach that through `lockOwnedGame` in
+`pkg/game/service.go`.
+
+**`AddOwner` and `RemoveOwner` are the exceptions, and should not be.** They read through the unlocked
+`GamesService.FindByID` and then write, outside any transaction. Two concurrent removals of two *different* owners of a
+two-owner game both observe `len(game.Owners) == 2`, both pass the `ErrLastOwner` guard and both delete: the game ends
+up with zero owners, which makes it unreachable and undeletable through the API, because `FindAllByOwner` joins
+`game_owners` and `FindByID` then answers 403 to everyone. Two concurrent `AddOwner` calls for the same email collide on
+the composite primary key and surface as 500 instead of `ErrAlreadyOwner`.
+
+`lockOwnedGame` returns a game with **only `Owners` preloaded**, because that is all `LockGame` preloads. `Teams` and
+`Rounds` are always nil on that value, and it sits a few lines from a fully hydrated `FindByID` game of the same type and
+name. Reading `len(game.Teams)` off it walks straight into the fail-open trap described below: a slice nobody loaded is
+indistinguishable from an empty one. Use `CountRelated`, or reload with `FindByID` inside the lock.
 
 ### Game Lifecycle
 
@@ -566,6 +540,15 @@ expanded away and `FIREBASE_SECRET` must be unwrapped base64 (`base64 -w0`).
 
 ---
 
+## Comments
+
+Prefer clear code to comments: a better name, a smaller function or an extracted variable usually removes the need for
+one. Default to zero.
+
+When one is warranted, keep it to a single line explaining a non-obvious *why* — an external quirk, an ordering
+requirement, a deliberate deviation. Never restate what the code already says, and never narrate the change you just
+made.
+
 ## Code Review Standards
 
 This section is the only copy. `.github/copilot-instructions.md` used to restate it and drifted: it documented
@@ -615,11 +598,11 @@ When reviewing code changes, apply these standards with appropriate severity:
 - Direct database access from handlers (use repositories)
 - Skipping authorization checks in service layer
 - Editing generated code in `gen/` directory
-- Using `interface{}` when specific types could be used
-- Ignoring errors with `_`
-- Not closing resources (missing `defer` for files/connections)
-- Hardcoding configuration values
 - Creating new sentinel errors instead of using `pkg/apperror`
+- Hand-rolling a JSON response instead of `writeJSON`/`respondError`
+
+(Ignored errors, unclosed resources and missing context propagation are blocked by golangci-lint — errcheck,
+bodyclose, sqlclosecheck, contextcheck — so they are not review work.)
 
 ### Project Best Practices to Encourage
 
