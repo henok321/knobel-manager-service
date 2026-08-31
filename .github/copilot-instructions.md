@@ -199,8 +199,8 @@ practices, Go-specific standards, and project-specific patterns.
 
 ### Code Style
 
-- [ ] Code passes `make lint` (pre-commit hooks)
-- [ ] Code passes `make lint-go` (golangci-lint)
+- [ ] Code passes `make lint` (golangci-lint, Go only)
+- [ ] Code passes `make lint-all` (full pre-commit suite)
 - [ ] No linter warnings or errors
 - [ ] `gofmt` and `goimports` applied
 - [ ] Code formatted consistently
@@ -355,7 +355,7 @@ This prevents users from modifying games they don't own.
 ### Before Submitting PR
 
 ```bash
-make lint # Run all linters
+make lint-all # Run all linters
 make test # Run all tests
 make build # Verify it builds
 git status # Check no unintended files
