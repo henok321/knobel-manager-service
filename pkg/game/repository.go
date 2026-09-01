@@ -17,15 +17,28 @@ func NewGamesRepository(db *gorm.DB) *GamesRepository {
 	return &GamesRepository{db}
 }
 
+func orderBy(column string) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB { return db.Order(column) }
+}
+
+func withRelations(db *gorm.DB) *gorm.DB {
+	return db.
+		Preload("Owners", orderBy("owner_sub")).
+		Preload("Teams", orderBy("id")).
+		Preload("Teams.Players", orderBy("id")).
+		Preload("Teams.Players.Scores", orderBy("id")).
+		Preload("Rounds", orderBy("round_number")).
+		Preload("Rounds.Tables", orderBy("table_number")).
+		Preload("Rounds.Tables.Players", orderBy("players.id")).
+		Preload("Rounds.Tables.Scores", orderBy("id"))
+}
+
 func (r *GamesRepository) FindAllByOwner(ctx context.Context, sub string) ([]entity.Game, error) {
 	var games []entity.Game
 
-	err := r.db.WithContext(ctx).
+	err := withRelations(r.db.WithContext(ctx)).
 		Joins("JOIN game_owners ON game_owners.game_id = games.id").Where("game_owners.owner_sub = ?", sub).
-		Preload("Teams.Players.Scores").
-		Preload("Rounds.Tables.Players").
-		Preload("Rounds.Tables.Scores").
-		Preload("Owners").
+		Order("games.id").
 		Find(&games).Error
 	if err != nil {
 		return nil, err
@@ -37,12 +50,8 @@ func (r *GamesRepository) FindAllByOwner(ctx context.Context, sub string) ([]ent
 func (r *GamesRepository) FindByID(ctx context.Context, id int) (entity.Game, error) {
 	var game entity.Game
 
-	err := r.db.WithContext(ctx).
+	err := withRelations(r.db.WithContext(ctx)).
 		Where("games.id = ?", id).
-		Preload("Teams.Players.Scores").
-		Preload("Rounds.Tables.Players").
-		Preload("Rounds.Tables.Scores").
-		Preload("Owners").
 		First(&game).Error
 	if err != nil {
 		return entity.Game{}, err
@@ -56,7 +65,7 @@ func (r *GamesRepository) LockGame(ctx context.Context, gameID int) (entity.Game
 
 	err := r.db.WithContext(ctx).
 		Clauses(clause.Locking{Strength: "UPDATE"}).
-		Preload("Owners").
+		Preload("Owners", orderBy("owner_sub")).
 		First(&game, gameID).Error
 	if err != nil {
 		return entity.Game{}, err
@@ -92,7 +101,7 @@ func (r *GamesRepository) CreateOrUpdateGame(ctx context.Context, game *entity.G
 	}
 
 	var savedGame entity.Game
-	err = r.db.WithContext(ctx).Preload("Owners").First(&savedGame, game.ID).Error
+	err = r.db.WithContext(ctx).Preload("Owners", orderBy("owner_sub")).First(&savedGame, game.ID).Error
 	if err != nil {
 		return entity.Game{}, err
 	}

@@ -16,14 +16,18 @@ func NewTablesRepository(db *gorm.DB) *TablesRepository {
 	return &TablesRepository{db}
 }
 
+func orderBy(column string) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB { return db.Order(column) }
+}
+
 func (t *TablesRepository) FindTable(ctx context.Context, sub string, gameID, roundNumber, tableNumber int) (entity.GameTable, error) {
 	tableEntity := entity.GameTable{}
 
 	err := t.db.WithContext(ctx).
 		Joins("JOIN rounds ON rounds.id = game_tables.round_id").
 		Joins("JOIN game_owners ON game_owners.game_id = rounds.game_id").
-		Preload("Scores").
-		Preload("Players").
+		Preload("Scores", orderBy("id")).
+		Preload("Players", orderBy("players.id")).
 		Where("game_owners.owner_sub = ?", sub).
 		Where("rounds.game_id = ?", gameID).
 		Where("rounds.round_number = ?", roundNumber).
@@ -54,7 +58,7 @@ func (t *TablesRepository) UpdateTable(ctx context.Context, table *entity.GameTa
 		}
 	}
 
-	err := t.db.WithContext(ctx).Preload("Scores").Preload("Players").First(table, table.ID).Error
+	err := t.db.WithContext(ctx).Preload("Scores", orderBy("id")).Preload("Players", orderBy("players.id")).First(table, table.ID).Error
 	if err != nil {
 		return entity.GameTable{}, err
 	}

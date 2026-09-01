@@ -31,6 +31,7 @@ func TestScores(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned_with_scores.sql")
+				executeSQLFile(t, db, "./test_data/reorder_heap.sql")
 			},
 		},
 		"Update score not game owner": {

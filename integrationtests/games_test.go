@@ -47,6 +47,16 @@ func TestGames(t *testing.T) {
 			expectedBody:   readContentFromFile(t, "./test_data/games_setup_by_id_tables_scores.json"),
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
+		"Find game by id orders teams and players by id after rows are rewritten": {
+			method:   http.MethodGet,
+			endpoint: "/games/1",
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup_assigned_with_scores.sql")
+				executeSQLFile(t, db, "./test_data/reorder_heap.sql")
+			}, expectedStatusCode: http.StatusOK,
+			expectedBody:   readContentFromFile(t, "./test_data/games_setup_by_id_tables_scores.json"),
+			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
+		},
 		"Find game by id not found": {
 			method:   http.MethodGet,
 			endpoint: "/games/2",
