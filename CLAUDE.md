@@ -406,7 +406,7 @@ delete order if you touch that function.
 
 Three mechanics are not obvious, and the first two were measured to behave the opposite of the expectation:
 
-- `pkg/audit/open.go` registers its callback at `Before("gorm:create")`, not `After("gorm:begin_transaction")`. At the
+- `pkg/audit/db_connection.go` registers its callback at `Before("gorm:create")`, not `After("gorm:begin_transaction")`. At the
   latter, `Statement.ConnPool` is still the `*sql.DB` pool, so the setting lands on an arbitrary connection and every
   audit row records `system`.
 - Cascade deletes are suppressed by checking whether the row can still reach a live game, not by `pg_trigger_depth()`.
