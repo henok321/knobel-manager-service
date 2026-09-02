@@ -100,10 +100,10 @@ repos:
     hooks:
       - id: golangci-lint-config-verify
         stages: [ pre-commit ]
-        language_version: '1.27.0'
+        language_version: '1.27.1'
       - id: golangci-lint-full
         stages: [ pre-commit ]
-        language_version: '1.27.0'
+        language_version: '1.27.1'
   - repo: local
     hooks:
       - id: go-test
