@@ -1,8 +1,9 @@
 api.knobel-manager.de {
 	import common
 
-	# health_uri makes the app's graceful drain effective: Caddy stops routing to a
-	# draining container instead of 502ing until the replacement is healthy
+	# health_uri lets Caddy detect a stopped container during a deploy; combined
+	# with lb_try_duration, requests in that window are held and retried until
+	# the replacement container passes its readiness check
 	reverse_proxy knobel-manager:8080 {
 		health_uri /health/ready
 		health_interval 5s

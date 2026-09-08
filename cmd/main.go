@@ -18,7 +18,6 @@ import (
 	"firebase.google.com/go/v4/auth"
 	"github.com/pressly/goose/v3"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/rs/cors"
 	"google.golang.org/api/option"
 	"gorm.io/gorm"
 
@@ -42,24 +41,20 @@ func init() {
 }
 
 func setupAuthClient() (*auth.Client, error) {
-	// tolerate padding and line wrapping, which every base64 CLI emits by default
 	encoded := strings.NewReplacer("=", "", "\n", "", "\r", "").Replace(os.Getenv("FIREBASE_SECRET"))
 
 	firebaseSecret, err := base64.RawStdEncoding.DecodeString(encoded)
 	if err != nil {
-		slog.Error("Starting application failed, cannot decode FIREBASE_SECRET", "error", err)
 		return nil, err
 	}
 
 	if len(firebaseSecret) == 0 {
-		slog.Error("Starting application failed, FIREBASE_SECRET is undefined or empty")
 		return nil, errors.New("FIREBASE_SECRET is undefined or empty")
 	}
 
 	firebaseOption := option.WithAuthCredentialsJSON(option.ServiceAccount, firebaseSecret)
 	firebaseApp, err := firebase.NewApp(context.Background(), nil, firebaseOption)
 	if err != nil {
-		slog.Error("Starting application failed, cannot initialize firebase client. Check if the environment FIREBASE_SECRET is set correctly", "error", err)
 		return nil, err
 	}
 
@@ -70,19 +65,16 @@ func setupDatabase() (*gorm.DB, *sql.DB, error) {
 	databaseURL := os.Getenv("DATABASE_URL")
 
 	if databaseURL == "" {
-		slog.Error("Starting application failed, DATABASE_URL is not set")
 		return nil, nil, errors.New("DATABASE_URL is not set")
 	}
 
 	gormDB, err := audit.OpenDatabase(databaseURL)
 	if err != nil {
-		slog.Error("Starting application failed, cannot open gormDB", "error", err)
 		return nil, nil, err
 	}
 
 	sqlDB, err := gormDB.DB()
 	if err != nil {
-		slog.Error("Starting application failed, cannot get gormDB instance", "error", err)
 		return nil, nil, err
 	}
 
@@ -103,7 +95,6 @@ func runDatabaseMigrations(db *sql.DB) error {
 
 	migrationsDir := os.Getenv("DB_MIGRATION_DIR")
 	if migrationsDir == "" {
-		slog.Error("Migrations directory is not set")
 		return errors.New("migrations directory is not set")
 	}
 
@@ -122,46 +113,58 @@ func runDatabaseMigrations(db *sql.DB) error {
 func setupOpenAPIConfig() (openAPIConfig, swaggerDocs []byte, err error) {
 	openAPIConfig, err = os.ReadFile(filepath.Join("openapi", "openapi.yaml"))
 	if err != nil {
-		slog.Error("Could not read openapi.yaml", "error", err)
 		return nil, nil, err
 	}
 
 	swaggerDocs, err = os.ReadFile(filepath.Join("openapi", "swagger.html"))
 	if err != nil {
-		slog.Error("Could not read swagger.html", "error", err)
 		return nil, nil, err
 	}
 
 	return openAPIConfig, swaggerDocs, nil
 }
 
+// Echoes the request origin instead of "*": browsers reject
+// Access-Control-Allow-Origin: * when credentials are allowed.
+func corsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if origin := r.Header.Get("Origin"); origin != "" {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Add("Vary", "Origin")
+		}
+
+		if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
+			w.Header().Set("Access-Control-Max-Age", "300")
+			w.WriteHeader(http.StatusNoContent)
+
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
 func main() {
-	exitCode := 0
-
-	defer func() {
-		os.Exit(exitCode)
-	}()
-
 	slog.Info("Initialize application")
 
 	authClient, err := setupAuthClient()
 	if err != nil {
-		slog.Error("Starting application failed, cannot initialize auth client", "error", err)
-		exitCode = 1
-		return
+		slog.Error("Failed to initialize auth client", "error", err)
+		os.Exit(1)
 	}
 
 	gormDB, sqlDB, err := setupDatabase()
 	if err != nil {
-		slog.Error("Starting application failed, cannot initialize gormDB", "error", err)
-		exitCode = 1
-		return
+		slog.Error("Failed to initialize database", "error", err)
+		os.Exit(1)
 	}
 
 	if err := runDatabaseMigrations(sqlDB); err != nil {
-		slog.Error("Starting application failed, gormDB migrations failed", "error", err)
-		exitCode = 1
-		return
+		slog.Error("Database migrations failed", "error", err)
+		os.Exit(1)
 	}
 
 	dbChecker := healthpkg.NewDatabaseChecker(gormDB, 500*time.Millisecond)
@@ -170,24 +173,15 @@ func main() {
 
 	openAPIConfig, swaggerDocs, err := setupOpenAPIConfig()
 	if err != nil {
-		slog.Error("Starting application failed, cannot read openapi config", "error", err)
-		exitCode = 1
-		return
+		slog.Error("Failed to load OpenAPI config", "error", err)
+		os.Exit(1)
 	}
 
 	router := routes.SetupRouter(gormDB, authClient, healthService, openAPIConfig, swaggerDocs)
 
-	corsHandler := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type"},
-		AllowCredentials: true,
-		MaxAge:           300, // 5 minutes
-	})
-
 	mainServer := &http.Server{
 		Addr:         ":8080",
-		Handler:      corsHandler.Handler(router),
+		Handler:      corsMiddleware(router),
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
@@ -227,11 +221,6 @@ func main() {
 
 	<-signalCtx.Done()
 	slog.Info("Shutdown signal received, shutting down gracefully...")
-
-	healthService.StartDraining()
-
-	slog.Info("Waiting for load balancer to drain...")
-	time.Sleep(5 * time.Second)
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()

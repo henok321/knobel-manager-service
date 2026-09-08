@@ -2,9 +2,11 @@ package middleware
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var (
@@ -25,6 +27,16 @@ func init() {
 	prometheus.MustRegister(HTTPRequestDuration)
 }
 
+type recordingWriter struct {
+	http.ResponseWriter
+	code int
+}
+
+func (w *recordingWriter) WriteHeader(code int) {
+	w.code = code
+	w.ResponseWriter.WriteHeader(code)
+}
+
 func Metrics() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -34,12 +46,16 @@ func Metrics() func(http.Handler) http.Handler {
 				handlerName = "unmatched"
 			}
 
-			duration := HTTPRequestDuration.MustCurryWith(prometheus.Labels{"handler": handlerName})
-			counter := HTTPRequestsTotal.MustCurryWith(prometheus.Labels{"handler": handlerName})
+			recorder := &recordingWriter{ResponseWriter: w, code: http.StatusOK}
+			start := time.Now()
 
-			instrumentedHandler := promhttp.InstrumentHandlerDuration(duration, promhttp.InstrumentHandlerCounter(counter, next))
+			defer func() {
+				method, code := strings.ToLower(r.Method), strconv.Itoa(recorder.code)
+				HTTPRequestsTotal.WithLabelValues(handlerName, method, code).Inc()
+				HTTPRequestDuration.WithLabelValues(handlerName, method, code).Observe(time.Since(start).Seconds())
+			}()
 
-			instrumentedHandler.ServeHTTP(w, r)
+			next.ServeHTTP(recorder, r)
 		})
 	}
 }
