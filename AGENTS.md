@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents when working with code in this repository.
 
 ## Project Overview
 
@@ -312,12 +312,9 @@ Every path that mutates a game or its children opens `GamesRepository.WithinTran
 and player write happens), `ResetSetup` and `AssignTables` all reach that through `lockOwnedGame` in
 `pkg/game/service.go`.
 
-**`AddOwner` and `RemoveOwner` are the exceptions, and should not be.** They read through the unlocked
-`GamesService.FindByID` and then write, outside any transaction. Two concurrent removals of two *different* owners of a
-two-owner game both observe `len(game.Owners) == 2`, both pass the `ErrLastOwner` guard and both delete: the game ends
-up with zero owners, which makes it unreachable and undeletable through the API, because `FindAllByOwner` joins
-`game_owners` and `FindByID` then answers 403 to everyone. Two concurrent `AddOwner` calls for the same email collide on
-the composite primary key and surface as 500 instead of `ErrAlreadyOwner`.
+`AddOwner` and `RemoveOwner` go through the same `lockOwnedGame` transaction. `AddOwner` calls the unlocked
+`FindByID` first deliberately: it authorizes before the Firebase lookup so a stranger cannot probe which emails exist.
+The write itself re-checks ownership and `ErrAlreadyOwner` under the lock.
 
 `lockOwnedGame` returns a game with **only `Owners` preloaded**, because that is all `LockGame` preloads. `Teams` and
 `Rounds` are always nil on that value, and it sits a few lines from a fully hydrated `FindByID` game of the same type and
@@ -635,4 +632,4 @@ bodyclose, sqlclosecheck, contextcheck — so they are not review work.)
 
 ---
 
-**Note for Claude Code:** Be direct and honest, do not sugar coat answers, focus on quality and fact.
+Be direct and honest, do not sugar coat answers, focus on quality and fact.
