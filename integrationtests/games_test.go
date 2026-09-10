@@ -84,6 +84,15 @@ func TestGames(t *testing.T) {
 			expectedStatusCode: http.StatusForbidden,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 		},
+		"Find game by id not owner but super admin": {
+			method:   http.MethodGet,
+			endpoint: "/games/1",
+			setup: func(db *sql.DB) {
+				executeSQLFile(t, db, "./test_data/games_setup.sql")
+			}, expectedStatusCode: http.StatusOK,
+			expectedBody:   readContentFromFile(t, "./test_data/games_setup_by_id.json"),
+			requestHeaders: map[string]string{"Authorization": "Bearer sub-3"},
+		},
 		"Create new game": {
 			method:             http.MethodPost,
 			endpoint:           "/games",

@@ -77,8 +77,8 @@ The one real cost is that golangci-lint now exists **twice**: this directive and
 them together; they have drifted apart before (go.mod v2.12.2 against the hook's v2.13.2).
 
 The editor path is separate again: `.vscode/settings.json` sets `go.lintTool`/`customFormatter` to `golangci-lint`,
-which the Go extension resolves from `PATH` (Homebrew), never through `go tool`. So the binary exists three times
-over — pre-commit's pin, PATH for the editor, and formerly the `go tool` directive that nothing could reach.
+which the Go extension resolves from `PATH` (Homebrew), never through `go tool`. So the binary exists three times over —
+pre-commit's pin, PATH for the editor, and formerly the `go tool` directive that nothing could reach.
 
 `.bake.toml` holds only settings that differ from mbake's defaults. `ensure_final_newline` is not optional despite
 looking redundant with the `end-of-file-fixer` hook: mbake strips the final newline at its default, that hook re-adds
@@ -139,16 +139,16 @@ make update  # Updates Go modules (go get -u && go mod tidy)
 
 ```mermaid
 graph TB
-    Client[Client App<br/>React Frontend]
-    API[Knobel Manager Service<br/>Go REST Service<br/>:8080]
-    DB[(PostgreSQL<br/>Database)]
-    Firebase[Firebase Auth<br/>JWT Validation]
-    Metrics[Prometheus<br/>Metrics<br/>:9090]
-    Client -->|HTTP + JWT Bearer Token| API
-    Client -.->|Authenticate| Firebase
-    API -->|Validate JWT| Firebase
-    API -->|SQL Queries| DB
-    API -->|Export Metrics| Metrics
+  Client[Client App<br/>React Frontend]
+  API[Knobel Manager Service<br/>Go REST Service<br/>:8080]
+  DB[(PostgreSQL<br/>Database)]
+  Firebase[Firebase Auth<br/>JWT Validation]
+  Metrics[Prometheus<br/>Metrics<br/>:9090]
+  Client -->|HTTP + JWT Bearer Token| API
+  Client -.->|Authenticate| Firebase
+  API -->|Validate JWT| Firebase
+  API -->|SQL Queries| DB
+  API -->|Export Metrics| Metrics
 ```
 
 The system uses:
@@ -163,14 +163,14 @@ The system uses:
 ### Code Organization
 
 `api/` is the HTTP layer (`routes/`, `handlers/`, `middleware/`, `health/`, `logging/`), `pkg/` the domain modules,
-`gen/` the generated code, `db_migration/` the goose migrations, `integrationtests/` the testcontainers suite. The
-parts that are not self-evident from the tree:
+`gen/` the generated code, `db_migration/` the goose migrations, `integrationtests/` the testcontainers suite. The parts
+that are not self-evident from the tree:
 
 - `gen/` has exactly **two** packages, `gen/api` and `gen/health` — not one per tag. Never edit either.
 - `pkg/table/` covers rounds **and** scores; there is no `pkg/scores`.
 - `pkg/setup/` is the table-assignment algorithm, not application setup.
-- `pkg/audit/` holds the read path plus `OpenDatabase`, which registers the actor callbacks. Audit *writes* are
-  Postgres triggers, not Go code.
+- `pkg/audit/` holds the read path plus `OpenDatabase`, which registers the actor callbacks. Audit *writes* are Postgres
+  triggers, not Go code.
 - `pkg/entity/` is shared by every module and is the one place a model may be defined.
 
 ### Domain Module Pattern
@@ -181,8 +181,8 @@ Each domain module (`pkg/game`, `pkg/team`, `pkg/player`, `pkg/table`) follows t
 - `service.go` - Business logic, exported concrete struct (e.g. `*GamesService`)
 
 Modules are wired directly in `api/routes/routes.go` (e.g. `game.NewGamesService(game.NewGamesRepository(db))`)
-and injected into handlers as concrete pointer types. Note: scores are handled by `TablesHandler` — there is no
-separate scores domain module in `pkg/`.
+and injected into handlers as concrete pointer types. Note: scores are handled by `TablesHandler` — there is no separate
+scores domain module in `pkg/`.
 
 ### OpenAPI-First Development
 
@@ -205,7 +205,8 @@ shared HTTP routing helpers. `gen/health` stays its own package because it uses 
 **✅ Correct Usage:**
 
 - Use unified `api.*` types: `api.Game`, `api.Team`, `api.Player`, `api.Table`, `api.Score`, etc.
-- Converters in `api/handlers/converters.go` return `api.*` types — one converter per entity (e.g. `entityGameToAPIGame`)
+- Converters in `api/handlers/converters.go` return `api.*` types — one converter per entity (e.g.
+  `entityGameToAPIGame`)
 - Handlers use `api.*` types for requests and responses
 - Services use `api.*` types for request parameters (e.g. `api.GameCreateRequest`, `api.ScoresRequest`)
 - The modular handlers (`GamesHandler`, `TeamsHandler`, `PlayersHandler`, `TablesHandler`) are kept, each implementing
@@ -214,10 +215,10 @@ shared HTTP routing helpers. `gen/health` stays its own package because it uses 
 
 ```go
 type apiServer struct {
-    *handlers.GamesHandler
-    *handlers.TeamsHandler
-    *handlers.PlayersHandler
-    *handlers.TablesHandler
+*handlers.GamesHandler
+*handlers.TeamsHandler
+*handlers.PlayersHandler
+*handlers.TablesHandler
 }
 var _ api.ServerInterface = (*apiServer)(nil)
 ```
@@ -274,8 +275,12 @@ Core entities in `pkg/entity/model.go`:
 
 - Uses Firebase JWT tokens via `Authorization: Bearer <token>` header
 - Authentication middleware in `api/middleware/auth.go`
-- Extracts user ID (`sub` = Firebase UID) and email from token, stores in request context via `middleware.UserFromContext`
+- Extracts user ID (`sub` = Firebase UID) and email from token, stores in request context via
+  `middleware.UserFromContext`
 - Authorization checks happen in services (e.g., verifying game ownership via `entity.IsOwner`)
+- A row in `super_admins` bypasses ownership checks everywhere: `requireAccess` in `pkg/game/service.go` accepts
+  owner **or** super admin, and the list/table/audit queries OR in an `EXISTS (super_admins)` clause. There is no
+  admin API — rows are inserted manually (YAGNI).
 - Application errors use sentinel errors in `pkg/apperror` (e.g., `apperror.ErrNotOwner`, `apperror.ErrTeamNotFound`)
 
 ### Middleware Chain
@@ -293,8 +298,8 @@ All response writing lives in `api/handlers/response.go`:
   an encode failure once. Do not hand-roll the header/encode block: it had grown to 16 copies that logged the identical
   failure at Info, Warn and Error depending on which file you opened.
 - `JSONError(w, message, status)` for a bare error body; `respondError(w, err)` to map an `apperror` sentinel to its
-  status. `respondError` walks a table with `errors.Is`, so a wrapped sentinel still matches. An unmapped error is a 500,
-  which is why a repository must not leak a raw `gorm` error to a handler.
+  status. `respondError` walks a table with `errors.Is`, so a wrapped sentinel still matches. An unmapped error is a
+  500, which is why a repository must not leak a raw `gorm` error to a handler.
 - Set `Location` (or any other header) **before** calling `writeJSON` — it writes the header, so anything added
   afterwards is silently dropped.
 
@@ -309,26 +314,26 @@ The Scores operations are part of the unified `gen/api` package, but **scores ar
 
 Every path that mutates a game or its children opens `GamesRepository.WithinTransaction`, takes the game row lock
 (`LockGame`, `SELECT … FOR UPDATE`) and only then checks ownership. `UpdateGame`, `WithinSetup` (which is how every team
-and player write happens), `ResetSetup` and `AssignTables` all reach that through `lockOwnedGame` in
+and player write happens), `ResetSetup` and `AssignTables` all reach that through `lockGame` in
 `pkg/game/service.go`.
 
-`AddOwner` and `RemoveOwner` go through the same `lockOwnedGame` transaction. `AddOwner` calls the unlocked
+`AddOwner` and `RemoveOwner` go through the same `lockGame` transaction. `AddOwner` calls the unlocked
 `FindByID` first deliberately: it authorizes before the Firebase lookup so a stranger cannot probe which emails exist.
 The write itself re-checks ownership and `ErrAlreadyOwner` under the lock.
 
-`lockOwnedGame` returns a game with **only `Owners` preloaded**, because that is all `LockGame` preloads. `Teams` and
-`Rounds` are always nil on that value, and it sits a few lines from a fully hydrated `FindByID` game of the same type and
-name. Reading `len(game.Teams)` off it walks straight into the fail-open trap described below: a slice nobody loaded is
-indistinguishable from an empty one. Use `CountRelated`, or reload with `FindByID` inside the lock.
+`lockGame` returns a game with **only `Owners` preloaded**, because that is all `LockGame` preloads. `Teams` and
+`Rounds` are always nil on that value, and it sits a few lines from a fully hydrated `FindByID` game of the same type
+and name. Reading `len(game.Teams)` off it walks straight into the fail-open trap described below: a slice nobody loaded
+is indistinguishable from an empty one. Use `CountRelated`, or reload with `FindByID` inside the lock.
 
 ### Game Lifecycle
 
-`setup → in_progress → completed`, plus one step back: `in_progress → setup`, and only while no score has been
-entered. Everything else — any move out of `completed`, a rewind that would orphan scores, a status outside the enum —
-is refused (`apperror.ErrInvalidStatusTransition`, 409; unknown values are 400 from the handler via the generated
-`GameStatus.Valid()`). `status` is optional in `GameUpdateRequest` — absent means "leave it alone", which is why
-it is a pointer in the generated type. `ensureTransitionAllowed` in `pkg/game/service.go` is the whole rule. Without the direction
-check, `PUT status=setup` followed by `DELETE /setup` wiped a finished tournament in two requests, both 2xx.
+`setup → in_progress → completed`, plus one step back: `in_progress → setup`, and only while no score has been entered.
+Everything else — any move out of `completed`, a rewind that would orphan scores, a status outside the enum — is refused
+(`apperror.ErrInvalidStatusTransition`, 409; unknown values are 400 from the handler via the generated
+`GameStatus.Valid()`). `status` is optional in `GameUpdateRequest` — absent means "leave it alone", which is why it is a
+pointer in the generated type. `ensureTransitionAllowed` in `pkg/game/service.go` is the whole rule. Without the
+direction check, `PUT status=setup` followed by `DELETE /setup` wiped a finished tournament in two requests, both 2xx.
 
 `UpdateGame` runs under the same row lock as a setup run and decides from `GamesRepository.CountRelated` — rounds,
 players and scores in one query — rather than from preloaded associations, for the reason given below: a slice nobody
@@ -349,8 +354,8 @@ submission. Renaming stays free in every status.
 
 ### Changing Teams and Players After Setup
 
-Creating or deleting a team or a player runs inside `GamesService.WithinSetup`, which is the only path allowed to
-change the teams of a game. In one transaction it locks the game row (`SELECT … FOR UPDATE`), checks ownership, counts the
+Creating or deleting a team or a player runs inside `GamesService.WithinSetup`, which is the only path allowed to change
+the teams of a game. In one transaction it locks the game row (`SELECT … FOR UPDATE`), checks ownership, counts the
 game's rounds and calls `entity.EnsureSetupNotAssigned(status, rounds)`: 409 unless the game is in `setup`
 (`apperror.ErrGameNotEditable`) and no round is assigned (`apperror.ErrGameAlreadySetUp`). Without it a late-arriving
 team could be added after the tables were assigned and the game started with players seated nowhere.
@@ -360,8 +365,8 @@ Three details of that transaction are load-bearing:
 - **The lock, not just the check.** `AssignTables` and `ResetSetup` take the same row lock, so a team insert cannot
   interleave with a setup run. Without it both requests succeed and the team ends up in a fully assigned game seated
   nowhere — `TestConcurrentTeamCreateAndSetup` reproduces exactly that, 3 runs out of 3, if the lock is removed.
-- **A `COUNT`, not `len(game.Rounds)`.** An association that was never preloaded is indistinguishable from an empty
-  one, so a guard reading the slice fails *open* — silently, with every test still green — the day a query drops a
+- **A `COUNT`, not `len(game.Rounds)`.** An association that was never preloaded is indistinguishable from an empty one,
+  so a guard reading the slice fails *open* — silently, with every test still green — the day a query drops a
   `Preload`. `EnsureSetupNotAssigned` therefore takes the count as an argument.
 - **`AssignTables` loads the game after taking the lock**, not before. A snapshot taken earlier can miss a team that
   committed in between, and the assignment would be built without it.
@@ -374,9 +379,9 @@ destroying real scoring history.
 
 Creating and renaming are separate repository methods on purpose — `CreateTeam`/`UpdateTeamName`,
 `CreatePlayer`/`UpdatePlayerName`. Create needs GORM's association cascade (a team is inserted with its players); a
-rename must not have it, because the entity it was loaded from carries its team, game and rounds, and `Save` walks
-that chain and upserts every row it finds. The rename methods therefore update the single column on the single row.
-Renaming leaves the assignment intact and stays allowed in every status.
+rename must not have it, because the entity it was loaded from carries its team, game and rounds, and `Save` walks that
+chain and upserts every row it finds. The rename methods therefore update the single column on the single row. Renaming
+leaves the assignment intact and stays allowed in every status.
 
 ### Audit Log
 
@@ -384,8 +389,8 @@ Changes to `games`, `game_owners`, `teams`, `players` and `scores` are recorded 
 triggers (`db_migration/0011_audit_events.sql`). There is no application code on the audit write path and no diffing:
 `to_jsonb(OLD)` and `to_jsonb(NEW)` carry before and after.
 
-`rounds`, `game_tables` and `table_players` are deliberately not audited — they are produced by the setup algorithm,
-not edited by a human, and one setup run would write hundreds of rows.
+`rounds`, `game_tables` and `table_players` are deliberately not audited — they are produced by the setup algorithm, not
+edited by a human, and one setup run would write hundreds of rows.
 
 **The log records one event per user action, not one row per changed row.** Deletes that cascade are recorded only at
 the level the request acted on: deleting a game records one `games` event, and deleting a team records one `teams`
@@ -403,9 +408,9 @@ delete order if you touch that function.
 
 Three mechanics are not obvious, and the first two were measured to behave the opposite of the expectation:
 
-- `pkg/audit/db_connection.go` registers its callback at `Before("gorm:create")`, not `After("gorm:begin_transaction")`. At the
-  latter, `Statement.ConnPool` is still the `*sql.DB` pool, so the setting lands on an arbitrary connection and every
-  audit row records `system`.
+- `pkg/audit/db_connection.go` registers its callback at `Before("gorm:create")`, not `After("gorm:begin_transaction")`.
+  At the latter, `Statement.ConnPool` is still the `*sql.DB` pool, so the setting lands on an arbitrary connection and
+  every audit row records `system`.
 - Cascade deletes are suppressed by checking whether the row can still reach a live game, not by `pg_trigger_depth()`.
   Referential-integrity cascades run at depth 1, exactly like a direct delete.
 - Updates that change nothing are suppressed by comparing the rows with `updated_at` removed. GORM's `Save` emits an
@@ -436,11 +441,11 @@ key forever, so a rename forces clients to handle both shapes indefinitely.
 Two limitations are known and deliberately not addressed:
 
 - **The log is not tamper-evident.** The application's database role owns `audit_events` and its triggers, so a
-  compromised service can rewrite or disable its own audit trail. `REVOKE UPDATE, DELETE, TRUNCATE` would fix it and
-  is the right move if this ever needs to prove anything to a third party; it is over-engineering for a tournament app.
-- **`game_id` is not tied to a game's incarnation.** There is no foreign key (by design, so trails outlive games) and
-  no immutable game key, so a `setval` or a `pg_restore` that rewinds the sequence could let a new game inherit a
-  deleted one's trail. Not reachable through the API — `nextval` never goes backwards on its own.
+  compromised service can rewrite or disable its own audit trail. `REVOKE UPDATE, DELETE, TRUNCATE` would fix it and is
+  the right move if this ever needs to prove anything to a third party; it is over-engineering for a tournament app.
+- **`game_id` is not tied to a game's incarnation.** There is no foreign key (by design, so trails outlive games) and no
+  immutable game key, so a `setval` or a `pg_restore` that rewinds the sequence could let a new game inherit a deleted
+  one's trail. Not reachable through the API — `nextval` never goes backwards on its own.
 
 ## Test Setup
 
@@ -457,8 +462,8 @@ Tests are automatically run by pre-commit hooks on push and by CI/CD.
 
 The project uses Go toolchain directives:
 
-- `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` - linting via `make lint` (keep in step with the
-  pre-commit hook rev)
+- `github.com/golangci/golangci-lint/v2/cmd/golangci-lint` - linting via `make lint` (keep in step with the pre-commit
+  hook rev)
 - `github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen` - OpenAPI code generation
 - `golang.org/x/vuln/cmd/govulncheck` - dependency CVE scanning (pre-commit)
 
@@ -488,21 +493,26 @@ GitHub Actions workflows in `.github/workflows/`:
 Single workflow runs on push to main with dependent jobs:
 
 1. **Validate, Lint & Test** - Run in parallel
-    - Validate OpenAPI: Ensures generated code matches spec (`make openapi-validate`)
-    - Lint: Pre-commit hooks (golangci-lint, betterleaks, shellcheck, markdownlint, etc.)
-    - Test: Full test suite (`make test`)
-2. **Build** - Triggers after all validations pass:
-    - Builds multi-arch Docker image (amd64/arm64)
-    - Pushes to GitHub Container Registry (`ghcr.io`)
-3. **Deploy** - Only from `main`, tracked via GitHub Environments (production):
-    - Runs `ansible-playbook deploy/deploy.yml` against the VPS as `root`. It writes
-      `/srv/knobel-manager/{compose.yaml,.env}` plus `/srv/edge/sites/knobel-manager.caddy`, then
-      `docker compose up -d --wait`, so the server never drifts from the repo
-    - The **host** is not this repo's job. Docker, firewall, swap, SSH, backups and the shared Caddy
-      come from [henok321/homelab](https://github.com/henok321/homelab); `deploy.yml` asserts
-      `/srv/edge` exists and refuses to run otherwise
-    - `deploy/deploy.yml` is the source of truth for this service's server state; `DEPLOYMENT.md`
-      covers only what it cannot express (routing contract, secret handling, manual operations)
+
+- Validate OpenAPI: Ensures generated code matches spec (`make openapi-validate`)
+- Lint: Pre-commit hooks (golangci-lint, betterleaks, shellcheck, markdownlint, etc.)
+- Test: Full test suite (`make test`)
+
+1. **Build** - Triggers after all validations pass:
+
+- Builds multi-arch Docker image (amd64/arm64)
+- Pushes to GitHub Container Registry (`ghcr.io`)
+
+1. **Deploy** - Only from `main`, tracked via GitHub Environments (production):
+
+- Runs `ansible-playbook deploy/deploy.yml` against the VPS as `root`. It writes
+  `/srv/knobel-manager/{compose.yaml,.env}` plus `/srv/edge/sites/knobel-manager.caddy`, then
+  `docker compose up -d --wait`, so the server never drifts from the repo
+- The **host** is not this repo's job. Docker, firewall, swap, SSH, backups and the shared Caddy come
+  from [henok321/homelab](https://github.com/henok321/homelab); `deploy.yml` asserts
+  `/srv/edge` exists and refuses to run otherwise
+- `deploy/deploy.yml` is the source of truth for this service's server state; `DEPLOYMENT.md`
+  covers only what it cannot express (routing contract, secret handling, manual operations)
 
 **On Pull Requests:** Only validation, lint, and test jobs run (build/deploy are skipped)
 
@@ -544,10 +554,10 @@ curl https://api.knobel-manager.de/health/ready
 `ACME_EMAIL` moved to the homelab repo along with Caddy.
 
 `DB_PASSWORD` must match the password already stored in the `db-data` volume: Postgres ignores
-`POSTGRES_PASSWORD` on an initialised data directory, so changing the secret alone leaves the app unable
-to authenticate and the deploy red. `ALTER USER` first, then the secret — see `DEPLOYMENT.md`. It also
-has to survive Compose interpolation: `.env` is Compose's own variable source, so a `$` in the value is
-expanded away and `FIREBASE_SECRET` must be unwrapped base64 (`base64 -w0`).
+`POSTGRES_PASSWORD` on an initialised data directory, so changing the secret alone leaves the app unable to authenticate
+and the deploy red. `ALTER USER` first, then the secret — see `DEPLOYMENT.md`. It also has to survive Compose
+interpolation: `.env` is Compose's own variable source, so a `$` in the value is expanded away and `FIREBASE_SECRET`
+must be unwrapped base64 (`base64 -w0`).
 
 ---
 
@@ -612,8 +622,8 @@ When reviewing code changes, apply these standards with appropriate severity:
 - Creating new sentinel errors instead of using `pkg/apperror`
 - Hand-rolling a JSON response instead of `writeJSON`/`respondError`
 
-(Ignored errors, unclosed resources and missing context propagation are blocked by golangci-lint — errcheck,
-bodyclose, sqlclosecheck, contextcheck — so they are not review work.)
+(Ignored errors, unclosed resources and missing context propagation are blocked by golangci-lint — errcheck, bodyclose,
+sqlclosecheck, contextcheck — so they are not review work.)
 
 ### Project Best Practices to Encourage
 
