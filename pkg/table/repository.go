@@ -25,10 +25,9 @@ func (t *TablesRepository) FindTable(ctx context.Context, sub string, gameID, ro
 
 	err := t.db.WithContext(ctx).
 		Joins("JOIN rounds ON rounds.id = game_tables.round_id").
-		Joins("JOIN game_owners ON game_owners.game_id = rounds.game_id").
 		Preload("Scores", orderBy("id")).
 		Preload("Players", orderBy("players.id")).
-		Where("game_owners.owner_sub = ?", sub).
+		Where("EXISTS (SELECT 1 FROM game_owners go WHERE go.game_id = rounds.game_id AND go.owner_sub = ?) OR EXISTS (SELECT 1 FROM super_admins WHERE sub = ?)", sub, sub).
 		Where("rounds.game_id = ?", gameID).
 		Where("rounds.round_number = ?", roundNumber).
 		Where("game_tables.table_number = ?", tableNumber).

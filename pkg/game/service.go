@@ -28,7 +28,7 @@ func (s *GamesService) FindAllByOwner(ctx context.Context, sub string) ([]entity
 	return s.repo.FindAllByOwner(ctx, sub)
 }
 
-func requireOwner(game entity.Game, err error, sub string) (entity.Game, error) {
+func requireAccess(ctx context.Context, repo *GamesRepository, game entity.Game, err error, sub string) (entity.Game, error) {
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return entity.Game{}, apperror.ErrGameNotFound
@@ -37,17 +37,26 @@ func requireOwner(game entity.Game, err error, sub string) (entity.Game, error) 
 		return entity.Game{}, err
 	}
 
-	if !entity.IsOwner(game, sub) {
-		return entity.Game{}, apperror.ErrNotOwner
+	if entity.IsOwner(game, sub) {
+		return game, nil
 	}
 
-	return game, nil
+	superAdmin, err := repo.IsSuperAdmin(ctx, sub)
+	if err != nil {
+		return entity.Game{}, err
+	}
+
+	if superAdmin {
+		return game, nil
+	}
+
+	return entity.Game{}, apperror.ErrNotOwner
 }
 
 func (s *GamesService) FindByID(ctx context.Context, id int, sub string) (entity.Game, error) {
 	game, err := s.repo.FindByID(ctx, id)
 
-	return requireOwner(game, err, sub)
+	return requireAccess(ctx, s.repo, game, err, sub)
 }
 
 func (s *GamesService) CreateGame(ctx context.Context, sub string, game *api.GameCreateRequest) (entity.Game, error) {
@@ -64,17 +73,17 @@ func (s *GamesService) CreateGame(ctx context.Context, sub string, game *api.Gam
 }
 
 // Returns the locked game with Owners preloaded and nothing else: Teams and Rounds are always nil.
-func lockOwnedGame(ctx context.Context, txRepo *GamesRepository, gameID int, sub string) (entity.Game, error) {
+func lockGame(ctx context.Context, txRepo *GamesRepository, gameID int, sub string) (entity.Game, error) {
 	game, err := txRepo.LockGame(ctx, gameID)
 
-	return requireOwner(game, err, sub)
+	return requireAccess(ctx, txRepo, game, err, sub)
 }
 
 func (s *GamesService) UpdateGame(ctx context.Context, id int, sub string, request api.GameUpdateRequest) (entity.Game, error) {
 	var updated entity.Game
 
 	err := s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
-		if _, err := lockOwnedGame(ctx, txRepo, id, sub); err != nil {
+		if _, err := lockGame(ctx, txRepo, id, sub); err != nil {
 			return err
 		}
 
@@ -154,7 +163,7 @@ func ensureTransitionAllowed(game entity.Game, counts Counts, next entity.GameSt
 
 func (s *GamesService) WithinSetup(ctx context.Context, gameID int, sub string, write func(ctx context.Context, tx *gorm.DB, game entity.Game) error) error {
 	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
-		game, err := lockOwnedGame(ctx, txRepo, gameID, sub)
+		game, err := lockGame(ctx, txRepo, gameID, sub)
 		if err != nil {
 			return err
 		}
@@ -174,7 +183,7 @@ func (s *GamesService) WithinSetup(ctx context.Context, gameID int, sub string, 
 
 func (s *GamesService) ResetSetup(ctx context.Context, gameID int, sub string) error {
 	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
-		game, err := lockOwnedGame(ctx, txRepo, gameID, sub)
+		game, err := lockGame(ctx, txRepo, gameID, sub)
 		if err != nil {
 			return err
 		}
@@ -221,7 +230,7 @@ func (s *GamesService) AddOwner(ctx context.Context, gameID int, callerSub, emai
 	var updated entity.Game
 
 	err = s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
-		game, err := lockOwnedGame(ctx, txRepo, gameID, callerSub)
+		game, err := lockGame(ctx, txRepo, gameID, callerSub)
 		if err != nil {
 			return err
 		}
@@ -246,7 +255,7 @@ func (s *GamesService) RemoveOwner(ctx context.Context, gameID int, callerSub, t
 	var updated entity.Game
 
 	err := s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
-		game, err := lockOwnedGame(ctx, txRepo, gameID, callerSub)
+		game, err := lockGame(ctx, txRepo, gameID, callerSub)
 		if err != nil {
 			return err
 		}
@@ -273,7 +282,7 @@ func (s *GamesService) RemoveOwner(ctx context.Context, gameID int, callerSub, t
 
 func (s *GamesService) AssignTables(ctx context.Context, gameID int, sub string) error {
 	return s.repo.WithinTransaction(ctx, func(ctx context.Context, txRepo *GamesRepository) error {
-		if _, err := lockOwnedGame(ctx, txRepo, gameID, sub); err != nil {
+		if _, err := lockGame(ctx, txRepo, gameID, sub); err != nil {
 			return err
 		}
 

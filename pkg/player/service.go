@@ -61,8 +61,8 @@ func (s PlayersService) ownedPlayer(ctx context.Context, id int, sub string) (en
 		return entity.Player{}, err
 	}
 
-	if !entity.IsOwner(*player.Team.Game, sub) {
-		return entity.Player{}, apperror.ErrNotOwner
+	if _, err := s.gamesService.FindByID(ctx, player.Team.GameID, sub); err != nil {
+		return entity.Player{}, err
 	}
 
 	return player, nil

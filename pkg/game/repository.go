@@ -37,7 +37,7 @@ func (r *GamesRepository) FindAllByOwner(ctx context.Context, sub string) ([]ent
 	var games []entity.Game
 
 	err := withRelations(r.db.WithContext(ctx)).
-		Joins("JOIN game_owners ON game_owners.game_id = games.id").Where("game_owners.owner_sub = ?", sub).
+		Where("EXISTS (SELECT 1 FROM game_owners go WHERE go.game_id = games.id AND go.owner_sub = ?) OR EXISTS (SELECT 1 FROM super_admins WHERE sub = ?)", sub, sub).
 		Order("games.id").
 		Find(&games).Error
 	if err != nil {
@@ -181,6 +181,16 @@ func (r *GamesRepository) Exists(ctx context.Context, gameID int) (bool, error) 
 	var count int64
 
 	err := r.db.WithContext(ctx).Model(&entity.Game{}).Where("id = ?", gameID).Count(&count).Error
+
+	return count > 0, err
+}
+
+func (r *GamesRepository) IsSuperAdmin(ctx context.Context, sub string) (bool, error) {
+	var count int64
+
+	err := r.db.WithContext(ctx).Model(&entity.SuperAdmin{}).
+		Where("sub = ?", sub).
+		Count(&count).Error
 
 	return count > 0, err
 }
