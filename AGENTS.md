@@ -278,9 +278,9 @@ Core entities in `pkg/entity/model.go`:
 - Extracts user ID (`sub` = Firebase UID) and email from token, stores in request context via
   `middleware.UserFromContext`
 - Authorization checks happen in services (e.g., verifying game ownership via `entity.IsOwner`)
-- A row in `super_admins` bypasses ownership checks everywhere: `requireAccess` in `pkg/game/service.go` accepts
-  owner **or** super admin, and the list/table/audit queries OR in an `EXISTS (super_admins)` clause. There is no
-  admin API — rows are inserted manually (YAGNI).
+- A row in `super_admins` bypasses ownership checks everywhere: `requireAccess` in `pkg/game/service.go` accepts owner
+  **or** super admin, and the list/table/audit queries OR in an `EXISTS (super_admins)` clause. There is no admin API —
+  rows are inserted manually (YAGNI).
 - Application errors use sentinel errors in `pkg/apperror` (e.g., `apperror.ErrNotOwner`, `apperror.ErrTeamNotFound`)
 
 ### Middleware Chain
