@@ -24,18 +24,18 @@ func (s *EventsService) FindByGameID(ctx context.Context, gameID int, sub string
 	}
 
 	if exists {
-		superAdmin, err := s.games.IsSuperAdmin(ctx, sub)
+		isOwner, err := s.games.IsOwner(ctx, gameID, sub)
 		if err != nil {
 			return nil, err
 		}
 
-		if !superAdmin {
-			isOwner, err := s.games.IsOwner(ctx, gameID, sub)
+		if !isOwner {
+			superAdmin, err := s.games.IsSuperAdmin(ctx, sub)
 			if err != nil {
 				return nil, err
 			}
 
-			if !isOwner {
+			if !superAdmin {
 				return nil, apperror.ErrNotOwner
 			}
 		}
