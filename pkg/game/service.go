@@ -37,20 +37,18 @@ func requireAccess(ctx context.Context, repo *GamesRepository, game entity.Game,
 		return entity.Game{}, err
 	}
 
-	if entity.IsOwner(game, sub) {
-		return game, nil
+	if !entity.IsOwner(game, sub) {
+		superAdmin, err := repo.IsSuperAdmin(ctx, sub)
+		if err != nil {
+			return entity.Game{}, err
+		}
+
+		if !superAdmin {
+			return entity.Game{}, apperror.ErrNotOwner
+		}
 	}
 
-	superAdmin, err := repo.IsSuperAdmin(ctx, sub)
-	if err != nil {
-		return entity.Game{}, err
-	}
-
-	if superAdmin {
-		return game, nil
-	}
-
-	return entity.Game{}, apperror.ErrNotOwner
+	return game, nil
 }
 
 func (s *GamesService) FindByID(ctx context.Context, id int, sub string) (entity.Game, error) {
