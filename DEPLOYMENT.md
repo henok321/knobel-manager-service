@@ -112,11 +112,16 @@ themselves are the problem — `audit_row: no game_id resolution for table X` in
 create/update of one entity type right after a schema change — disable them without dropping the function:
 
 ```sql
-ALTER TABLE games DISABLE TRIGGER audit;
-ALTER TABLE game_owners DISABLE TRIGGER audit;
-ALTER TABLE teams DISABLE TRIGGER audit;
-ALTER TABLE players DISABLE TRIGGER audit;
-ALTER TABLE scores DISABLE TRIGGER audit;
+ALTER TABLE games
+  DISABLE TRIGGER audit;
+ALTER TABLE game_owners
+  DISABLE TRIGGER audit;
+ALTER TABLE teams
+  DISABLE TRIGGER audit;
+ALTER TABLE players
+  DISABLE TRIGGER audit;
+ALTER TABLE scores
+  DISABLE TRIGGER audit;
 ```
 
 `ENABLE TRIGGER` reverses it. Changes made while disabled are never recorded and cannot be recovered.
@@ -128,8 +133,11 @@ which looks like a complete log until someone reads it. It happens when a new en
 without `audit.OpenDatabase`, when `SkipDefaultTransaction` is set, or when a write goes through raw `Exec`.
 
 ```sql
-SELECT actor_sub, count(*) FROM audit_events
-WHERE created_at > now() - interval '1 day' GROUP BY 1 ORDER BY 2 DESC;
+SELECT actor_sub, count(*)
+FROM audit_events
+WHERE created_at > now() - interval '1 day'
+GROUP BY 1
+ORDER BY 2 DESC;
 ```
 
 `system` rows during request hours mean attribution is broken. `system` from a migration or a manual fix is
