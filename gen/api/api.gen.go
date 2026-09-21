@@ -107,8 +107,8 @@ type AuditEvent struct {
 	// Example: scores
 	Entity string `json:"entity"`
 
-	// EntityID Example: 42
-	EntityID string `json:"entityID"`
+	// EntityId Example: 42
+	EntityId string `json:"entityId"`
 
 	// Id Example: 1
 	Id int64 `json:"id"`
@@ -169,8 +169,8 @@ type GameOwner struct {
 	// Example: owner@example.org
 	Email *string `json:"email,omitempty"`
 
-	// GameID Example: 1
-	GameID int `json:"gameID"`
+	// GameId Example: 1
+	GameId int `json:"gameId"`
 
 	// OwnerSub Example: sub-1
 	OwnerSub string `json:"ownerSub"`
@@ -183,7 +183,7 @@ type GameResponse struct {
 
 // GameRound Round skeleton returned as part of game structure. Tables and scores are loaded lazily via the per-round tables endpoints, not embedded here.
 type GameRound struct {
-	GameID      int `json:"gameID"`
+	GameId      int `json:"gameId"`
 	Id          int `json:"id"`
 	RoundNumber int `json:"roundNumber"`
 
@@ -218,8 +218,8 @@ type Player struct {
 	// Name Example: Player 1
 	Name string `json:"name"`
 
-	// TeamID Example: 1
-	TeamID int `json:"teamID"`
+	// TeamId Example: 1
+	TeamId int `json:"teamId"`
 }
 
 // PlayersRequest defines model for PlayersRequest.
@@ -240,20 +240,20 @@ type Score struct {
 	// Id Example: 100
 	Id int `json:"id"`
 
-	// PlayerID Example: 1
-	PlayerID int `json:"playerID"`
+	// PlayerId Example: 1
+	PlayerId int `json:"playerId"`
 
 	// Score Example: 6
 	Score int `json:"score"`
 
-	// TableID Example: 10
-	TableID int `json:"tableID"`
+	// TableId Example: 10
+	TableId int `json:"tableId"`
 }
 
 // ScoresRequest defines model for ScoresRequest.
 type ScoresRequest struct {
 	Scores []struct {
-		PlayerID int `json:"playerID"`
+		PlayerId int `json:"playerId"`
 		Score    int `json:"score"`
 	} `json:"scores"`
 }
@@ -264,8 +264,8 @@ type Table struct {
 	Id      int       `json:"id"`
 	Players *[]Player `json:"players,omitempty"`
 
-	// RoundID Example: 5
-	RoundID int      `json:"roundID"`
+	// RoundId Example: 5
+	RoundId int      `json:"roundId"`
 	Scores  *[]Score `json:"scores,omitempty"`
 
 	// TableNumber Example: 1
@@ -284,8 +284,8 @@ type TablesResponse struct {
 
 // Team defines model for Team.
 type Team struct {
-	// GameID Example: 1
-	GameID int `json:"gameID"`
+	// GameId Example: 1
+	GameId int `json:"gameId"`
 
 	// Id Example: 1
 	Id int `json:"id"`
@@ -339,59 +339,59 @@ type ServerInterface interface {
 	// (POST /games)
 	CreateGame(w http.ResponseWriter, r *http.Request)
 	// DeleteGame Delete an existing game
-	// (DELETE /games/{gameID})
-	DeleteGame(w http.ResponseWriter, r *http.Request, gameID int)
+	// (DELETE /games/{gameId})
+	DeleteGame(w http.ResponseWriter, r *http.Request, gameId int)
 	// GetGame Get game by ID
-	// (GET /games/{gameID})
-	GetGame(w http.ResponseWriter, r *http.Request, gameID int)
+	// (GET /games/{gameId})
+	GetGame(w http.ResponseWriter, r *http.Request, gameId int)
 	// UpdateGame Update an existing game
-	// (PUT /games/{gameID})
-	UpdateGame(w http.ResponseWriter, r *http.Request, gameID int)
+	// (PUT /games/{gameId})
+	UpdateGame(w http.ResponseWriter, r *http.Request, gameId int)
 	// GetAuditLog List audit events for a game, newest first
-	// (GET /games/{gameID}/audit)
-	GetAuditLog(w http.ResponseWriter, r *http.Request, gameID int)
+	// (GET /games/{gameId}/audit)
+	GetAuditLog(w http.ResponseWriter, r *http.Request, gameId int)
 	// AddOwner Add an owner to a game by email
-	// (POST /games/{gameID}/owners)
-	AddOwner(w http.ResponseWriter, r *http.Request, gameID int)
+	// (POST /games/{gameId}/owners)
+	AddOwner(w http.ResponseWriter, r *http.Request, gameId int)
 	// RemoveOwner Remove an owner from a game
-	// (DELETE /games/{gameID}/owners/{ownerSub})
-	RemoveOwner(w http.ResponseWriter, r *http.Request, gameID int, ownerSub string)
+	// (DELETE /games/{gameId}/owners/{ownerSub})
+	RemoveOwner(w http.ResponseWriter, r *http.Request, gameId int, ownerSub string)
 	// GetTables List tables for a round
-	// (GET /games/{gameID}/rounds/{roundNumber}/tables)
-	GetTables(w http.ResponseWriter, r *http.Request, gameID int, roundNumber int)
+	// (GET /games/{gameId}/rounds/{roundNumber}/tables)
+	GetTables(w http.ResponseWriter, r *http.Request, gameId int, roundNumber int)
 	// GetTable Get a table by number in round
-	// (GET /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber})
-	GetTable(w http.ResponseWriter, r *http.Request, gameID int, roundNumber int, tableNumber int)
+	// (GET /games/{gameId}/rounds/{roundNumber}/tables/{tableNumber})
+	GetTable(w http.ResponseWriter, r *http.Request, gameId int, roundNumber int, tableNumber int)
 	// UpdateScores Update scores for a table
-	// (PUT /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores)
-	UpdateScores(w http.ResponseWriter, r *http.Request, gameID int, roundNumber int, tableNumber int)
+	// (PUT /games/{gameId}/rounds/{roundNumber}/tables/{tableNumber}/scores)
+	UpdateScores(w http.ResponseWriter, r *http.Request, gameId int, roundNumber int, tableNumber int)
 	// ResetGameSetup Reset the game setup and discard the assigned rounds and tables, including the scores entered at those tables
-	// (DELETE /games/{gameID}/setup)
-	ResetGameSetup(w http.ResponseWriter, r *http.Request, gameID int)
+	// (DELETE /games/{gameId}/setup)
+	ResetGameSetup(w http.ResponseWriter, r *http.Request, gameId int)
 	// SetupGame Setup game and assign tables for all rounds
-	// (POST /games/{gameID}/setup)
-	SetupGame(w http.ResponseWriter, r *http.Request, gameID int)
+	// (POST /games/{gameId}/setup)
+	SetupGame(w http.ResponseWriter, r *http.Request, gameId int)
 	// GetGameTables List all tables for a game across rounds
-	// (GET /games/{gameID}/tables)
-	GetGameTables(w http.ResponseWriter, r *http.Request, gameID int)
+	// (GET /games/{gameId}/tables)
+	GetGameTables(w http.ResponseWriter, r *http.Request, gameId int)
 	// CreateTeam Create a team
-	// (POST /games/{gameID}/teams)
-	CreateTeam(w http.ResponseWriter, r *http.Request, gameID int)
+	// (POST /games/{gameId}/teams)
+	CreateTeam(w http.ResponseWriter, r *http.Request, gameId int)
 	// DeleteTeam Delete a team
-	// (DELETE /games/{gameID}/teams/{teamID})
-	DeleteTeam(w http.ResponseWriter, r *http.Request, gameID int, teamID int)
+	// (DELETE /games/{gameId}/teams/{teamId})
+	DeleteTeam(w http.ResponseWriter, r *http.Request, gameId int, teamId int)
 	// UpdateTeam Update a team
-	// (PUT /games/{gameID}/teams/{teamID})
-	UpdateTeam(w http.ResponseWriter, r *http.Request, gameID int, teamID int)
+	// (PUT /games/{gameId}/teams/{teamId})
+	UpdateTeam(w http.ResponseWriter, r *http.Request, gameId int, teamId int)
 	// CreatePlayer Create player in a team
-	// (POST /games/{gameID}/teams/{teamID}/players)
-	CreatePlayer(w http.ResponseWriter, r *http.Request, gameID int, teamID int)
+	// (POST /games/{gameId}/teams/{teamId}/players)
+	CreatePlayer(w http.ResponseWriter, r *http.Request, gameId int, teamId int)
 	// DeletePlayer Delete player
-	// (DELETE /games/{gameID}/teams/{teamID}/players/{playerID})
-	DeletePlayer(w http.ResponseWriter, r *http.Request, gameID int, teamID int, playerID int)
+	// (DELETE /games/{gameId}/teams/{teamId}/players/{playerId})
+	DeletePlayer(w http.ResponseWriter, r *http.Request, gameId int, teamId int, playerId int)
 	// UpdatePlayer Update player
-	// (PUT /games/{gameID}/teams/{teamID}/players/{playerID})
-	UpdatePlayer(w http.ResponseWriter, r *http.Request, gameID int, teamID int, playerID int)
+	// (PUT /games/{gameId}/teams/{teamId}/players/{playerId})
+	UpdatePlayer(w http.ResponseWriter, r *http.Request, gameId int, teamId int, playerId int)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -437,17 +437,17 @@ func (siw *ServerInterfaceWrapper) DeleteGame(w http.ResponseWriter, r *http.Req
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteGame(w, r, gameID)
+		siw.Handler.DeleteGame(w, r, gameId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -463,17 +463,17 @@ func (siw *ServerInterfaceWrapper) GetGame(w http.ResponseWriter, r *http.Reques
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetGame(w, r, gameID)
+		siw.Handler.GetGame(w, r, gameId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -489,17 +489,17 @@ func (siw *ServerInterfaceWrapper) UpdateGame(w http.ResponseWriter, r *http.Req
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateGame(w, r, gameID)
+		siw.Handler.UpdateGame(w, r, gameId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -515,17 +515,17 @@ func (siw *ServerInterfaceWrapper) GetAuditLog(w http.ResponseWriter, r *http.Re
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetAuditLog(w, r, gameID)
+		siw.Handler.GetAuditLog(w, r, gameId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -541,17 +541,17 @@ func (siw *ServerInterfaceWrapper) AddOwner(w http.ResponseWriter, r *http.Reque
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddOwner(w, r, gameID)
+		siw.Handler.AddOwner(w, r, gameId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -567,12 +567,12 @@ func (siw *ServerInterfaceWrapper) RemoveOwner(w http.ResponseWriter, r *http.Re
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
@@ -586,7 +586,7 @@ func (siw *ServerInterfaceWrapper) RemoveOwner(w http.ResponseWriter, r *http.Re
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.RemoveOwner(w, r, gameID, ownerSub)
+		siw.Handler.RemoveOwner(w, r, gameId, ownerSub)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -602,12 +602,12 @@ func (siw *ServerInterfaceWrapper) GetTables(w http.ResponseWriter, r *http.Requ
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
@@ -621,7 +621,7 @@ func (siw *ServerInterfaceWrapper) GetTables(w http.ResponseWriter, r *http.Requ
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetTables(w, r, gameID, roundNumber)
+		siw.Handler.GetTables(w, r, gameId, roundNumber)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -637,12 +637,12 @@ func (siw *ServerInterfaceWrapper) GetTable(w http.ResponseWriter, r *http.Reque
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
@@ -665,7 +665,7 @@ func (siw *ServerInterfaceWrapper) GetTable(w http.ResponseWriter, r *http.Reque
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetTable(w, r, gameID, roundNumber, tableNumber)
+		siw.Handler.GetTable(w, r, gameId, roundNumber, tableNumber)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -681,12 +681,12 @@ func (siw *ServerInterfaceWrapper) UpdateScores(w http.ResponseWriter, r *http.R
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
@@ -709,7 +709,7 @@ func (siw *ServerInterfaceWrapper) UpdateScores(w http.ResponseWriter, r *http.R
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateScores(w, r, gameID, roundNumber, tableNumber)
+		siw.Handler.UpdateScores(w, r, gameId, roundNumber, tableNumber)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -725,17 +725,17 @@ func (siw *ServerInterfaceWrapper) ResetGameSetup(w http.ResponseWriter, r *http
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ResetGameSetup(w, r, gameID)
+		siw.Handler.ResetGameSetup(w, r, gameId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -751,17 +751,17 @@ func (siw *ServerInterfaceWrapper) SetupGame(w http.ResponseWriter, r *http.Requ
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetupGame(w, r, gameID)
+		siw.Handler.SetupGame(w, r, gameId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -777,17 +777,17 @@ func (siw *ServerInterfaceWrapper) GetGameTables(w http.ResponseWriter, r *http.
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.GetGameTables(w, r, gameID)
+		siw.Handler.GetGameTables(w, r, gameId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -803,17 +803,17 @@ func (siw *ServerInterfaceWrapper) CreateTeam(w http.ResponseWriter, r *http.Req
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreateTeam(w, r, gameID)
+		siw.Handler.CreateTeam(w, r, gameId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -829,26 +829,26 @@ func (siw *ServerInterfaceWrapper) DeleteTeam(w http.ResponseWriter, r *http.Req
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "teamID" -------------
-	var teamID int
+	// ------------- Path parameter "teamId" -------------
+	var teamId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "teamID", r.PathValue("teamID"), &teamID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", r.PathValue("teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteTeam(w, r, gameID, teamID)
+		siw.Handler.DeleteTeam(w, r, gameId, teamId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -864,26 +864,26 @@ func (siw *ServerInterfaceWrapper) UpdateTeam(w http.ResponseWriter, r *http.Req
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "teamID" -------------
-	var teamID int
+	// ------------- Path parameter "teamId" -------------
+	var teamId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "teamID", r.PathValue("teamID"), &teamID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", r.PathValue("teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateTeam(w, r, gameID, teamID)
+		siw.Handler.UpdateTeam(w, r, gameId, teamId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -899,26 +899,26 @@ func (siw *ServerInterfaceWrapper) CreatePlayer(w http.ResponseWriter, r *http.R
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "teamID" -------------
-	var teamID int
+	// ------------- Path parameter "teamId" -------------
+	var teamId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "teamID", r.PathValue("teamID"), &teamID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", r.PathValue("teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.CreatePlayer(w, r, gameID, teamID)
+		siw.Handler.CreatePlayer(w, r, gameId, teamId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -934,35 +934,35 @@ func (siw *ServerInterfaceWrapper) DeletePlayer(w http.ResponseWriter, r *http.R
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "teamID" -------------
-	var teamID int
+	// ------------- Path parameter "teamId" -------------
+	var teamId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "teamID", r.PathValue("teamID"), &teamID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", r.PathValue("teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "playerID" -------------
-	var playerID int
+	// ------------- Path parameter "playerId" -------------
+	var playerId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "playerID", r.PathValue("playerID"), &playerID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "playerId", r.PathValue("playerId"), &playerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "playerID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "playerId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeletePlayer(w, r, gameID, teamID, playerID)
+		siw.Handler.DeletePlayer(w, r, gameId, teamId, playerId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -978,35 +978,35 @@ func (siw *ServerInterfaceWrapper) UpdatePlayer(w http.ResponseWriter, r *http.R
 	var err error
 	_ = err
 
-	// ------------- Path parameter "gameID" -------------
-	var gameID int
+	// ------------- Path parameter "gameId" -------------
+	var gameId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "gameID", r.PathValue("gameID"), &gameID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "gameId", r.PathValue("gameId"), &gameId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "gameId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "teamID" -------------
-	var teamID int
+	// ------------- Path parameter "teamId" -------------
+	var teamId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "teamID", r.PathValue("teamID"), &teamID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "teamId", r.PathValue("teamId"), &teamId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "teamId", Err: err})
 		return
 	}
 
-	// ------------- Path parameter "playerID" -------------
-	var playerID int
+	// ------------- Path parameter "playerId" -------------
+	var playerId int
 
-	err = runtime.BindStyledParameterWithOptions("simple", "playerID", r.PathValue("playerID"), &playerID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
+	err = runtime.BindStyledParameterWithOptions("simple", "playerId", r.PathValue("playerId"), &playerId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "integer", Format: "", ValueIsUnescaped: true})
 	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "playerID", Err: err})
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "playerId", Err: err})
 		return
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdatePlayer(w, r, gameID, teamID, playerID)
+		siw.Handler.UpdatePlayer(w, r, gameId, teamId, playerId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1138,24 +1138,24 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games", wrapper.GetGames)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/games", wrapper.CreateGame)
-	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameID}", wrapper.DeleteGame)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}", wrapper.GetGame)
-	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameID}", wrapper.UpdateGame)
-	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameID}/setup", wrapper.ResetGameSetup)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/games/{gameID}/setup", wrapper.SetupGame)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/games/{gameID}/owners", wrapper.AddOwner)
-	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameID}/owners/{ownerSub}", wrapper.RemoveOwner)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/games/{gameID}/teams", wrapper.CreateTeam)
-	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameID}/teams/{teamID}", wrapper.DeleteTeam)
-	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameID}/teams/{teamID}", wrapper.UpdateTeam)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/games/{gameID}/teams/{teamID}/players", wrapper.CreatePlayer)
-	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameID}/teams/{teamID}/players/{playerID}", wrapper.DeletePlayer)
-	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameID}/teams/{teamID}/players/{playerID}", wrapper.UpdatePlayer)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/tables", wrapper.GetGameTables)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables", wrapper.GetTables)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}", wrapper.GetTable)
-	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores", wrapper.UpdateScores)
-	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameID}/audit", wrapper.GetAuditLog)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameId}", wrapper.DeleteGame)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameId}", wrapper.GetGame)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameId}", wrapper.UpdateGame)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameId}/setup", wrapper.ResetGameSetup)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/games/{gameId}/setup", wrapper.SetupGame)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/games/{gameId}/owners", wrapper.AddOwner)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameId}/owners/{ownerSub}", wrapper.RemoveOwner)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/games/{gameId}/teams", wrapper.CreateTeam)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameId}/teams/{teamId}", wrapper.DeleteTeam)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameId}/teams/{teamId}", wrapper.UpdateTeam)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/games/{gameId}/teams/{teamId}/players", wrapper.CreatePlayer)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/games/{gameId}/teams/{teamId}/players/{playerId}", wrapper.DeletePlayer)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameId}/teams/{teamId}/players/{playerId}", wrapper.UpdatePlayer)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameId}/tables", wrapper.GetGameTables)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameId}/rounds/{roundNumber}/tables", wrapper.GetTables)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameId}/rounds/{roundNumber}/tables/{tableNumber}", wrapper.GetTable)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/games/{gameId}/rounds/{roundNumber}/tables/{tableNumber}/scores", wrapper.UpdateScores)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/games/{gameId}/audit", wrapper.GetAuditLog)
 
 	return m
 }

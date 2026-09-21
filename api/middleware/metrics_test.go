@@ -11,7 +11,7 @@ import (
 
 func TestMetricsLabelsUseRoutePatternNotRawPath(t *testing.T) {
 	mux := http.NewServeMux()
-	mux.Handle("GET /games/{gameID}", Metrics()(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	mux.Handle("GET /games/{gameId}", Metrics()(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})))
 
@@ -21,7 +21,7 @@ func TestMetricsLabelsUseRoutePatternNotRawPath(t *testing.T) {
 	}
 
 	// promhttp lowercases the method label.
-	patternSeries := testutil.ToFloat64(HTTPRequestsTotal.WithLabelValues("GET /games/{gameID}", "get", "200"))
+	patternSeries := testutil.ToFloat64(HTTPRequestsTotal.WithLabelValues("GET /games/{gameId}", "get", "200"))
 	assert.Equal(t, 3, int(patternSeries), "distinct IDs must collapse into one series keyed by the route template")
 
 	rawPathSeries := testutil.ToFloat64(HTTPRequestsTotal.WithLabelValues("games/1", "get", "200"))

@@ -8,7 +8,7 @@
     "status": "setup",
     "owners": [
       {
-        "gameID": 1,
+        "gameId": 1,
         "ownerSub": "sub-1",
         "email": "sub-1@example.org"
       }

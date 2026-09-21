@@ -11,23 +11,23 @@ func entityPlayerToAPIPlayer(p entity.Player) api.Player {
 	return api.Player{
 		Id:     p.ID,
 		Name:   p.Name,
-		TeamID: p.TeamID,
+		TeamId: p.TeamID,
 	}
 }
 
 func entityScoreToAPIScore(s entity.Score) api.Score {
 	return api.Score{
 		Id:       s.ID,
-		PlayerID: s.PlayerID,
+		PlayerId: s.PlayerID,
 		Score:    s.Score,
-		TableID:  s.TableID,
+		TableId:  s.TableID,
 	}
 }
 
 func entityTableToAPITable(tableEntity entity.GameTable) api.Table {
 	apiTable := api.Table{
 		Id:          tableEntity.ID,
-		RoundID:     tableEntity.RoundID,
+		RoundId:     tableEntity.RoundID,
 		TableNumber: tableEntity.TableNumber,
 	}
 
@@ -52,7 +52,7 @@ func entityTableToAPITable(tableEntity entity.GameTable) api.Table {
 
 func entityTeamToAPITeam(teamEntity entity.Team) api.Team {
 	apiTeam := api.Team{
-		GameID: teamEntity.GameID,
+		GameId: teamEntity.GameID,
 		Id:     teamEntity.ID,
 		Name:   teamEntity.Name,
 	}
@@ -70,7 +70,7 @@ func entityTeamToAPITeam(teamEntity entity.Team) api.Team {
 
 func entityRoundToAPIRound(gameEntity entity.Game, roundEntity entity.Round) api.GameRound {
 	return api.GameRound{
-		GameID:      roundEntity.GameID,
+		GameId:      roundEntity.GameID,
 		Id:          roundEntity.ID,
 		RoundNumber: roundEntity.RoundNumber,
 		Status:      api.RoundStatus(entity.RoundStatus(gameEntity, roundEntity)),
@@ -91,7 +91,7 @@ func entityGameToAPIGame(gameEntity entity.Game) api.Game {
 		owners := make([]api.GameOwner, len(gameEntity.Owners))
 		for i, owner := range gameEntity.Owners {
 			owners[i] = api.GameOwner{
-				GameID:   owner.GameID,
+				GameId:   owner.GameID,
 				OwnerSub: owner.OwnerSub,
 			}
 		}
@@ -122,7 +122,7 @@ func entityAuditEventToAPIAuditEvent(event entity.AuditEvent) api.AuditEvent {
 	return api.AuditEvent{
 		Id:         event.ID,
 		Entity:     event.Entity,
-		EntityID:   event.RowID,
+		EntityId:   event.RowID,
 		Action:     api.AuditAction(event.Action),
 		ActorSub:   event.ActorSub,
 		ActorEmail: event.ActorEmail,
