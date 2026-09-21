@@ -61,7 +61,7 @@ paths:
                 empty:
                   value: { "games": [ ] }
                 withGames:
-                  value: { "games": [ { "id": 1,"name": "Game 1","teamSize": 4,"tableSize": 4,"numberOfRounds": 2,"status": "setup","owners": [ { "gameID": 1,"ownerSub": "sub-1" } ] } ] }
+                  value: { "games": [ { "id": 1,"name": "Game 1","teamSize": 4,"tableSize": 4,"numberOfRounds": 2,"status": "setup","owners": [ { "gameId": 1,"ownerSub": "sub-1" } ] } ] }
         '401':
           description: Unauthorized - invalid or missing bearer token
           content:
@@ -101,9 +101,9 @@ paths:
                 $ref: '#/components/schemas/GameResponse'
         '400':
           description: Invalid request
-  /games/{gameID}:
+  /games/{gameId}:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
@@ -122,14 +122,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/GameResponse'
         '400':
-          description: Invalid gameID
+          description: Invalid gameId
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
               examples:
                 invalidId:
-                  value: { "error": "Invalid gameID" }
+                  value: { "error": "Invalid gameId" }
         '403':
           description: Not owner of the game
         '404':
@@ -185,9 +185,9 @@ paths:
           description: Not owner of the game
         '404':
           description: Game not found
-  /games/{gameID}/setup:
+  /games/{gameId}/setup:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
@@ -202,7 +202,7 @@ paths:
         '204':
           description: Game setup complete; tables assigned for all rounds
         '400':
-          description: Invalid gameID
+          description: Invalid gameId
         '403':
           description: Not owner of the game
         '404':
@@ -227,7 +227,7 @@ paths:
             Game setup reset; rounds, tables and the scores of those tables
             discarded
         '400':
-          description: Invalid gameID
+          description: Invalid gameId
         '403':
           description: Not owner of the game
         '404':
@@ -236,9 +236,9 @@ paths:
           description: Game already started or completed
         '500':
           description: Internal server error while resetting the setup
-  /games/{gameID}/owners:
+  /games/{gameId}/owners:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
@@ -272,9 +272,9 @@ paths:
           description: User is already an owner
         '422':
           description: No user found for the given email
-  /games/{gameID}/owners/{ownerSub}:
+  /games/{gameId}/owners/{ownerSub}:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
@@ -303,9 +303,9 @@ paths:
           description: Game or owner not found
         '409':
           description: Cannot remove the last owner
-  /games/{gameID}/teams:
+  /games/{gameId}/teams:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
@@ -343,14 +343,14 @@ paths:
           description: Game not found
         '409':
           description: Game already started or completed, or setup already assigned and not yet reset
-  /games/{gameID}/teams/{teamID}:
+  /games/{gameId}/teams/{teamId}:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
           type: integer
-      - name: teamID
+      - name: teamId
         in: path
         required: true
         schema:
@@ -395,14 +395,14 @@ paths:
           description: Team or game not found
         '409':
           description: Game already started or completed, or setup already assigned and not yet reset
-  /games/{gameID}/teams/{teamID}/players:
+  /games/{gameId}/teams/{teamId}/players:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
           type: integer
-      - name: teamID
+      - name: teamId
         in: path
         required: true
         schema:
@@ -434,19 +434,19 @@ paths:
           description: Team or game not found
         '409':
           description: Game already started or completed, or setup already assigned and not yet reset
-  /games/{gameID}/teams/{teamID}/players/{playerID}:
+  /games/{gameId}/teams/{teamId}/players/{playerId}:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
           type: integer
-      - name: teamID
+      - name: teamId
         in: path
         required: true
         schema:
           type: integer
-      - name: playerID
+      - name: playerId
         in: path
         required: true
         schema:
@@ -489,9 +489,9 @@ paths:
           description: Player or team not found
         '409':
           description: Game already started or completed, or setup already assigned and not yet reset
-  /games/{gameID}/tables:
+  /games/{gameId}/tables:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
@@ -510,14 +510,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/TablesResponse'
         '400':
-          description: Invalid gameID
+          description: Invalid gameId
         '403':
           description: Not owner of the game
         '404':
           description: Game not found
-  /games/{gameID}/rounds/{roundNumber}/tables:
+  /games/{gameId}/rounds/{roundNumber}/tables:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
@@ -546,9 +546,9 @@ paths:
           description: Not owner of the game
         '404':
           description: Game or round not found
-  /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}:
+  /games/{gameId}/rounds/{roundNumber}/tables/{tableNumber}:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
@@ -582,9 +582,9 @@ paths:
           description: Not owner of the game
         '404':
           description: Round or table not found
-  /games/{gameID}/rounds/{roundNumber}/tables/{tableNumber}/scores:
+  /games/{gameId}/rounds/{roundNumber}/tables/{tableNumber}/scores:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
@@ -626,9 +626,9 @@ paths:
           description: Game, round, or table not found
         '409':
           description: Game is not in progress; scores can only be entered while it runs
-  /games/{gameID}/audit:
+  /games/{gameId}/audit:
     parameters:
-      - name: gameID
+      - name: gameId
         in: path
         required: true
         schema:
@@ -647,7 +647,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuditResponse'
         '400':
-          description: Invalid gameID
+          description: Invalid gameId
           content:
             application/json:
               schema:
@@ -691,7 +691,7 @@ components:
     GameOwner:
       type: object
       properties:
-        gameID:
+        gameId:
           type: integer
           example: 1
         ownerSub:
@@ -701,7 +701,7 @@ components:
           type: string
           description: Resolved live from Firebase; absent if the user cannot be resolved.
           example: owner@example.org
-      required: [ gameID, ownerSub ]
+      required: [ gameId, ownerSub ]
     AddOwnerRequest:
       type: object
       properties:
@@ -718,10 +718,10 @@ components:
         name:
           type: string
           example: Player 1
-        teamID:
+        teamId:
           type: integer
           example: 1
-      required: [ id, name, teamID ]
+      required: [ id, name, teamId ]
     Team:
       type: object
       properties:
@@ -731,14 +731,14 @@ components:
         name:
           type: string
           example: Team A
-        gameID:
+        gameId:
           type: integer
           example: 1
         players:
           type: array
           items:
             $ref: '#/components/schemas/Player'
-      required: [ id, name, gameID ]
+      required: [ id, name, gameId ]
     Table:
       type: object
       properties:
@@ -748,7 +748,7 @@ components:
         tableNumber:
           type: integer
           example: 1
-        roundID:
+        roundId:
           type: integer
           example: 5
         players:
@@ -759,23 +759,23 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Score'
-      required: [ id, tableNumber, roundID ]
+      required: [ id, tableNumber, roundId ]
     Score:
       type: object
       properties:
         id:
           type: integer
           example: 100
-        playerID:
+        playerId:
           type: integer
           example: 1
-        tableID:
+        tableId:
           type: integer
           example: 10
         score:
           type: integer
           example: 6
-      required: [ id, playerID, tableID, score ]
+      required: [ id, playerId, tableId, score ]
     GameRound:
       type: object
       description: >-
@@ -784,13 +784,13 @@ components:
       properties:
         id:
           type: integer
-        gameID:
+        gameId:
           type: integer
         roundNumber:
           type: integer
         status:
           $ref: '#/components/schemas/RoundStatus'
-      required: [ id, gameID, roundNumber, status ]
+      required: [ id, gameId, roundNumber, status ]
     Game:
       type: object
       properties:
@@ -887,11 +887,11 @@ components:
           items:
             type: object
             properties:
-              playerID:
+              playerId:
                 type: integer
               score:
                 type: integer
-            required: [ playerID, score ]
+            required: [ playerId, score ]
       required: [ scores ]
     HealthCheckResponse:
       type: object
@@ -978,7 +978,7 @@ components:
           type: string
           description: Name of the changed database table.
           example: scores
-        entityID:
+        entityId:
           type: string
           example: "42"
         action:
@@ -1006,7 +1006,7 @@ components:
           nullable: true
           description: The row after the change; null on delete.
           x-go-type: json.RawMessage
-      required: [ id, entity, entityID, action, actorSub, actorEmail, createdAt, old, new ]
+      required: [ id, entity, entityId, action, actorSub, actorEmail, createdAt, old, new ]
     AuditResponse:
       type: object
       properties:

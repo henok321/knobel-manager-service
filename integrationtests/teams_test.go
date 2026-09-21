@@ -17,7 +17,7 @@ func TestTeams(t *testing.T) {
 			requestBody:        `{"name":"Team 1"}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusCreated,
-			expectedBody:       `{"team": {"id":1,"name":"Team 1", "gameID":1}}`,
+			expectedBody:       `{"team": {"id":1,"name":"Team 1", "gameId":1}}`,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
@@ -28,7 +28,7 @@ func TestTeams(t *testing.T) {
 			requestBody:        `{"name":"Team 1","players": [{"name":"Player 1"},{"name":"Player 2"},{"name":"Player 3"},{"name":"Player 4"}]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusCreated,
-			expectedBody:       `{"team":{"id":1,"name":"Team 1","gameID":1,"players":[{"id":1,"name":"Player 1","teamID":1},{"id":2,"name":"Player 2","teamID":1},{"id":3,"name":"Player 3","teamID":1},{"id":4,"name":"Player 4","teamID":1}]}}`,
+			expectedBody:       `{"team":{"id":1,"name":"Team 1","gameId":1,"players":[{"id":1,"name":"Player 1","teamId":1},{"id":2,"name":"Player 2","teamId":1},{"id":3,"name":"Player 3","teamId":1},{"id":4,"name":"Player 4","teamId":1}]}}`,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
@@ -59,19 +59,19 @@ func TestTeams(t *testing.T) {
 			requestBody:        `{"name":"Team 1 updated"}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       `{"team": {"id":1,"name":"Team 1 updated", "gameID":1}}`,
+			expectedBody:       `{"team": {"id":1,"name":"Team 1 updated", "gameId":1}}`,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_team.sql")
 			},
 		},
-		"Update team invalid teamID": {
+		"Update team invalid teamId": {
 			method:             "PUT",
 			endpoint:           "/games/1/teams/invalid",
 			requestBody:        `{"name":"Team 1 updated"}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusBadRequest,
 		},
-		"Update team invalid gameID": {
+		"Update team invalid gameId": {
 			method:             "PUT",
 			endpoint:           "/games/invalid/teams/1",
 			requestBody:        `{"name":"Team 1 updated"}`,
@@ -135,13 +135,13 @@ func TestTeams(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
 		},
-		"Delete team invalid gameID": {
+		"Delete team invalid gameId": {
 			method:             "DELETE",
 			endpoint:           "/games/invalid/teams/1",
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			expectedStatusCode: http.StatusBadRequest,
 		},
-		"Delete team invalid teamID": {
+		"Delete team invalid teamId": {
 			method:             "DELETE",
 			endpoint:           "/games/1/teams/invalid",
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},

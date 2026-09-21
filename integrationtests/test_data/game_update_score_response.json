@@ -2,52 +2,52 @@
   "table": {
     "id": 1,
     "tableNumber": 1,
-    "roundID": 1,
+    "roundId": 1,
     "players": [
       {
         "id": 1,
         "name": "Player 1",
-        "teamID": 1
+        "teamId": 1
       },
       {
         "id": 5,
         "name": "Player 5",
-        "teamID": 2
+        "teamId": 2
       },
       {
         "id": 9,
         "name": "Player 9",
-        "teamID": 3
+        "teamId": 3
       },
       {
         "id": 13,
         "name": "Player 13",
-        "teamID": 4
+        "teamId": 4
       }
     ],
     "scores": [
       {
         "id": 1,
-        "playerID": 1,
-        "tableID": 1,
+        "playerId": 1,
+        "tableId": 1,
         "score": 6
       },
       {
         "id": 2,
-        "playerID": 5,
-        "tableID": 1,
+        "playerId": 5,
+        "tableId": 1,
         "score": 3
       },
       {
         "id": 3,
-        "playerID": 9,
-        "tableID": 1,
+        "playerId": 9,
+        "tableId": 1,
         "score": 2
       },
       {
         "id": 4,
-        "playerID": 13,
-        "tableID": 1,
+        "playerId": 13,
+        "tableId": 1,
         "score": 1
       }
     ]

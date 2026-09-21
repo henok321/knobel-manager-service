@@ -85,7 +85,7 @@ func seedGameWithPlayerAndScore(t *testing.T, db *sql.DB) {
 type auditEvent struct {
 	ID         int64          `json:"id"`
 	Entity     string         `json:"entity"`
-	EntityID   string         `json:"entityID"`
+	EntityID   string         `json:"entityId"`
 	Action     string         `json:"action"`
 	ActorSub   string         `json:"actorSub"`
 	ActorEmail string         `json:"actorEmail"`
@@ -115,11 +115,11 @@ func assertPublishedColumns(t *testing.T, events []auditEvent, entity string, ex
 	t.Fatalf("no %s event with a new row found; the pin asserts nothing", entity)
 }
 
-func readAuditLog(t *testing.T, server *httptest.Server, gameID int, sub string, expectedStatus int) []auditEvent {
+func readAuditLog(t *testing.T, server *httptest.Server, gameId int, sub string, expectedStatus int) []auditEvent {
 	t.Helper()
 
 	request, err := http.NewRequestWithContext(t.Context(), http.MethodGet,
-		fmt.Sprintf("%s/games/%d/audit", server.URL, gameID), nil)
+		fmt.Sprintf("%s/games/%d/audit", server.URL, gameId), nil)
 	require.NoError(t, err)
 
 	request.Header.Set("Authorization", "Bearer "+sub)
@@ -434,7 +434,7 @@ func TestAuditActor(t *testing.T) {
 		submitScores := testCase{
 			method:             http.MethodPut,
 			endpoint:           "/games/1/rounds/1/tables/1/scores",
-			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestBody:        `{"scores": [{"playerId":1,"score":6},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":13,"score":1}]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusOK,
 		}
@@ -608,7 +608,7 @@ func TestAuditLogEndpoint(t *testing.T) {
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusNotFound,
 		},
-		"read audit log invalid gameID": {
+		"read audit log invalid gameId": {
 			method:             http.MethodGet,
 			endpoint:           "/games/invalid/audit",
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},

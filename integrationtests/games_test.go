@@ -66,13 +66,13 @@ func TestGames(t *testing.T) {
 			expectedBody:   `{"error":"Game not found"}`,
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
-		"Find game by id Invalid gameID": {
+		"Find game by id Invalid gameId": {
 			method:   http.MethodGet,
 			endpoint: "/games/invalid",
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			}, expectedStatusCode: http.StatusBadRequest,
-			expectedBody:   `{"error":"Invalid format for parameter gameID: error binding string parameter: strconv.ParseInt: parsing \"invalid\": invalid syntax"}`,
+			expectedBody:   `{"error":"Invalid format for parameter gameId: error binding string parameter: strconv.ParseInt: parsing \"invalid\": invalid syntax"}`,
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 		},
 		"Find game by id not owner": {
@@ -99,7 +99,7 @@ func TestGames(t *testing.T) {
 			expectedStatusCode: http.StatusCreated,
 			requestBody:        `{"name":"Game 1","numberOfRounds":2, "teamSize":4, "tableSize":4}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
-			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"setup","owners":[{"gameID":1,"ownerSub":"sub-1","email":"sub-1@example.org"}]}}`,
+			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"setup","owners":[{"gameId":1,"ownerSub":"sub-1","email":"sub-1@example.org"}]}}`,
 			expectedHeaders:    map[string]string{"Location": "/games/1"},
 		},
 		"Create new game invalid request": {
@@ -115,7 +115,7 @@ func TestGames(t *testing.T) {
 			requestBody:        `{"name":"Game 1 updated","numberOfRounds":3, "teamSize":4, "tableSize":4}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       `{"game":{"id":1,"name":"Game 1 updated","teamSize":4,"tableSize":4,"numberOfRounds":3,"status":"setup","owners":[{"gameID":1,"ownerSub":"sub-1","email":"sub-1@example.org"}]}}`,
+			expectedBody:       `{"game":{"id":1,"name":"Game 1 updated","teamSize":4,"tableSize":4,"numberOfRounds":3,"status":"setup","owners":[{"gameId":1,"ownerSub":"sub-1","email":"sub-1@example.org"}]}}`,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup.sql")
 			},
@@ -126,7 +126,7 @@ func TestGames(t *testing.T) {
 			requestBody:        `{"name":"Game 1","numberOfRounds":2, "teamSize":4, "tableSize":4, "status":"in_progress"}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"in_progress","owners":[{"gameID":1,"ownerSub":"sub-1","email":"sub-1@example.org"}]}}`,
+			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":2,"status":"in_progress","owners":[{"gameId":1,"ownerSub":"sub-1","email":"sub-1@example.org"}]}}`,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
@@ -172,7 +172,7 @@ func TestGames(t *testing.T) {
 			requestBody:        `{"name":"Game 1","numberOfRounds":1, "teamSize":4, "tableSize":4, "status":"completed"}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusOK,
-			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":1,"status":"completed","owners":[{"gameID":1,"ownerSub":"sub-1","email":"sub-1@example.org"}]}}`,
+			expectedBody:       `{"game":{"id":1,"name":"Game 1","teamSize":4,"tableSize":4,"numberOfRounds":1,"status":"completed","owners":[{"gameId":1,"ownerSub":"sub-1","email":"sub-1@example.org"}]}}`,
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned_scores_entered.sql")
 			},

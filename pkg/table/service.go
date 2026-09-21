@@ -54,16 +54,16 @@ func (t *TablesService) UpdateScore(ctx context.Context, gameID, roundNumber, ta
 
 	scores := make([]*entity.Score, 0, len(table.Players))
 	for _, s := range scoresRequest.Scores {
-		if !seatedPlayers[s.PlayerID] {
+		if !seatedPlayers[s.PlayerId] {
 			return entity.GameTable{}, apperror.ErrInvalidScore
 		}
 
-		if existingScore, exists := existingScores[s.PlayerID]; exists {
+		if existingScore, exists := existingScores[s.PlayerId]; exists {
 			existingScore.Score = s.Score
 			scores = append(scores, existingScore)
 		} else {
 			scores = append(scores, &entity.Score{
-				PlayerID: s.PlayerID,
+				PlayerID: s.PlayerId,
 				TableID:  table.ID,
 				Score:    s.Score,
 			})

@@ -15,7 +15,7 @@ func TestScores(t *testing.T) {
 			method:             "PUT",
 			endpoint:           "/games/1/rounds/1/tables/1/scores",
 			expectedStatusCode: http.StatusOK,
-			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestBody:        `{"scores": [{"playerId":1,"score":6},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":13,"score":1}]}`,
 			expectedBody:       readContentFromFile(t, "./test_data/game_update_score_response.json"),
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
@@ -26,7 +26,7 @@ func TestScores(t *testing.T) {
 			method:             "PUT",
 			endpoint:           "/games/1/rounds/1/tables/1/scores",
 			expectedStatusCode: http.StatusOK,
-			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestBody:        `{"scores": [{"playerId":1,"score":6},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":13,"score":1}]}`,
 			expectedBody:       readContentFromFile(t, "./test_data/game_update_score_response.json"),
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
@@ -38,7 +38,7 @@ func TestScores(t *testing.T) {
 			method:             "PUT",
 			endpoint:           "/games/1/rounds/1/tables/1/scores",
 			expectedStatusCode: http.StatusNotFound,
-			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestBody:        `{"scores": [{"playerId":1,"score":6},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":13,"score":1}]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-2"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
@@ -48,7 +48,7 @@ func TestScores(t *testing.T) {
 			method:             "PUT",
 			endpoint:           "/games/2/rounds/1/tables/1/scores",
 			expectedStatusCode: http.StatusNotFound,
-			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestBody:        `{"scores": [{"playerId":1,"score":6},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":13,"score":1}]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
@@ -58,7 +58,7 @@ func TestScores(t *testing.T) {
 			method:             "PUT",
 			endpoint:           "/games/1/rounds/2/tables/1/scores",
 			expectedStatusCode: http.StatusNotFound,
-			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestBody:        `{"scores": [{"playerId":1,"score":6},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":13,"score":1}]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
@@ -68,17 +68,17 @@ func TestScores(t *testing.T) {
 			method:             "PUT",
 			endpoint:           "/games/1/rounds/1/tables/35/scores",
 			expectedStatusCode: http.StatusNotFound,
-			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestBody:        `{"scores": [{"playerId":1,"score":6},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":13,"score":1}]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
 			},
 		},
-		"Update score invalid gameID": {
+		"Update score invalid gameId": {
 			method:             "PUT",
 			endpoint:           "/games/invalid/rounds/1/tables/1/scores",
 			expectedStatusCode: http.StatusBadRequest,
-			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestBody:        `{"scores": [{"playerId":1,"score":6},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":13,"score":1}]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
@@ -88,7 +88,7 @@ func TestScores(t *testing.T) {
 			method:             "PUT",
 			endpoint:           "/games/1/rounds/invalid/tables/1/scores",
 			expectedStatusCode: http.StatusBadRequest,
-			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestBody:        `{"scores": [{"playerId":1,"score":6},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":13,"score":1}]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
@@ -98,7 +98,7 @@ func TestScores(t *testing.T) {
 			method:             "PUT",
 			endpoint:           "/games/1/rounds/1/tables/invalid/scores",
 			expectedStatusCode: http.StatusBadRequest,
-			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestBody:        `{"scores": [{"playerId":1,"score":6},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":13,"score":1}]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
@@ -109,7 +109,7 @@ func TestScores(t *testing.T) {
 			endpoint:           "/games/1/rounds/1/tables/1/scores",
 			expectedStatusCode: http.StatusBadRequest,
 			// Player 17 exists but is seated at table 2, not table 1 (players 1, 5, 9, 13).
-			requestBody:    `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":17,"score":1}]}`,
+			requestBody:    `{"scores": [{"playerId":1,"score":6},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":17,"score":1}]}`,
 			requestHeaders: map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
@@ -127,7 +127,7 @@ func TestScores(t *testing.T) {
 			method:             "PUT",
 			endpoint:           "/games/1/rounds/1/tables/1/scores",
 			expectedStatusCode: http.StatusBadRequest,
-			requestBody:        `{"scores": [{"playerID":1,"score":"invalid"},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestBody:        `{"scores": [{"playerId":1,"score":"invalid"},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":13,"score":1}]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			setup: func(db *sql.DB) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned.sql")
@@ -136,7 +136,7 @@ func TestScores(t *testing.T) {
 		"Update score before the game started": {
 			method:             "PUT",
 			endpoint:           "/games/1/rounds/1/tables/1/scores",
-			requestBody:        `{"scores": [{"playerID":1,"score":6},{"playerID":5,"score":3},{"playerID":9,"score":2},{"playerID":13,"score":1}]}`,
+			requestBody:        `{"scores": [{"playerId":1,"score":6},{"playerId":5,"score":3},{"playerId":9,"score":2},{"playerId":13,"score":1}]}`,
 			requestHeaders:     map[string]string{"Authorization": "Bearer sub-1"},
 			expectedStatusCode: http.StatusConflict,
 			expectedBody:       `{"error":"Game is not in progress"}`,

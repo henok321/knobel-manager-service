@@ -10,7 +10,7 @@ import (
 
 func TestTables(t *testing.T) {
 	tests := map[string]testCase{
-		"get all tables for gameID 1 across rounds": {
+		"get all tables for gameId 1 across rounds": {
 			method:             "GET",
 			endpoint:           "/games/1/tables",
 			expectedStatusCode: http.StatusOK,
@@ -51,7 +51,7 @@ func TestTables(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
-		"get tables for gameID 1 and round number 1": {
+		"get tables for gameId 1 and round number 1": {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/1/tables",
 			expectedStatusCode: http.StatusOK,
@@ -62,7 +62,7 @@ func TestTables(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
-		"get tables for gameID 1 and round number 1 with scores": {
+		"get tables for gameId 1 and round number 1 with scores": {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/1/tables",
 			expectedStatusCode: http.StatusOK,
@@ -73,7 +73,7 @@ func TestTables(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_assigned_with_scores.sql")
 			},
 		},
-		"get tables for gameID 1 and round number 1 orders scores and players by id after rows are rewritten": {
+		"get tables for gameId 1 and round number 1 orders scores and players by id after rows are rewritten": {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/1/tables",
 			expectedStatusCode: http.StatusOK,
@@ -85,7 +85,7 @@ func TestTables(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/reorder_heap.sql")
 			},
 		},
-		"get tables for gameID 1 and round number 2": {
+		"get tables for gameId 1 and round number 2": {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/2/tables",
 			expectedStatusCode: http.StatusOK,
@@ -144,7 +144,7 @@ func TestTables(t *testing.T) {
 				executeSQLFile(t, db, "./test_data/games_setup_with_tables.sql")
 			},
 		},
-		"get table for gameID 1 and round number 2 by number 1": {
+		"get table for gameId 1 and round number 2 by number 1": {
 			method:             "GET",
 			endpoint:           "/games/1/rounds/1/tables/1",
 			expectedStatusCode: http.StatusOK,
