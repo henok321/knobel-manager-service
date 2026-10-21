@@ -95,15 +95,24 @@ repos:
         types: [ go ]
         pass_filenames: false
 
-  - repo: https://github.com/golangci/golangci-lint
-    rev: v2.15.0
+  - repo: local
     hooks:
       - id: golangci-lint-config-verify
+        name: golangci-lint config verify
         stages: [ pre-commit ]
-        language_version: '1.27.1'
+        entry: go
+        args: [ "tool", "golangci-lint", "config", "verify" ]
+        language: system
+        files: ^\.golangci\.ya?ml$
+        pass_filenames: false
       - id: golangci-lint-full
+        name: golangci-lint-full
         stages: [ pre-commit ]
-        language_version: '1.27.1'
+        entry: go
+        args: [ "tool", "golangci-lint", "run" ]
+        language: system
+        types: [ go ]
+        pass_filenames: false
   - repo: local
     hooks:
       - id: go-test

@@ -73,12 +73,14 @@ The directive adds ~185 indirect requires, but they are **not** in the build: no
 govulncheck does not flag them. Measured cost is ~49 MiB of extra `go mod download` on a cold cache — the Dockerfile's
 `go mod download` and the `setup-go` cache — which Docker layer caching amortises because `go.mod` rarely changes.
 
-The one real cost is that golangci-lint now exists **twice**: this directive and the pre-commit hook rev CI runs. Bump
-them together; they have drifted apart before (go.mod v2.12.2 against the hook's v2.13.2).
+golangci-lint is installed **once**, via the `go tool` directive: `make lint` and the pre-commit hooks
+(`golangci-lint-config-verify`, `golangci-lint-full`, both `language: system` calling `go tool golangci-lint`) share the
+same binary, built with the toolchain `go.mod` requires. The hook rev pin that used to drift against this directive
+(go.mod v2.12.2 against the hook's v2.13.2) is gone — bump the version only here, in one place.
 
 The editor path is separate again: `.vscode/settings.json` sets `go.lintTool`/`customFormatter` to `golangci-lint`,
-which the Go extension resolves from `PATH` (Homebrew), never through `go tool`. So the binary exists three times over —
-pre-commit's pin, PATH for the editor, and formerly the `go tool` directive that nothing could reach.
+which the Go extension resolves from `PATH` (Homebrew), never through `go tool`. So the binary exists twice over —
+PATH for the editor, and the `go tool` directive the hooks and `make lint` share.
 
 `.bake.toml` holds only settings that differ from mbake's defaults. `ensure_final_newline` is not optional despite
 looking redundant with the `end-of-file-fixer` hook: mbake strips the final newline at its default, that hook re-adds
