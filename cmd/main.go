@@ -198,7 +198,7 @@ func main() {
 		IdleTimeout:  15 * time.Second,
 	}
 
-	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	signalCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	defer stop()
 
 	go func() {
@@ -231,6 +231,10 @@ func main() {
 
 	if err := metricsServer.Shutdown(shutdownCtx); err != nil {
 		slog.Error("Metrics server shutdown failed", "error", err)
+	}
+
+	if err := sqlDB.Close(); err != nil {
+		slog.Error("Database shutdown failed", "error", err)
 	}
 
 	slog.Info("Servers exited")
