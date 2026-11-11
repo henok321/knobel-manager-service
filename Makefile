@@ -49,6 +49,8 @@ openapi-validate:
 
 lint:
 	@echo "Running Go linter..."
+	go fmt ./...
+	go fix ./...
 	go tool golangci-lint run --fix ./...
 
 lint-all:
@@ -57,8 +59,9 @@ lint-all:
 
 update:
 	@echo "Updating Go modules..."
-	go get -u ./...
+	go get -t -u ./...
 	go mod tidy
+	go mod verify
 
 test:
 	@echo "Running tests..."
