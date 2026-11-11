@@ -3,7 +3,7 @@
 
 GOARCH ?= $(shell uname -m)
 GOOS ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
-OUTPUT := knobel-manager-service
+OUTPUT := bin/knobel-manager-service
 BUILD_FLAGS := -a -ldflags="-s -w -extldflags '-static'"
 CMD_DIR := ./cmd
 

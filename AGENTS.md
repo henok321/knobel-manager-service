@@ -117,7 +117,7 @@ set +o allexport
 go run cmd/main.go
 
 # Or run built binary
-./knobel-manager-service
+./bin/knobel-manager-service
 ```
 
 The service starts two servers:

@@ -93,7 +93,7 @@ make build                  # Build binary
 set -a
 source .env
 set +a
-./knobel-manager-service    # Run binary (requires sourced .env)
+./bin/knobel-manager-service    # Run binary (requires sourced .env)
 ```
 
 Deployment happens automatically via GitHub Actions on push to main. Server setup, TLS, backups and
