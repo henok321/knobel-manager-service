@@ -58,7 +58,7 @@ func Authentication(authClient FirebaseAuth) func(http.Handler) http.Handler {
 
 			token, err := authClient.VerifyIDToken(requestContext, idToken)
 			if err != nil {
-				slog.InfoContext(requestContext, "Invalid token", "error", err)
+				slog.InfoContext(requestContext, "Cannot verify token", "error", err)
 				http.Error(writer, `{"error": "unauthorized"}`, http.StatusUnauthorized)
 
 				return
