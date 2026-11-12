@@ -40,8 +40,8 @@ dev.gaijin.team/go/exhaustruct/v5 v5.2.0 h1:HZB49Fshn8qHJCi9VzYtrcnR1jbLteRHXfnQ
 dev.gaijin.team/go/exhaustruct/v5 v5.2.0/go.mod h1:5IshpqhgGdKIrF8lBmi3M6YKmI7T3hMzAL9nrflko88=
 dev.gaijin.team/go/golib v0.8.1 h1:JYju4x9BSo+QD/AYeHULVDcvEhiFg8wOi6pT0IaZF5E=
 dev.gaijin.team/go/golib v0.8.1/go.mod h1:c5fu7t1RSGMxSQgcUYO1sODbzsYnOCXJLmHeNG1Eb+0=
-firebase.google.com/go/v4 v4.22.0 h1:+7ClMN69jOITseDXC7q0OKjMkRl3ZEJwZaLB900mvYs=
-firebase.google.com/go/v4 v4.22.0/go.mod h1:tXyH/bqgOst15PmgHUSFaLX9woyDwclTtz/cRX+NocQ=
+firebase.google.com/go/v4 v4.23.0 h1:mNetoxTnPKBlRiapJhKRnikqlI1VllKDltDytf92ogA=
+firebase.google.com/go/v4 v4.23.0/go.mod h1:5dH5Zcm6ua4tm2GRd7tprKlqkEGqUom+YJncUOqBrTI=
 github.com/4meepo/tagalign v1.4.4 h1:052JDGj2pBORc6NkD30dDXpsUpoYszDeUwr9/5YZuVA=
 github.com/4meepo/tagalign v1.4.4/go.mod h1:00WwRjiuSbrRJnSVeGWPLp2epS5Q/l4UEy0apLLS37c=
 github.com/Abirdcfly/dupword v0.1.8 h1:SrhcUuGsROBuChFxHALRYzyyPODWn9zwghmzPvD9Cd8=
