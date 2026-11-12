@@ -10,7 +10,7 @@ tool (
 
 // goose v3.30.0 compiles against the interpolate v0.0.2 API; v0.2.0 removed Interpolate.
 // Pin it so go get -u cannot break the build until goose releases a fix.
-replace github.com/mfridman/interpolate => github.com/mfridman/interpolate v0.0.2
+replace github.com/mfridman/interpolate => github.com/mfridman/interpolate v0.2.0
 
 require (
 	firebase.google.com/go/v4 v4.22.0
