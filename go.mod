@@ -1,6 +1,6 @@
 module github.com/henok321/knobel-manager-service
 
-go 1.27.3
+go 1.27.4
 
 tool (
 	github.com/golangci/golangci-lint/v2/cmd/golangci-lint
@@ -17,7 +17,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/testcontainers/testcontainers-go v0.45.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.45.0
-	google.golang.org/api v0.313.0
+	google.golang.org/api v0.315.0
 	gorm.io/driver/postgres v1.6.3
 	gorm.io/gorm v1.31.2
 )
@@ -35,7 +35,7 @@ require (
 	cloud.google.com/go/iam v1.15.1 // indirect
 	cloud.google.com/go/longrunning v1.5.0 // indirect
 	cloud.google.com/go/monitoring v1.32.1 // indirect
-	cloud.google.com/go/storage v1.70.0 // indirect
+	cloud.google.com/go/storage v1.71.0 // indirect
 	codeberg.org/chavacava/garif v0.2.1 // indirect
 	codeberg.org/polyfloyd/go-errorlint v1.9.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
@@ -172,7 +172,7 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/puddle/v2 v2.2.3 // indirect
+	github.com/jackc/puddle/v2 v2.2.4 // indirect
 	github.com/jgautheron/goconst v1.11.0 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
@@ -195,7 +195,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.4.1 // indirect
 	github.com/lufia/plan9stats v0.0.0-20261101121723-be84dd9509a0 // indirect
 	github.com/macabu/inamedparam v0.2.0 // indirect
-	github.com/magiconair/properties v1.18.12 // indirect
+	github.com/magiconair/properties v1.18.13 // indirect
 	github.com/manuelarte/embeddedstructfieldcheck v0.4.0 // indirect
 	github.com/manuelarte/funcorder v0.6.0 // indirect
 	github.com/maratori/testableexamples v1.0.1 // indirect
@@ -210,8 +210,8 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/go-archive v0.3.3 // indirect
-	github.com/moby/moby/api v1.56.1 // indirect
-	github.com/moby/moby/client v0.6.2 // indirect
+	github.com/moby/moby/api v1.57.0 // indirect
+	github.com/moby/moby/client v0.6.3 // indirect
 	github.com/moby/patternmatcher v0.6.1 // indirect
 	github.com/moby/sys/sequential v0.7.0 // indirect
 	github.com/moby/sys/user v0.5.0 // indirect
@@ -320,10 +320,10 @@ require (
 	golang.org/x/time v0.16.0 // indirect
 	golang.org/x/tools v0.52.0 // indirect
 	golang.org/x/vuln v1.7.0 // indirect
-	google.golang.org/appengine/v2 v2.0.6 // indirect
-	google.golang.org/genproto v0.0.0-20261110000943-09e21b237f2c // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20261110000943-09e21b237f2c // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261110000943-09e21b237f2c // indirect
+	google.golang.org/appengine/v2 v2.1.0 // indirect
+	google.golang.org/genproto v0.0.0-20261116203732-fd2c7689a808 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20261116203732-fd2c7689a808 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261116203732-fd2c7689a808 // indirect
 	google.golang.org/grpc v1.85.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
