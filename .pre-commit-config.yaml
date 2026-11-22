@@ -77,7 +77,7 @@ repos:
       - id: hadolint-docker
         name: Lint Dockerfiles
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.50.0
+    rev: v0.50.1
     hooks:
       - id: markdownlint
         files: \.(md|markdown)$
