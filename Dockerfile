@@ -40,7 +40,7 @@ RUN apt-get update && \
 
 WORKDIR /home/appuser
 
-COPY --from=builder /app/knobel-manager-service /home/appuser/knobel-manager-service
+COPY --from=builder /app/bin/knobel-manager-service /home/appuser/knobel-manager-service
 COPY --from=builder /app/openapi /home/appuser/openapi
 COPY ./db_migration /home/appuser/db_migration
 
